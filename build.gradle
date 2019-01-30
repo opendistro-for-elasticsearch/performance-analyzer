@@ -76,7 +76,7 @@ esplugin {
     name 'performance-analyzer'
     description 'Performance Analyzer Plugin'
     classname 'com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerPlugin'
-    version "${es_version}"
+    version "1.0"
     publishArtifact true
 }
 
