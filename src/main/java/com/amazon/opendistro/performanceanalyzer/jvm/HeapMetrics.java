@@ -19,8 +19,8 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.MemoryUsage;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -57,7 +57,7 @@ public class HeapMetrics {
                 || "Survivor Space".equals(item.getName())
                 || "PS Survivor Space".equals(item.getName())
                 || "G1 Survivor".equals(item.getName())) {
-                memoryUsageSuppliers.put("Surivor", () -> item.getUsage());
+                memoryUsageSuppliers.put("Survivor", () -> item.getUsage());
             }
         }
     }

@@ -1,3 +1,18 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.performanceanalyzer.reader;
 
 import java.sql.Connection;
@@ -9,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.amazon.opendistro.performanceanalyzer.DBUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.BatchBindStep;
@@ -22,7 +36,8 @@ import org.jooq.SelectField;
 import org.jooq.SelectHavingStep;
 import org.jooq.impl.DSL;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OS_Metrics;
+import com.amazon.opendistro.performanceanalyzer.DBUtils;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
 
 @SuppressWarnings("serial")
 public class OSMetricsSnapshot implements Removable {
@@ -41,8 +56,8 @@ public class OSMetricsSnapshot implements Removable {
 
     static {
         METRIC_COLUMNS = new LinkedHashSet<>();
-        for (OS_Metrics metric: OS_Metrics.values()) {
-            METRIC_COLUMNS.add(metric.name());
+        for (OSMetrics metric: OSMetrics.values()) {
+            METRIC_COLUMNS.add(metric.toString());
         }
     }
 
@@ -55,8 +70,8 @@ public class OSMetricsSnapshot implements Removable {
         this.create = DSL.using(conn, SQLDialect.SQLITE);
 
         this.dimensionColumns = new LinkedHashSet<String>() { {
-            this.add(Fields.tid.name());
-            this.add(Fields.tName.name());
+            this.add(Fields.tid.toString());
+            this.add(Fields.tName.toString());
         } };
 
         LOG.debug("Creating a new os snapshot table - {}", tableName);
@@ -125,8 +140,8 @@ public class OSMetricsSnapshot implements Removable {
         }
 
         create.insertInto(DSL.table(this.tableName))
-            .set(DSL.field(Fields.tid.name()), tid)
-            .set(DSL.field(Fields.tName.name()), tName)
+            .set(DSL.field(Fields.tid.toString()), tid)
+            .set(DSL.field(Fields.tName.toString()), tName)
             .set(metricMap)
             .execute();
     }
@@ -141,7 +156,7 @@ public class OSMetricsSnapshot implements Removable {
 
     public Result<Record> fetchNegative() {
         return create.select().from(DSL.table(this.tableName))
-            .where(DSL.field("cpu").lt(0L)).fetch();
+            .where(DSL.field(OSMetrics.CPU_UTILIZATION.toString()).lt(0L)).fetch();
     }
 
     public SelectHavingStep<Record> selectAll() {
@@ -159,18 +174,21 @@ public class OSMetricsSnapshot implements Removable {
     }
 
     public Result<?> getDebugSnap() {
-        return create.select(DSL.field(Fields.tid.name()).as(Fields.tid.name())
-                    , DSL.field(Fields.tName.name()).as(Fields.tName.name())
-                    , DSL.field("cpu")
-                    , DSL.field("paging_minflt")
-                    )
-            .from(this.tableName).where(DSL.field("cpu", Double.class).ne(0d)).fetch();
+        return create
+                .select(DSL.field(Fields.tid.toString()).as(Fields.tid.toString()),
+                        DSL.field(Fields.tName.toString()).as(Fields.tName.toString()),
+                        DSL.field(OSMetrics.CPU_UTILIZATION.toString()),
+                        DSL.field(OSMetrics.PAGING_MIN_FLT_RATE.toString()))
+                .from(this.tableName)
+                .where(DSL.field(OSMetrics.CPU_UTILIZATION.toString(),
+                        Double.class).ne(0d))
+                .fetch();
     }
 
     public Result<Record> getOSMetrics() {
         List<SelectField<?>> fields = new ArrayList<SelectField<?>>();
-        fields.add(DSL.field(Fields.tid.name()).as(Fields.tid.name()));
-        fields.add(DSL.field(Fields.tName.name()).as(Fields.tName.name()));
+        fields.add(DSL.field(Fields.tid.toString()).as(Fields.tid.toString()));
+        fields.add(DSL.field(Fields.tName.toString()).as(Fields.tName.toString()));
         for (String metricColumn: METRIC_COLUMNS) {
             fields.add(DSL.field(metricColumn, Double.class).as(metricColumn));
         }
@@ -188,33 +206,37 @@ public class OSMetricsSnapshot implements Removable {
      *
      * This method assumes that both left/right windows are greater than or equal to 5 seconds.
      *
+     *  @param leftWindow a snapshot of the left window metrics
+     *  @param rightWindow a snapshot of the right window metrics
+     *  @param alignedWindow aligned window combinging left and right window
+     *  @param t leftWindow end time, as well as right window start time
      *  @param a aligned window start time.
      *  @param b aligned window end time.
-     *  @param t leftWindow end time, as well as right window start time
+     *
      */
     public static void alignWindow(OSMetricsSnapshot leftWindow,
             OSMetricsSnapshot rightWindow, String alignedWindow,
             long t, long a, long b) {
         DSLContext create = leftWindow.getDSLContext();
         ArrayList<SelectField<?>> alignedFields = new ArrayList<SelectField<?>>();
-        alignedFields.add(DSL.field(Fields.tid.name()).as(Fields.tid.name()));
-        alignedFields.add(DSL.field(Fields.tName.name()).as(Fields.tName.name()));
+        alignedFields.add(DSL.field(Fields.tid.toString()).as(Fields.tid.toString()));
+        alignedFields.add(DSL.field(Fields.tName.toString()).as(Fields.tName.toString()));
         for (String metricName: METRIC_COLUMNS) {
             alignedFields.add(DSL.sum(DSL.field(metricName, Double.class))
-                    .div(DSL.sum(DSL.field(Fields.weight.name(), Double.class))).as(metricName));
+                    .div(DSL.sum(DSL.field(Fields.weight.toString(), Double.class))).as(metricName));
         }
 
         List<SelectField<?>> leftWinFields = new ArrayList<SelectField<?>>();
-        leftWinFields.add(DSL.field(Fields.tid.name(), String.class).as(Fields.tid.name()));
-        leftWinFields.add(DSL.field(Fields.tName.name(), String.class).as(Fields.tName.name()));
-        leftWinFields.add(DSL.val(t - a).as(Fields.weight.name()));
+        leftWinFields.add(DSL.field(Fields.tid.toString(), String.class).as(Fields.tid.toString()));
+        leftWinFields.add(DSL.field(Fields.tName.toString(), String.class).as(Fields.tName.toString()));
+        leftWinFields.add(DSL.val(t - a).as(Fields.weight.toString()));
         for (String c: METRIC_COLUMNS) {
             leftWinFields.add(DSL.field(c, Double.class).mul(t - a).as(c));
         }
         List<SelectField<?>> rightWinFields = new ArrayList<SelectField<?>>();
-        rightWinFields.add(DSL.field(Fields.tid.name(), String.class).as(Fields.tid.name()));
-        rightWinFields.add(DSL.field(Fields.tName.name(), String.class).as(Fields.tName.name()));
-        rightWinFields.add(DSL.val(b - t).as(Fields.weight.name()));
+        rightWinFields.add(DSL.field(Fields.tid.toString(), String.class).as(Fields.tid.toString()));
+        rightWinFields.add(DSL.field(Fields.tName.toString(), String.class).as(Fields.tName.toString()));
+        rightWinFields.add(DSL.val(b - t).as(Fields.weight.toString()));
         for (String c: METRIC_COLUMNS) {
             rightWinFields.add(DSL.field(c, Double.class).mul(b - t).as(c));
         }
@@ -226,7 +248,7 @@ public class OSMetricsSnapshot implements Removable {
                             .select(rightWinFields).from(rightWindow.getTableName())
                         )
                 )
-                .groupBy(DSL.field(Fields.tid.name(), String.class)))
+                .groupBy(DSL.field(Fields.tid.toString(), String.class)))
             .execute();
     }
 

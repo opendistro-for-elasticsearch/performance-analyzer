@@ -26,7 +26,7 @@ public class OSMetricsGeneratorFactory {
 
         if (isLinux()) {
             return LinuxOSMetricsGenerator.getInstance();
-        }else {
+        } else {
             ConfigStatus.INSTANCE.setConfigurationInvalid();
         }
 

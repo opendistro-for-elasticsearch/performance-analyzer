@@ -1,3 +1,18 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.performanceanalyzer.metricsdb;
 
 import java.io.File;
@@ -6,8 +21,6 @@ import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.amazon.opendistro.performanceanalyzer.DBUtils;
-import com.amazon.opendistro.performanceanalyzer.reader.Removable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.BatchBindStep;
@@ -20,10 +33,12 @@ import org.jooq.Select;
 import org.jooq.TableLike;
 import org.jooq.impl.DSL;
 
+import com.amazon.opendistro.performanceanalyzer.DBUtils;
 import com.amazon.opendistro.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.performanceanalyzer.reader.Removable;
 
 /**
- * Ondisk database that holds a 5 second snapshot of all metrics.
+ * On-disk database that holds a 5 second snapshot of all metrics.
  * We create one table per metric. Every row contains four aggregations and any other relevant dimensions.
  *
  * Eg:
@@ -192,6 +207,14 @@ public class MetricsDB implements Removable {
      * |1    |sonested |   20| null|
      * |2    |sonested | null|   47|
      *
+     * @param metrics a list of metrics we want to query
+     * @param aggregations aggregation we want to use for each metric
+     * @param dimensions dimension we want to use for each metric
+     *
+     * @return result of query
+     *
+     * @throws Exception if one of the aggregations contains sth other than
+     *   "sum", "avg", "min", and "max".
      * */
     public Result<Record> queryMetric(List<String> metrics,
             List<String> aggregations, List<String> dimensions) throws Exception {

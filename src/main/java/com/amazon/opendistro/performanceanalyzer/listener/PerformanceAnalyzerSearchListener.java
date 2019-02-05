@@ -15,22 +15,21 @@
 
 package com.amazon.opendistro.performanceanalyzer.listener;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.index.shard.SearchOperationListener;
 import org.elasticsearch.search.internal.SearchContext;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.ThreadIDUtil;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
-
 import com.amazon.opendistro.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
-
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardSearch_Metrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CommonDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CommonMetric;
+import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.ThreadIDUtil;
 
 public class PerformanceAnalyzerSearchListener implements SearchOperationListener, SearchListener, MetricsProcessor {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerSearchListener.class);
+
     private static final SearchListener NO_OP_SEARCH_LISTENER = new NoOpSearchListener();
     private static final int KEYS_PATH_LENGTH = 4;
     private SearchListener searchListener;
@@ -158,23 +157,23 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
     public static String generateStartMetrics(long startTime, String indexName, int shardId) {
         return new StringBuilder().append(PerformanceAnalyzerMetrics.getCurrentTimeMetric())
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.startTime.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonMetric.START_TIME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(startTime)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.indexName.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonDimension.INDEX_NAME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(indexName)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.shardId.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonDimension.SHARD_ID.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(shardId).toString();
     }
 
     public static String generateFinishMetrics(long finishTime, boolean failed, String indexName, int shardId) {
         return new StringBuilder().append(PerformanceAnalyzerMetrics.getCurrentTimeMetric())
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.finishTime.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonMetric.FINISH_TIME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(finishTime)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.failed.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonDimension.FAILED.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(failed)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.indexName.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonDimension.INDEX_NAME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(indexName)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardSearch_Metrics.shardId.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(CommonDimension.SHARD_ID.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(shardId).toString();
     }
 }

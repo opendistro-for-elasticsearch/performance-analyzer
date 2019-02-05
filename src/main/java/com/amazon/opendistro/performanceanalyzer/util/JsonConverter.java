@@ -32,19 +32,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 public class JsonConverter {
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final Logger LOG = LogManager.getLogger(JsonConverter.class);
 
 
     /**
      * We can miss writing a metric if exception is thrown.
-     * @param value
-     * @return
+     * @param value a Java object
+     * @return the converted string from the input Java object
      */
     public static String writeValueAsString(Object value) {
         try {
-            return mapper.writeValueAsString(value);
+            return MAPPER.writeValueAsString(value);
         } catch (JsonGenerationException e) {
             LOG.warn("Json generation error " + e.getMessage());
             throw new IllegalArgumentException(e);
@@ -61,8 +61,8 @@ public class JsonConverter {
 
         try {
             if (json.trim().length() != 0) {
-                return mapper.readValue(json,
-                        new TypeReference<Map<String, Object>>(){});
+                return MAPPER.readValue(json,
+                        new TypeReference<Map<String, Object>>() { });
             }
         } catch (IOException e) {
             LOG.debug("IO error: {} for json {}", () -> e.toString(), () -> json);
@@ -79,13 +79,16 @@ public class JsonConverter {
      * @param paths
      *            path fragments
      * @return the matching Jackson JsonNode or null in case of no match.
-     * @throws IOException
-     * @throws JsonProcessingException
-     * @throws IOException
+     * @throws IOException if underlying input contains invalid content of type
+     *  JsonParser supports
+     * @throws JsonProcessingException if underlying input contains invalid
+     *  content of type JsonParser supports
+     * @throws IOException if underlying input contains invalid content of type
+     *  JsonParser supports
      */
     public static JsonNode getChildNode(String jsonString, String... paths)
             throws JsonProcessingException, IOException {
-        JsonNode rootNode = mapper.readTree(jsonString);
+        JsonNode rootNode = MAPPER.readTree(jsonString);
         return getChildNode(rootNode, paths);
     }
 
@@ -102,8 +105,9 @@ public class JsonConverter {
     public static JsonNode getChildNode(JsonNode jsonNode, String... paths) {
         for (int i = 0; i < paths.length; i++) {
             String path = paths[i];
-            if (!jsonNode.has(path))
+            if (!jsonNode.has(path)) {
                 return null;
+            }
 
             jsonNode = jsonNode.get(path);
         }
@@ -121,9 +125,11 @@ public class JsonConverter {
      *            path fragments
      * @return the matching long number or null in case of no match.
      *
-     * @throws JsonPathNotFoundException
-     * @throws IOException
-     * @throws JsonProcessingException
+     * @throws JsonPathNotFoundException thrown if the input path is invalid
+     * @throws IOException thrown if underlying input contains invalid content
+     *  of type JsonParser supports
+     * @throws JsonProcessingException thrown if underlying input contains
+     *  invalid content of type JsonParser supports
      */
     public static long getLongValue(String jsonString, String... paths)
             throws JsonPathNotFoundException, JsonProcessingException,

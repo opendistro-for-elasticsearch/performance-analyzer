@@ -19,10 +19,13 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.amazon.opendistro.performanceanalyzer.ConfigStatus;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
+
+import com.amazon.opendistro.performanceanalyzer.ConfigStatus;
+import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 
 public class OSGlobals {
     private static long scClkTck;
@@ -41,7 +44,11 @@ public class OSGlobals {
             enumTids();
             lastUpdated = System.currentTimeMillis();
         } catch (Exception e) {
-            LOGGER.error("Error in static initialization of OSGlobals with exception: {}", e.toString(), e);
+            LOGGER.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error in static initialization of OSGlobals with exception: {}",
+                            e.toString()),
+                    e);
         }
     }
 
@@ -57,7 +64,11 @@ public class OSGlobals {
         try {
             scClkTck = Long.parseUnsignedLong(System.getProperty(CLK_TCK_SYS_PROPERTY_NAME));
         } catch (Exception e) {
-            LOGGER.error("Error in reading/parsing clk.tck value: {}", e.toString(), e);
+            LOGGER.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error in reading/parsing clk.tck value: {}",
+                            e.toString()),
+                    e);
             ConfigStatus.INSTANCE.setConfigurationInvalid();
         }
     }

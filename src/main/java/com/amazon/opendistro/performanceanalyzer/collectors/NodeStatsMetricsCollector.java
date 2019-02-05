@@ -19,14 +19,10 @@ import java.lang.reflect.Field;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.performanceanalyzer.ESResources;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
@@ -40,8 +36,13 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.NodeIndicesStats;
 
+import com.amazon.opendistro.performanceanalyzer.ESResources;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
+import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings("unchecked")
 public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
@@ -73,58 +74,49 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             IndexShardState.RECOVERING, IndexShardState.POST_RECOVERY, IndexShardState.STARTED);
 
     private Map<String, ValueCalculator> valueCalculators = new HashMap<String, ValueCalculator>() { {
-        put(AllMetrics.ShardStatsValue.indexingThrottleTime.name(),
+        put(ShardStatsValue.INDEXING_THROTTLE_TIME.toString(),
                 (shardStats) -> shardStats.getStats().getIndexing().getTotal().getThrottleTime().millis());
 
-        put(AllMetrics.ShardStatsValue.queryCacheHitCount.name(), (shardStats) -> shardStats.getStats().getQueryCache().getHitCount());
-        put(AllMetrics.ShardStatsValue.queryCacheMissCount.name(), (shardStats) -> shardStats.getStats().getQueryCache().getMissCount());
-        put(AllMetrics.ShardStatsValue.queryCacheInBytes.name(),
-                (shardStats) -> shardStats.getStats().getQueryCache().getMemorySizeInBytes());
+        put(ShardStatsValue.CACHE_QUERY_HIT.toString(), (shardStats) -> shardStats.getStats().getQueryCache().getHitCount());
+        put(ShardStatsValue.CACHE_QUERY_MISS.toString(), (shardStats) -> shardStats.getStats().getQueryCache().getMissCount());
+        put(ShardStatsValue.CACHE_QUERY_SIZE.toString(), (shardStats) -> shardStats.getStats().getQueryCache().getMemorySizeInBytes());
 
-        put(AllMetrics.ShardStatsValue.fieldDataEvictions.name(), (shardStats) -> shardStats.getStats().getFieldData().getEvictions());
-        put(AllMetrics.ShardStatsValue.fieldDataInBytes.name(),
-                (shardStats) -> shardStats.getStats().getFieldData().getMemorySizeInBytes());
+        put(ShardStatsValue.CACHE_FIELDDATA_EVICTION.toString(), (shardStats) -> shardStats.getStats().getFieldData().getEvictions());
+        put(ShardStatsValue.CACHE_FIELDDATA_SIZE.toString(), (shardStats) -> shardStats.getStats().getFieldData().getMemorySizeInBytes());
 
-        put(AllMetrics.ShardStatsValue.requestCacheHitCount.name(),
-                (shardStats) -> shardStats.getStats().getRequestCache().getHitCount());
-        put(AllMetrics.ShardStatsValue.requestCacheMissCount.name(),
-                (shardStats) -> shardStats.getStats().getRequestCache().getMissCount());
-        put(AllMetrics.ShardStatsValue.requestCacheEvictions.name(),
-                (shardStats) -> shardStats.getStats().getRequestCache().getEvictions());
-        put(AllMetrics.ShardStatsValue.requestCacheInBytes.name(),
-                (shardStats) -> shardStats.getStats().getRequestCache().getMemorySizeInBytes());
+        put(ShardStatsValue.CACHE_REQUEST_HIT.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getHitCount());
+        put(ShardStatsValue.CACHE_REQUEST_MISS.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getMissCount());
+        put(ShardStatsValue.CACHE_REQUEST_EVICTION.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getEvictions());
+        put(ShardStatsValue.CACHE_REQUEST_SIZE.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getMemorySizeInBytes());
 
-        put(AllMetrics.ShardStatsValue.refreshCount.name(), (shardStats) -> shardStats.getStats().getRefresh().getTotal());
-        put(AllMetrics.ShardStatsValue.refreshTime.name(), (shardStats) -> shardStats.getStats().getRefresh().getTotalTimeInMillis());
+        put(ShardStatsValue.REFRESH_EVENT.toString(), (shardStats) -> shardStats.getStats().getRefresh().getTotal());
+        put(ShardStatsValue.REFRESH_TIME.toString(), (shardStats) -> shardStats.getStats().getRefresh().getTotalTimeInMillis());
 
-        put(AllMetrics.ShardStatsValue.flushCount.name(), (shardStats) -> shardStats.getStats().getFlush().getTotal());
-        put(AllMetrics.ShardStatsValue.flushTime.name(), (shardStats) -> shardStats.getStats().getFlush().getTotalTimeInMillis());
+        put(ShardStatsValue.FLUSH_EVENT.toString(), (shardStats) -> shardStats.getStats().getFlush().getTotal());
+        put(ShardStatsValue.FLUSH_TIME.toString(), (shardStats) -> shardStats.getStats().getFlush().getTotalTimeInMillis());
 
-        put(AllMetrics.ShardStatsValue.mergeCount.name(), (shardStats) -> shardStats.getStats().getMerge().getTotal());
-        put(AllMetrics.ShardStatsValue.mergeTime.name(), (shardStats) -> shardStats.getStats().getMerge().getTotalTimeInMillis());
-        put(AllMetrics.ShardStatsValue.mergeCurrent.name(), (shardStats) -> shardStats.getStats().getMerge().getCurrent());
+        put(ShardStatsValue.MERGE_EVENT.toString(), (shardStats) -> shardStats.getStats().getMerge().getTotal());
+        put(ShardStatsValue.MERGE_TIME.toString(), (shardStats) -> shardStats.getStats().getMerge().getTotalTimeInMillis());
+        put(ShardStatsValue.MERGE_CURRENT_EVENT.toString(), (shardStats) -> shardStats.getStats().getMerge().getCurrent());
 
-        put(AllMetrics.ShardStatsValue.segmentCount.name(), (shardStats) -> shardStats.getStats().getSegments().getCount());
-        put(AllMetrics.ShardStatsValue.segmentsMemory.name(), (shardStats) -> shardStats.getStats().getSegments().getMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.termsMemory.name(),
-                (shardStats) -> shardStats.getStats().getSegments().getTermsMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.storedFieldsMemory.name(),
+        put(ShardStatsValue.SEGMENTS_TOTAL.toString(), (shardStats) -> shardStats.getStats().getSegments().getCount());
+        put(ShardStatsValue.SEGMENTS_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getMemoryInBytes());
+        put(ShardStatsValue.TERMS_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getTermsMemoryInBytes());
+        put(ShardStatsValue.STORED_FIELDS_MEMORY.toString(),
                 (shardStats) -> shardStats.getStats().getSegments().getStoredFieldsMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.termVectorsMemory.name(),
+        put(ShardStatsValue.TERM_VECTOR_MEMORY.toString(),
                 (shardStats) -> shardStats.getStats().getSegments().getTermVectorsMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.normsMemory.name(),
-                (shardStats) -> shardStats.getStats().getSegments().getNormsMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.pointsMemory.name(),
-                (shardStats) -> shardStats.getStats().getSegments().getPointsMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.docValuesMemory.name(),
-                (shardStats) -> shardStats.getStats().getSegments().getDocValuesMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.indexWriterMemory.name(),
+        put(ShardStatsValue.NORMS_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getNormsMemoryInBytes());
+        put(ShardStatsValue.POINTS_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getPointsMemoryInBytes());
+        put(ShardStatsValue.DOC_VALUES_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getDocValuesMemoryInBytes());
+        put(ShardStatsValue.INDEX_WRITER_MEMORY.toString(),
                 (shardStats) -> shardStats.getStats().getSegments().getIndexWriterMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.versionMapMemory.name(),
-                (shardStats) -> shardStats.getStats().getSegments().getVersionMapMemoryInBytes());
-        put(AllMetrics.ShardStatsValue.bitsetMemory.name(), (shardStats) -> shardStats.getStats().getSegments().getBitsetMemoryInBytes());
+            put(ShardStatsValue.VERSION_MAP_MEMORY.toString(),
+                    (shardStats) -> shardStats.getStats().getSegments()
+                            .getVersionMapMemoryInBytes());
+            put(ShardStatsValue.BITSET_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getBitsetMemoryInBytes());
 
-        put(AllMetrics.ShardStatsValue.indexBufferBytes.name(), (shardStats) -> getIndexBufferBytes(shardStats));
+        put(ShardStatsValue.INDEXING_BUFFER.toString(), (shardStats) -> getIndexBufferBytes(shardStats));
 
     } };
 
@@ -214,40 +206,40 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
     public class NodeStatsMetricsStatus extends MetricStatus {
 
         @JsonIgnore
-        ShardStats shardStats;
+        private ShardStats shardStats;
 
         @JsonIgnore
-        CachedStats prevStats;
+        private CachedStats prevStats;
 
-        public final long indexingThrottleTime;
-        public final long queryCacheHitCount;
-        public final long queryCacheMissCount;
-        public final long queryCacheInBytes;
-        public final long fieldDataEvictions;
-        public final long fieldDataInBytes;
-        public final long requestCacheHitCount;
-        public final long requestCacheMissCount;
-        public final long requestCacheEvictions;
-        public final long requestCacheInBytes;
-        public final long refreshCount;
-        public final long refreshTime;
-        public final long flushCount;
-        public final long flushTime;
-        public final long mergeCount;
-        public final long mergeTime;
-        public final long mergeCurrent;
-        public final long indexBufferBytes;
-        public final long segmentCount;
-        public final long segmentsMemory;
-        public final long termsMemory;
-        public final long storedFieldsMemory;
-        public final long termVectorsMemory;
-        public final long normsMemory;
-        public final long pointsMemory;
-        public final long docValuesMemory;
-        public final long indexWriterMemory;
-        public final long versionMapMemory;
-        public final long bitsetMemory;
+        private final long indexingThrottleTime;
+        private final long queryCacheHitCount;
+        private final long queryCacheMissCount;
+        private final long queryCacheInBytes;
+        private final long fieldDataEvictions;
+        private final long fieldDataInBytes;
+        private final long requestCacheHitCount;
+        private final long requestCacheMissCount;
+        private final long requestCacheEvictions;
+        private final long requestCacheInBytes;
+        private final long refreshCount;
+        private final long refreshTime;
+        private final long flushCount;
+        private final long flushTime;
+        private final long mergeCount;
+        private final long mergeTime;
+        private final long mergeCurrent;
+        private final long indexBufferBytes;
+        private final long segmentCount;
+        private final long segmentsMemory;
+        private final long termsMemory;
+        private final long storedFieldsMemory;
+        private final long termVectorsMemory;
+        private final long normsMemory;
+        private final long pointsMemory;
+        private final long docValuesMemory;
+        private final long indexWriterMemory;
+        private final long versionMapMemory;
+        private final long bitsetMemory;
 
         public NodeStatsMetricsStatus(ShardStats shardStats,
                 CachedStats prevStats) {
@@ -256,47 +248,48 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.prevStats = prevStats;
 
             this.indexingThrottleTime = calculate(
-                    AllMetrics.ShardStatsValue.indexingThrottleTime);
+                    ShardStatsValue.INDEXING_THROTTLE_TIME);
             this.queryCacheHitCount = calculate(
-                    AllMetrics.ShardStatsValue.queryCacheHitCount);
+                    ShardStatsValue.CACHE_QUERY_HIT);
             this.queryCacheMissCount = calculate(
-                    AllMetrics.ShardStatsValue.queryCacheMissCount);
+                    ShardStatsValue.CACHE_QUERY_MISS);
             this.queryCacheInBytes = calculate(
-                    AllMetrics.ShardStatsValue.queryCacheInBytes);
+                    ShardStatsValue.CACHE_QUERY_SIZE);
             this.fieldDataEvictions = calculate(
-                    AllMetrics.ShardStatsValue.fieldDataEvictions);
-            this.fieldDataInBytes = calculate(AllMetrics.ShardStatsValue.fieldDataInBytes);
+                    ShardStatsValue.CACHE_FIELDDATA_EVICTION);
+            this.fieldDataInBytes = calculate(ShardStatsValue.CACHE_FIELDDATA_SIZE);
             this.requestCacheHitCount = calculate(
-                    AllMetrics.ShardStatsValue.requestCacheHitCount);
+                    ShardStatsValue.CACHE_REQUEST_HIT);
             this.requestCacheMissCount = calculate(
-                    AllMetrics.ShardStatsValue.requestCacheMissCount);
+                    ShardStatsValue.CACHE_REQUEST_MISS);
             this.requestCacheEvictions = calculate(
-                    AllMetrics.ShardStatsValue.requestCacheEvictions);
+                    ShardStatsValue.CACHE_REQUEST_EVICTION);
             this.requestCacheInBytes = calculate(
-                    AllMetrics.ShardStatsValue.requestCacheInBytes);
-            this.refreshCount = calculate(AllMetrics.ShardStatsValue.refreshCount);
-            this.refreshTime = calculate(AllMetrics.ShardStatsValue.refreshTime);
-            this.flushCount = calculate(AllMetrics.ShardStatsValue.flushCount);
-            this.flushTime = calculate(AllMetrics.ShardStatsValue.flushTime);
-            this.mergeCount = calculate(AllMetrics.ShardStatsValue.mergeCount);
-            this.mergeTime = calculate(AllMetrics.ShardStatsValue.mergeTime);
-            this.mergeCurrent = calculate(AllMetrics.ShardStatsValue.mergeCurrent);
-            this.indexBufferBytes = calculate(AllMetrics.ShardStatsValue.indexBufferBytes);
-            this.segmentCount = calculate(AllMetrics.ShardStatsValue.segmentCount);
-            this.segmentsMemory = calculate(AllMetrics.ShardStatsValue.segmentsMemory);
-            this.termsMemory = calculate(AllMetrics.ShardStatsValue.termsMemory);
+                    ShardStatsValue.CACHE_REQUEST_SIZE);
+            this.refreshCount = calculate(ShardStatsValue.REFRESH_EVENT);
+            this.refreshTime = calculate(ShardStatsValue.REFRESH_TIME);
+            this.flushCount = calculate(ShardStatsValue.FLUSH_EVENT);
+            this.flushTime = calculate(ShardStatsValue.FLUSH_TIME);
+            this.mergeCount = calculate(ShardStatsValue.MERGE_EVENT);
+            this.mergeTime = calculate(ShardStatsValue.MERGE_TIME);
+            this.mergeCurrent = calculate(ShardStatsValue.MERGE_CURRENT_EVENT);
+            this.indexBufferBytes = calculate(ShardStatsValue.INDEXING_BUFFER);
+            this.segmentCount = calculate(ShardStatsValue.SEGMENTS_TOTAL);
+            this.segmentsMemory = calculate(ShardStatsValue.SEGMENTS_MEMORY);
+            this.termsMemory = calculate(ShardStatsValue.TERMS_MEMORY);
             this.storedFieldsMemory = calculate(
-                    AllMetrics.ShardStatsValue.storedFieldsMemory);
-            this.termVectorsMemory = calculate(AllMetrics.ShardStatsValue.termsMemory);
-            this.normsMemory = calculate(AllMetrics.ShardStatsValue.normsMemory);
-            this.pointsMemory = calculate(AllMetrics.ShardStatsValue.pointsMemory);
-            this.docValuesMemory = calculate(AllMetrics.ShardStatsValue.docValuesMemory);
+                    ShardStatsValue.STORED_FIELDS_MEMORY);
+            this.termVectorsMemory = calculate(ShardStatsValue.TERMS_MEMORY);
+            this.normsMemory = calculate(ShardStatsValue.NORMS_MEMORY);
+            this.pointsMemory = calculate(ShardStatsValue.POINTS_MEMORY);
+            this.docValuesMemory = calculate(ShardStatsValue.DOC_VALUES_MEMORY);
             this.indexWriterMemory = calculate(
-                    AllMetrics.ShardStatsValue.indexWriterMemory);
-            this.versionMapMemory = calculate(AllMetrics.ShardStatsValue.versionMapMemory);
-            this.bitsetMemory = calculate(AllMetrics.ShardStatsValue.bitsetMemory);
+                    ShardStatsValue.INDEX_WRITER_MEMORY);
+            this.versionMapMemory = calculate(ShardStatsValue.VERSION_MAP_MEMORY);
+            this.bitsetMemory = calculate(ShardStatsValue.BITSET_MEMORY);
         }
 
+        @SuppressWarnings("checkstyle:parameternumber")
         public NodeStatsMetricsStatus(long indexingThrottleTime,
                 long queryCacheHitCount, long queryCacheMissCount,
                 long queryCacheInBytes, long fieldDataEvictions,
@@ -345,9 +338,164 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         }
 
 
-        private long calculate(AllMetrics.ShardStatsValue nodeMetric) {
-            return valueCalculators.get(nodeMetric.name()).calculate(
-                    shardStats, prevStats, nodeMetric.name());
+        private long calculate(ShardStatsValue nodeMetric) {
+            return valueCalculators.get(nodeMetric.toString()).calculate(
+                    shardStats, prevStats, nodeMetric.toString());
+        }
+
+        @JsonIgnore
+        public ShardStats getShardStats() {
+            return shardStats;
+        }
+
+        @JsonIgnore
+        public CachedStats getPrevStats() {
+            return prevStats;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.INDEXING_THROTTLE_TIME_VALUE)
+        public long getIndexingThrottleTime() {
+            return indexingThrottleTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.QUEY_CACHE_HIT_COUNT_VALUE)
+        public long getQueryCacheHitCount() {
+            return queryCacheHitCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.QUERY_CACHE_MISS_COUNT_VALUE)
+        public long getQueryCacheMissCount() {
+            return queryCacheMissCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.QUERY_CACHE_IN_BYTES_VALUE)
+        public long getQueryCacheInBytes() {
+            return queryCacheInBytes;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.FIELDDATA_EVICTION_VALUE)
+        public long getFieldDataEvictions() {
+            return fieldDataEvictions;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.FIELD_DATA_IN_BYTES_VALUE)
+        public long getFieldDataInBytes() {
+            return fieldDataInBytes;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_HIT_COUNT_VALUE)
+        public long getRequestCacheHitCount() {
+            return requestCacheHitCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_MISS_COUNT_VALUE)
+        public long getRequestCacheMissCount() {
+            return requestCacheMissCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_EVICTION_VALUE)
+        public long getRequestCacheEvictions() {
+            return requestCacheEvictions;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_IN_BYTES_VALUE)
+        public long getRequestCacheInBytes() {
+            return requestCacheInBytes;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REFRESH_COUNT_VALUE)
+        public long getRefreshCount() {
+            return refreshCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REFRESH_TIME_VALUE)
+        public long getRefreshTime() {
+            return refreshTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.FLUSH_COUNT_VALUE)
+        public long getFlushCount() {
+            return flushCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.FLUSH_TIME_VALUE)
+        public long getFlushTime() {
+            return flushTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.MERGE_COUNT_VALUE)
+        public long getMergeCount() {
+            return mergeCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.MERGE_TIME_VALUE)
+        public long getMergeTime() {
+            return mergeTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.MERGE_CURRENT_VALUE)
+        public long getMergeCurrent() {
+            return mergeCurrent;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.INDEX_BUFFER_BYTES_VALUE)
+        public long getIndexBufferBytes() {
+            return indexBufferBytes;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.SEGMENTS_COUNT_VALUE)
+        public long getSegmentCount() {
+            return segmentCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.SEGMENTS_MEMORY_VALUE)
+        public long getSegmentsMemory() {
+            return segmentsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.TERMS_MEMORY_VALUE)
+        public long getTermsMemory() {
+            return termsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.STORED_FIELDS_MEMORY_VALUE)
+        public long getStoredFieldsMemory() {
+            return storedFieldsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.TERM_VECTOR_MEMORY_VALUE)
+        public long getTermVectorsMemory() {
+            return termVectorsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.NORMS_MEMORY_VALUE)
+        public long getNormsMemory() {
+            return normsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.POINTS_MEMORY_VALUE)
+        public long getPointsMemory() {
+            return pointsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.DOC_VALUES_MEMORY_VALUE)
+        public long getDocValuesMemory() {
+            return docValuesMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.INDEX_WRITER_MEMORY_VALUE)
+        public long getIndexWriterMemory() {
+            return indexWriterMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.VERSION_MAP_MEMORY_VALUE)
+        public long getVersionMapMemory() {
+            return versionMapMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.BITSET_MEMORY_VALUE)
+        public long getBitsetMemory() {
+            return bitsetMemory;
         }
     }
 }

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.MasterService;
@@ -29,9 +28,12 @@ import org.elasticsearch.cluster.service.SourcePrioritizedRunnable;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 
 import com.amazon.opendistro.performanceanalyzer.ESResources;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.Master_Metrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MasterMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MasterPendingValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings("unchecked")
 public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
@@ -107,21 +109,21 @@ public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector im
                     lastTaskInsertionOrder = firstPending.insertionOrder;
                     int firstSpaceIndex = task.source().indexOf(" ");
                     value.append(PerformanceAnalyzerMetrics.getCurrentTimeMetric())
-                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.ID.name())
+                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.ID.toString())
                             .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(lastTaskInsertionOrder)
-                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.priority.name())
+                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.priority.toString())
                             .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(firstPending.priority)
-                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.startTime.name())
+                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.startTime.toString())
                             //- as it is sampling, we won't exactly know the start time of the current task, we will be
                             //- capturing start time as midpoint of previous time bucket
                             .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(startTime - SAMPLING_TIME_INTERVAL / 2)
-                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.type.name())
+                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.type.toString())
                             .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor)
                             .append(firstSpaceIndex == -1 ? task.source() : task.source().substring(0, firstSpaceIndex))
-                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.metadata.name())
+                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.metadata.toString())
                             .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor)
                             .append(firstSpaceIndex == -1 ? "" : task.source().substring(firstSpaceIndex))
-                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.ageInMillis.name())
+                            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.ageInMillis.toString())
                             .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(task.getAgeInMillis());
 
                     saveMetricValues(value.toString(), startTime, String.valueOf(lastTaskInsertionOrder),
@@ -139,9 +141,10 @@ public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector im
     private void generateFinishMetrics(long startTime) {
         if (lastTaskInsertionOrder != -1) {
             value.append(PerformanceAnalyzerMetrics.getCurrentTimeMetric())
-                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(Master_Metrics.finishTime.name())
+                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(MasterMetrics.finishTime.toString())
                     .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(startTime - SAMPLING_TIME_INTERVAL / 2);
-            saveMetricValues(value.toString(), startTime, String.valueOf(lastTaskInsertionOrder),
+            saveMetricValues(value.toString(), startTime,
+                    String.valueOf(lastTaskInsertionOrder),
                     PerformanceAnalyzerMetrics.FINISH_FILE_NAME);
             value.setLength(0);
             lastTaskInsertionOrder = -1;
@@ -194,9 +197,14 @@ public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector im
     }
 
     public static class MasterPendingStatus extends MetricStatus {
-        public final int pendingTasksCount;
+        private final int pendingTasksCount;
         public MasterPendingStatus(int pendingTasksCount) {
             this.pendingTasksCount = pendingTasksCount;
+        }
+
+        @JsonProperty(MasterPendingValue.Constants.PENDING_TASKS_COUNT_VALUE)
+        public int getPendingTasksCount() {
+            return pendingTasksCount;
         }
     }
 }

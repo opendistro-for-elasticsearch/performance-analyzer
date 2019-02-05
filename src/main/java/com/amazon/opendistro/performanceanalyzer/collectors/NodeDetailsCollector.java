@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 
 import com.amazon.opendistro.performanceanalyzer.ESResources;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.NodeDetailColumns;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
@@ -78,22 +79,22 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
     }
 
     public static class NodeDetailsStatus extends MetricStatus {
-        private String ID;
+        private String id;
 
         private String hostAddress;
 
-        public NodeDetailsStatus(String iD, String hostAddress) {
+        public NodeDetailsStatus(String id, String hostAddress) {
             super();
-            ID = iD;
+            this.id = id;
             this.hostAddress = hostAddress;
         }
 
-        @JsonProperty("ID")
+        @JsonProperty(NodeDetailColumns.Constants.ID_VALUE)
         public String getID() {
-            return ID;
+            return id;
         }
 
-        @JsonProperty("hostAddress")
+        @JsonProperty(NodeDetailColumns.Constants.HOST_ADDRESS_VALUE)
         public String getHostAddress() {
             return hostAddress;
         }

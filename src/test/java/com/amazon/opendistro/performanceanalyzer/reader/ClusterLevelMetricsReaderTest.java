@@ -38,7 +38,7 @@ import com.amazon.opendistro.performanceanalyzer.reader.ClusterLevelMetricsReade
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ PerformanceAnalyzerMetrics.class, PluginSettings.class })
 @SuppressStaticInitializationFor({ "PluginSettings" })
-public class ClusterLevelMetricsReaderTest extends AbstractReaderTest {
+public class ClusterLevelMetricsReaderTest extends AbstractReaderTests {
 
     public ClusterLevelMetricsReaderTest() throws SQLException, ClassNotFoundException {
         super();
@@ -79,11 +79,11 @@ public class ClusterLevelMetricsReaderTest extends AbstractReaderTest {
 
         NodeDetails[] nodes = ClusterLevelMetricsReader.getNodes();
 
-        assertEquals(nodeId1, nodes[0].id);
-        assertEquals(address1, nodes[0].hostAddress);
+        assertEquals(nodeId1, nodes[0].getId());
+        assertEquals(address1, nodes[0].getHostAddress());
 
-        assertEquals(nodeId2, nodes[1].id);
-        assertEquals(address2, nodes[1].hostAddress);
+        assertEquals(nodeId2, nodes[1].getId());
+        assertEquals(address2, nodes[1].getHostAddress());
     }
 
 

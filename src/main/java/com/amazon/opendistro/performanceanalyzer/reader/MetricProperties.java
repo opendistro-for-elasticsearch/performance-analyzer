@@ -146,8 +146,8 @@ public class MetricProperties {
 
         try (BufferedReader bufferedReader = new BufferedReader(
                 new FileReader(file))) {
-            String line = null;
-            if ((line = bufferedReader.readLine()) == null) {
+            String line = bufferedReader.readLine();
+            if (line == null) {
                 return false;
             }
 
@@ -190,7 +190,7 @@ public class MetricProperties {
                         templateMetricVals) || processed;
             }
             return processed;
-        } catch (JsonPathNotFoundException |JsonProcessingException e) {
+        } catch (JsonPathNotFoundException | JsonProcessingException e) {
             LOG.warn(String.format("Fail to get last modified time of %s",
                     file.getAbsolutePath()), e);
             return false;
@@ -209,13 +209,13 @@ public class MetricProperties {
         Object[] metricVals = templateMetricVals.clone();
         int startIndex = derivedDimension.length;
 
-        for (int i = 0; i<directDimensions.length; i++) {
+        for (int i = 0; i < directDimensions.length; i++) {
             metricVals[startIndex + i] = map.get(
                     directDimensions[i].toString());
         }
 
         startIndex += directDimensions.length;
-        for (int i = 0; i< metadata.length; i++) {
+        for (int i = 0; i < metadata.length; i++) {
             String key = metadata[i].toString();
             if (map.containsKey(key)) {
                 metricVals[startIndex + i] = map.get(key);
@@ -233,7 +233,7 @@ public class MetricProperties {
      * @param lastSnapTimestamp the highest modified time of all the files
      *  processed for the last snapshot.
      * @return whether any metrics extracted from /dev/shm/performanceanalyzer files
-     * @throws Exception
+     * @throws Exception thrown if we have issues parsing metrics
      */
     public boolean dispatch(MemoryDBSnapshot snap,
             long startTime, long lastSnapTimestamp) throws Exception {
@@ -279,8 +279,7 @@ public class MetricProperties {
     /**
      * Initialize fields used for database operation
      */
-    private void initializeFields()
-    {
+    private void initializeFields() {
         dimensionNames = new ArrayList<>();
 
         dimensionNames.addAll(createEnumNameList(derivedDimension));

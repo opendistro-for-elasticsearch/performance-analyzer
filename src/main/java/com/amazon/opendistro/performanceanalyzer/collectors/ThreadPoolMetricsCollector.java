@@ -17,12 +17,15 @@ package com.amazon.opendistro.performanceanalyzer.collectors;
 
 import java.util.Iterator;
 
-import com.amazon.opendistro.performanceanalyzer.ESResources;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.elasticsearch.threadpool.ThreadPoolStats.Stats;
 
+import com.amazon.opendistro.performanceanalyzer.ESResources;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolValue;
+import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ThreadPoolMetricsCollector.class).samplingInterval;
@@ -66,11 +69,11 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
     }
 
     public static class ThreadPoolStatus extends MetricStatus {
-        public String type;
-        public int queueSize;
-        public long rejected;
-        public int threadsCount;
-        public int threadsActive;
+        private String type;
+        private int queueSize;
+        private long rejected;
+        private int threadsCount;
+        private int threadsActive;
 
         public ThreadPoolStatus(String type,
                                 int queueSize,
@@ -82,6 +85,31 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             this.rejected = rejected;
             this.threadsCount = threadsCount;
             this.threadsActive = threadsActive;
+        }
+
+        @JsonProperty(ThreadPoolDimension.Constants.TYPE_VALUE)
+        public String getType() {
+            return type;
+        }
+
+        @JsonProperty(ThreadPoolValue.Constants.QUEUE_SIZE_VALUE)
+        public int getQueueSize() {
+            return queueSize;
+        }
+
+        @JsonProperty(ThreadPoolValue.Constants.REJECTED_VALUE)
+        public long getRejected() {
+            return rejected;
+        }
+
+        @JsonProperty(ThreadPoolValue.Constants.THREADS_COUNT_VALUE)
+        public int getThreadsCount() {
+            return threadsCount;
+        }
+
+        @JsonProperty(ThreadPoolValue.Constants.THREADS_ACTIVE_VALUE)
+        public int getThreadsActive() {
+            return threadsActive;
         }
     }
 }

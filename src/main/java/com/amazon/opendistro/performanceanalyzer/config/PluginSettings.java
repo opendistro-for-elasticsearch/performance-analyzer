@@ -19,10 +19,13 @@ package com.amazon.opendistro.performanceanalyzer.config;
 import java.io.File;
 import java.util.Properties;
 
-import com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerPlugin;
-import com.amazon.opendistro.performanceanalyzer.ConfigStatus;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
+
+import com.amazon.opendistro.performanceanalyzer.ConfigStatus;
+import com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerPlugin;
 
 public class PluginSettings {
     private static final Logger log = LogManager.getLogger(PluginSettings.class);
@@ -142,7 +145,11 @@ public class PluginSettings {
             }
             instance.metricsDeletionInterval = interval;
         } catch (NumberFormatException e) {
-            log.error("Invalid metrics-deletion-interval. Using default value {}.", e, instance.metricsDeletionInterval);
+            log.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Invalid metrics-deletion-interval. Using default value {}.",
+                            instance.metricsDeletionInterval),
+                    e);
         }
     }
 }

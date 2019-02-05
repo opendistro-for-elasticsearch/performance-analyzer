@@ -68,7 +68,7 @@ ext {
     noticeFile = rootProject.file('NOTICE.txt')
 }
 test {
-    enabled = false
+    enabled = true
 }
 licenseHeaders.enabled = false
 
@@ -146,12 +146,11 @@ dependencyLicenses.doFirst {
     updateShas.updateShas()
 }
 
-task untar (type : Exec) {
-    executable "sh"
-    args "-c", "mkdir -p build/private/test_resources ;" +
-        "tar -xvf test_files/shm.tar.gz -C build/private/test_resources/"
+integTestRunner {
+    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
+    systemProperty 'tests.security.manager', 'false'
+    ifNoTests 'ignore'
 }
-test.dependsOn(untar)
 
 bundlePlugin {
     from ("pa_config") {
@@ -172,9 +171,7 @@ bundlePlugin {
 }
 
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
-                                            "forbiddenApisTest",
-					    "loggerUsageCheck", "thirdPartyAudit",
-                                            "integTestCluster#wait", "integTestRunner"]
-
-
+                                             "forbiddenApisTest",
+                                             "thirdPartyAudit",
+                                             "namingConventions"]
 

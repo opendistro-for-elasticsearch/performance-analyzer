@@ -42,15 +42,14 @@ import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolVa
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.google.common.annotations.VisibleForTesting;
 
-public class MetricPropertiesConfig {
+public final class MetricPropertiesConfig {
 
     /**
      *  Find files under /dev/shm/performanceanalyzer/TS_BUCKET/metricPathElements
      * @param metricPathElements path element array
      * @return a list of Files
      */
-    static FileHandler createFileHandler(String... metricPathElements)
-    {
+    static FileHandler createFileHandler(String... metricPathElements) {
         return new FileHandler() {
             @Override
             public List<File> findFiles4Metric(
@@ -103,7 +102,7 @@ public class MetricPropertiesConfig {
             // getRootLocation() may or may not end with File.separator.  So
             // I put ? next to File.separator.
             return getRootLocation() + File.separator + "?\\d+" + File.separator
-                    + "indices" + File.separator + "(.*)" + File.separator
+                    + PerformanceAnalyzerMetrics.sIndicesPath + File.separator + "(.*)" + File.separator
                     + "(\\d+)";
         }
     }
@@ -111,44 +110,44 @@ public class MetricPropertiesConfig {
     private final
     Map<MetricName, MetricProperties> metricName2Property;
 
-    private static final MetricPropertiesConfig instance = new
+    private static final MetricPropertiesConfig INSTANCE = new
             MetricPropertiesConfig();
 
     private MetricPropertiesConfig() {
         metricName2Property = new HashMap<>();
 
-        metricName2Property.put(MetricName.circuit_breaker,
+        metricName2Property.put(MetricName.CIRCUIT_BREAKER,
                 new MetricProperties(CircuitBreakerDimension.values(),
                         CircuitBreakerValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sCircuitBreakerPath)));
-        metricName2Property.put(MetricName.heap_metrics,
+        metricName2Property.put(MetricName.HEAP_METRICS,
                 new MetricProperties(HeapDimension.values(),
                         HeapValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sHeapPath)));
-        metricName2Property.put(MetricName.disk_metrics,
+        metricName2Property.put(MetricName.DISK_METRICS,
                 new MetricProperties(DiskDimension.values(),
                         DiskValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sDisksPath)));
-        metricName2Property.put(MetricName.tcp_metrics,
+        metricName2Property.put(MetricName.TCP_METRICS,
                 new MetricProperties(TCPDimension.values(),
                         TCPValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sTCPPath)));
-        metricName2Property.put(MetricName.ip_metrics,
+        metricName2Property.put(MetricName.IP_METRICS,
                 new MetricProperties(IPDimension.values(),
                         IPValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sIPPath)));
-        metricName2Property.put(MetricName.thread_pool,
+        metricName2Property.put(MetricName.THREAD_POOL,
                 new MetricProperties(ThreadPoolDimension.values(),
                         ThreadPoolValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sThreadPoolPath)));
-        metricName2Property.put(MetricName.shard_stats,
+        metricName2Property.put(MetricName.SHARD_STATS,
                 new MetricProperties(
                         ShardStatsDerivedDimension.values(),
                         MetricProperties.EMPTY_DIMENSION,
                         ShardStatsValue.values(),
                         new ShardStatFileHandler()
                         ));
-        metricName2Property.put(MetricName.master_pending,
+        metricName2Property.put(MetricName.MASTER_PENDING,
                 new MetricProperties(MetricProperties.EMPTY_DIMENSION,
                         MasterPendingValue.values(),
                         createFileHandler(PerformanceAnalyzerMetrics.sPendingTasksPath,
@@ -158,7 +157,7 @@ public class MetricPropertiesConfig {
     }
 
     public static MetricPropertiesConfig getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     public MetricProperties getProperty(MetricName name) {

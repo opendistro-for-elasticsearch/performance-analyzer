@@ -15,6 +15,9 @@
 
 package com.amazon.opendistro.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.IPDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.IPValue;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 // all metrics are per-time-unit
 public class NetInterfaceSummary extends MetricStatus {
@@ -23,12 +26,12 @@ public class NetInterfaceSummary extends MetricStatus {
         in, out;
     }
 
-    Direction direction;
-    public double packetRate4;
-    public double dropRate4;
-    public double packetRate6;
-    public double dropRate6;
-    public double bps;
+    private Direction direction;
+    private double packetRate4;
+    private double dropRate4;
+    private double packetRate6;
+    private double dropRate6;
+    private double bps;
 
     public NetInterfaceSummary(Direction direction,
                                double packetRate4,
@@ -44,26 +47,32 @@ public class NetInterfaceSummary extends MetricStatus {
         this.bps = bps;
     }
 
+    @JsonProperty(IPDimension.Constants.DIRECTION_VALUE)
     public Direction getDirection() {
         return direction;
     }
 
+    @JsonProperty(IPValue.Constants.PACKET_RATE4_VALUE)
     public double getPacketRate4() {
         return packetRate4;
     }
 
+    @JsonProperty(IPValue.Constants.DROP_RATE4_VALUE)
     public double getDropRate4() {
         return dropRate4;
     }
 
+    @JsonProperty(IPValue.Constants.PACKET_RATE6_VALUE)
     public double getPacketRate6() {
         return packetRate6;
     }
 
+    @JsonProperty(IPValue.Constants.DROP_RATE6_VALUE)
     public double getDropRate6() {
         return dropRate6;
     }
 
+    @JsonProperty(IPValue.Constants.THROUGHPUT_VALUE)
     public double getBps() {
         return bps;
     }

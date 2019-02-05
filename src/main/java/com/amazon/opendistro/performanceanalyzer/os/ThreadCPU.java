@@ -19,9 +19,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.amazon.opendistro.performanceanalyzer.metrics_generator.linux.LinuxCPUPagingActivityGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
+
+import com.amazon.opendistro.performanceanalyzer.metrics_generator.linux.LinuxCPUPagingActivityGenerator;
 
 public final class ThreadCPU  {
     public static ThreadCPU INSTANCE = new ThreadCPU();
@@ -137,7 +140,11 @@ public final class ThreadCPU  {
             scClkTck = OSGlobals.getScClkTck();
             tids = OSGlobals.getTids();
         } catch (Exception e) {
-            LOGGER.error("Error In Initializing ThreadCPU: {}", e.toString(), e);
+            LOGGER.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error In Initializing ThreadCPU: {}",
+                            e.toString()),
+                    e);
         }
     }
 

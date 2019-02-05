@@ -19,15 +19,18 @@ import java.lang.management.MemoryUsage;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.amazon.opendistro.performanceanalyzer.jvm.GCMetrics;
 import com.amazon.opendistro.performanceanalyzer.jvm.HeapMetrics;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.GCType;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HeapDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HeapValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 
 public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
@@ -49,11 +52,11 @@ public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector im
         value.setLength(0);
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-        value.append(new HeapStatus(GCType.totYoungGC.name(),
+        value.append(new HeapStatus(GCType.TOT_YOUNG_GC.toString(),
                 GCMetrics.totYoungGCCollectionCount,
                 GCMetrics.totYoungGCCollectionTime).serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
-        value.append(new HeapStatus(GCType.totFullGC.name(),
+        value.append(new HeapStatus(GCType.TOT_FULL_GC.toString(),
                 GCMetrics.totFullGCCollectionCount,
                 GCMetrics.totFullGCCollectionTime).serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
@@ -61,7 +64,7 @@ public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector im
                 .getMemoryUsageSuppliers().entrySet()) {
             MemoryUsage memoryUsage = entry.getValue().get();
 
-            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(
+            value.append(
                     new HeapStatus(entry.getKey(),
                             memoryUsage.getCommitted(),
                             memoryUsage.getInit(),
@@ -84,25 +87,29 @@ public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector im
 
     public static class HeapStatus extends MetricStatus {
         // GC type like survivor
-        public final String type;
+        private final String type;
+
+        // -2 means this metric is undefined for a memory pool.  For example,
+        // The memory pool Eden has no collectionCount metric.
+        private static final long UNDEFINED = -2;
 
         // the total number of collections that have occurred
-        public long collectionCount = -2;
+        private long collectionCount = UNDEFINED;
 
         // the approximate accumulated collection elapsed time in milliseconds
-        public long collectionTime = -2;
+        private long collectionTime = UNDEFINED;
 
         // the amount of memory in bytes that is committed for the Java virtual machine to use
-        public long committed = -2;
+        private long committed = UNDEFINED;
 
         // the amount of memory in bytes that the Java virtual machine initially requests from the operating system for memory management
-        public long init = -2;
+        private long init = UNDEFINED;
 
         // the maximum amount of memory in bytes that can be used for memory management
-        public long max = -2;
+        private long max = UNDEFINED;
 
         // the amount of used memory in bytes
-        public long used = -2;
+        private long used = UNDEFINED;
 
         public HeapStatus(String type,
                           long collectionCount,
@@ -126,6 +133,41 @@ public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector im
             this.max = max;
             this.used = used;
 
+        }
+
+        @JsonProperty(HeapDimension.Constants.TYPE_VALUE)
+        public String getType() {
+            return type;
+        }
+
+        @JsonProperty(HeapValue.Constants.COLLECTION_COUNT_VALUE)
+        public long getCollectionCount() {
+            return collectionCount;
+        }
+
+        @JsonProperty(HeapValue.Constants.COLLECTION_TIME_VALUE)
+        public long getCollectionTime() {
+            return collectionTime;
+        }
+
+        @JsonProperty(HeapValue.Constants.COMMITTED_VALUE)
+        public long getCommitted() {
+            return committed;
+        }
+
+        @JsonProperty(HeapValue.Constants.INIT_VALUE)
+        public long getInit() {
+            return init;
+        }
+
+        @JsonProperty(HeapValue.Constants.MAX_VALUE)
+        public long getMax() {
+            return max;
+        }
+
+        @JsonProperty(HeapValue.Constants.USED_VALUE)
+        public long getUsed() {
+            return used;
         }
     }
 }

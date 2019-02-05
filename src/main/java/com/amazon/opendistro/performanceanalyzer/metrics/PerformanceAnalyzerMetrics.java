@@ -23,6 +23,8 @@ import java.nio.file.Paths;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
 
 import com.amazon.opendistro.performanceanalyzer.config.PluginSettings;
 
@@ -96,7 +98,11 @@ public class PerformanceAnalyzerMetrics {
         try {
             java.nio.file.Files.createDirectories(file.getParentFile().toPath());
         } catch (IOException ex) {
-            LOG.error("Error In Creating Directories: {} for keyPath:{}", ex.toString(), keyPath, ex);
+            LOG.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error In Creating Directories: {} for keyPath:{}",
+                            ex.toString(), keyPath),
+                    ex);
             return;
         }
 
@@ -104,14 +110,22 @@ public class PerformanceAnalyzerMetrics {
         try {
             tmpFile = writeToTmp(keyPath, value);
         } catch (Exception ex) {
-            LOG.error("Error in Writing to Tmp File: {} for keyPath:{}", ex.toString(), keyPath, ex);
+            LOG.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error in Writing to Tmp File: {} for keyPath:{}",
+                            ex.toString(), keyPath),
+                    ex);
             return;
         }
 
         try {
             tmpFile.renameTo(file);
         } catch (Exception ex) {
-            LOG.error("Error in Rename Tmp File: {} for keyPath:{}", ex.toString(), keyPath, ex);
+            LOG.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error in Renaming Tmp File: {} for keyPath:{}",
+                            ex.toString(), keyPath),
+                    ex);
         }
     }
 
@@ -190,7 +204,11 @@ public class PerformanceAnalyzerMetrics {
         try {
             keyPathFile.delete();
         } catch (Exception ex) {
-            LOG.debug("Error in deleting file: {} for keyPath:{}", ex.toString(), keyPathFile.getAbsolutePath(), ex);
+            LOG.debug(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error in deleting file: {} for keyPath:{}",
+                            ex.toString(), keyPathFile.getAbsolutePath()),
+                    ex);
         }
     }
 

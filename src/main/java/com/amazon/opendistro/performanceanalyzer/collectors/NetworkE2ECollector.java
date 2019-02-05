@@ -24,7 +24,7 @@ import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.performanceanalyzer.metrics_generator.TCPMetricsGenerator;
 
-public class NetworkE2ECollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor{
+public class NetworkE2ECollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     private static final int sTimeInterval = MetricsConfiguration.CONFIG_MAP.get(NetworkE2ECollector.class).samplingInterval;
 
 
@@ -37,9 +37,9 @@ public class NetworkE2ECollector extends PerformanceAnalyzerMetricsCollector imp
         TCPMetricsGenerator tcpMetricsGenerator = OSMetricsGeneratorFactory.getInstance().getTCPMetricsGenerator();
         tcpMetricsGenerator.addSample();
 
-        String value = PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds() +
-                PerformanceAnalyzerMetrics.sMetricNewLineDelimitor +
-                getMetrics(tcpMetricsGenerator);
+        String value = PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds()
+                + PerformanceAnalyzerMetrics.sMetricNewLineDelimitor
+                + getMetrics(tcpMetricsGenerator);
 
         saveMetricValues(value, startTime);
     }

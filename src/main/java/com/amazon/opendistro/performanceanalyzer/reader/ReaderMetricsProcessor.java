@@ -1,3 +1,18 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.performanceanalyzer.reader;
 
 import java.sql.Connection;
@@ -9,16 +24,19 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.performanceanalyzer.metricsdb.MetricsDB;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MetricName;
+import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.performanceanalyzer.metricsdb.MetricsDB;
 import com.google.common.annotations.VisibleForTesting;
 
 public class ReaderMetricsProcessor implements Runnable {
@@ -101,7 +119,12 @@ public class ReaderMetricsProcessor implements Runnable {
                 }
             }
         } catch (Throwable e) {
-            LOG.error("READER PROCESSOR ERROR. NEEDS DEBUGGING.", e.toString(), e);
+            LOG.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "READER PROCESSOR ERROR. NEEDS DEBUGGING {}.",
+                            e.toString()),
+                    e);
+
             try {
                 long duration = System.currentTimeMillis() - startTime;
                 if (duration < MetricsConfiguration.SAMPLING_INTERVAL) {
@@ -157,6 +180,10 @@ public class ReaderMetricsProcessor implements Runnable {
      * /dev/shm/performanceanalyzer/{rotation_window}/threads/{tid}/os_metrics.
      * This function parses the files written since the last successful run and populates an inmemory
      * sqlite table with the results. A few metrics available are - cpu, rss, minor pagefaults etc.
+     *
+     * @param rootLocation where to find metric files
+     * @param currTimestamp when reader starts processing metric files
+     * @throws Exception thrown if the metric file could not be parsed correctly.
      */
     public void parseOSMetrics(String rootLocation, long currTimestamp) throws Exception {
         long mCurrT = System.currentTimeMillis();
@@ -190,6 +217,9 @@ public class ReaderMetricsProcessor implements Runnable {
      * available are - Starting memory limit for overall parent-level breaker,
      *  maximum limit defined for the survivor memory pool (-1 means there is
      *   no maxium limit) etc.
+     *
+     * @param  currTimestamp when reader starts processing metric files
+     * @throws Exception thrown if we have issues parsing metrics
      */
     public void parseNodeMetrics(long currTimestamp)
             throws Exception {
@@ -241,6 +271,16 @@ public class ReaderMetricsProcessor implements Runnable {
      * emits a start event and an end event. The events can be found in
      * /dev/shm/performanceanalyzer/{rotation_window}/threads/{tid}/{operation}/{rid}/. The start event data is written to
      * a file called start and the end event data is in a file called end.
+     *
+     * @param rootLocation where to find metric files
+     * @param currWindowStartTime the start time of current sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param currWindowEndTime the end time of current sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     *
+     * @throws Exception thrown if we have issues parsing metrics
      */
     public void parseRequestMetrics(String rootLocation, long currWindowStartTime,
             long currWindowEndTime) throws Exception {
@@ -270,6 +310,16 @@ public class ReaderMetricsProcessor implements Runnable {
      * emits a start event and an end event. The events can be found in
      * /dev/shm/performanceanalyzer/{rotation_window}/threads/{tid}/http/{operation}/{rid}/. The start event data
      * is written to * a file called start and the end event data is in a file called end.
+     *
+     * @param rootLocation where to find metric files
+     * @param currWindowStartTime the start time of current sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param currWindowEndTime the end time of current sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     *
+     * @throws Exception thrown if we have issues parsing metrics
      */
     public void parseHttpRequestMetrics(String rootLocation, long currWindowStartTime,
             long currWindowEndTime) throws Exception {
@@ -295,6 +345,11 @@ public class ReaderMetricsProcessor implements Runnable {
      * We emit metrics for the previous window interval as we need two metric windows to align OSMetrics.
      * Ex: To emit metrics between 5-10, we need OSMetrics emitted at 8 and 13, to be able to calculate the
      * metrics correctly. The aggregated metrics are then written to a metricsDB.
+     *
+     * @param currWindowStartTime the start time of current sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @throws Exception thrown if we have issues parsing metrics
      */
     public void emitMetrics(long currWindowStartTime) throws Exception {
         long prevWindowStartTime = currWindowStartTime - MetricsConfiguration.SAMPLING_INTERVAL;
@@ -361,6 +416,24 @@ public class ReaderMetricsProcessor implements Runnable {
      * OSMetrics might have been collected for windows that dont completely overlap with startTime and endTime.
      * This function calculates the weighted average of metrics in each overlapping window and sums them up to find
      * the average metrics in the requested window.
+     *
+     * @param startTime  the start time of the previous sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param endTime the end time of the previous sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param alignedWindow where we store aligned snapshot
+     *
+     * @return
+     *   alignedWindow if we have two sampled snapshot;
+     *   a sampled snapshot if we have only one sampled snapshot within
+     *     startTime and endTime;
+     *   null if the number of total snapshots is less than OS_SNAPSHOTS or
+     *     if there is no snapshot taken after startTime or
+     *     right window snapshot ends at or before endTime
+     *
+     * @throws Exception thrown when we have issues in aligning window
      */
     public OSMetricsSnapshot alignOSMetrics(long startTime, long endTime, OSMetricsSnapshot alignedWindow)
             throws Exception {
@@ -404,7 +477,7 @@ public class ReaderMetricsProcessor implements Runnable {
         if (t2 <= endTime) {
             LOG.error("Right window snapshot ends at or before endTime. rw: {}, lw: {}, startTime: {}, endTime: {}",
                     t2, t1, startTime, endTime);
-            //TODO: To be fixed by https://issues.amazon.com/issues/CloudSearch-8007. As a quick fix we ignore this window.
+            //TODO: As a quick fix we ignore this window. We might want to consider multiple windows instead.
             return null;
         }
 
@@ -452,6 +525,26 @@ public class ReaderMetricsProcessor implements Runnable {
      *
      * If we align for current reader window, we need writer window ends in
      *  7000l and 12000l. But we don't have 12000l at 11000l.
+     *
+     * @param metricName the name of the metric we want to align
+     * @param metricMap the in-memory database for this metric
+     * @param readerStartTime the start time of the previous sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param readerEndTime the end time of the previous sampling period.
+     *   The bound of the period where that value is measured is
+     *  MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param alignedWindow where we store aligned snapshot
+     *
+     * @return
+     *   alignedWindow if we have two sampled snapshot;
+     *   a sampled snapshot if we have only one sampled snapshot within
+     *     startTime and endTime;
+     *   null if the number of total snapshots is less than OS_SNAPSHOTS or
+     *     if there is no snapshot taken after startTime or
+     *     right window snapshot ends at or before endTime
+     *
+     * @throws Exception thrown when we have issues in aligning window
      */
     public MemoryDBSnapshot alignNodeMetrics(AllMetrics.MetricName metricName,
             NavigableMap<Long, MemoryDBSnapshot> metricMap, long readerStartTime,
@@ -507,7 +600,7 @@ public class ReaderMetricsProcessor implements Runnable {
             LOG.error(
                     "Right window {} snapshot ends at or before endTime. rw: {}, lw: {}, startTime: {}, endTime: {}",
                     metricName, t2, t1, readerStartTime, readerEndTime);
-            //TODO: To be fixed by https://issues.amazon.com/issues/CloudSearch-8007. As a quick fix we ignore this window.
+            //TODO: As a quick fix we ignore this window. We might want to consider multiple windows instead.
             return null;
         }
 
@@ -535,6 +628,8 @@ public class ReaderMetricsProcessor implements Runnable {
 
     /**
      * This is called by operations outside of the ReaderMetricsProcessor.
+     *
+     * @return the latest on-disk database
      */
     public Map.Entry<Long, MetricsDB> getMetricsDB() {
         //If metricsDBMap is being trimmed we wait and acquire the latest
@@ -556,6 +651,13 @@ public class ReaderMetricsProcessor implements Runnable {
      * Enrich event data with node metrics and calculate aggregated metrics on
      * dimensions like (shard, index, operation, role). The aggregated metrics
      * are then written to a metricsDB.
+     *
+     * @param currWindowStartTime the start time of current sampling period.
+     *   The bound of the period where that value is measured is
+     *   MetricsConfiguration.SAMPLING_INTERVAL.
+     * @param metricsDB on-disk database to which we want to emit metrics
+     *
+     * @throws Exception if we have issues emitting or aligning metrics
      */
     public void emitNodeMetrics(long currWindowStartTime, MetricsDB metricsDB)
             throws Exception {
@@ -565,10 +667,8 @@ public class ReaderMetricsProcessor implements Runnable {
         for (Map.Entry<AllMetrics.MetricName, NavigableMap<Long, MemoryDBSnapshot>> entry : nodeMetricsMap
                 .entrySet()) {
 
-            AllMetrics.MetricName metricName = entry.getKey();
-            if (metricName.toString().equals("master_pending")) {
-                System.out.print("");
-            }
+            MetricName metricName = entry.getKey();
+
             NavigableMap<Long, MemoryDBSnapshot> metricMap = entry.getValue();
 
             if (metricMap.get(prevWindowStartTime) != null) {

@@ -18,16 +18,17 @@ package com.amazon.opendistro.performanceanalyzer.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.Dimensions;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HeapDimension;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.DiskDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.AggregatedOSDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsDerivedDimension;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MasterDimensions;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.DiskDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.EmptyDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HeapDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpOnlyDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.IPDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.LatencyDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsDerivedDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPDimension;
-import com.amazon.opendistro.performanceanalyzer.model.MetricAttributes;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolDimension;
 
 public class MetricsModel {
 
@@ -35,28 +36,28 @@ public class MetricsModel {
 
     static {
         // OS Metrics
-        ALL_METRICS.put("cpu", new MetricAttributes("cores", Dimensions.values()));
-        ALL_METRICS.put("paging_majflt", new MetricAttributes("count", Dimensions.values()));
-        ALL_METRICS.put("paging_minflt", new MetricAttributes("count", Dimensions.values()));
-        ALL_METRICS.put("rss", new MetricAttributes("count", Dimensions.values()));
-        ALL_METRICS.put("runtime", new MetricAttributes("s", Dimensions.values()));
-        ALL_METRICS.put("waittime", new MetricAttributes("s", Dimensions.values()));
-        ALL_METRICS.put("ctxrate", new MetricAttributes("count", Dimensions.values()));
-        ALL_METRICS.put("heap_usage", new MetricAttributes("bps", Dimensions.values()));
-        ALL_METRICS.put("avgReadThroughputBps", new MetricAttributes("bps", Dimensions.values()));
-        ALL_METRICS.put("avgWriteThroughputBps", new MetricAttributes("bps", Dimensions.values()));
-        ALL_METRICS.put("avgTotalThroughputBps", new MetricAttributes("bps", Dimensions.values()));
-        ALL_METRICS.put("avgReadSyscallRate", new MetricAttributes("sread/s", Dimensions.values()));
-        ALL_METRICS.put("avgWriteSyscallRate", new MetricAttributes("swrite/s", Dimensions.values()));
-        ALL_METRICS.put("avgTotalSyscallRate", new MetricAttributes("scall/s", Dimensions.values()));
-        ALL_METRICS.put("avgBlockedTime", new MetricAttributes("s", Dimensions.values()));
-        ALL_METRICS.put("blockedCount", new MetricAttributes("count", Dimensions.values()));
+        ALL_METRICS.put("cpu", new MetricAttributes("cores", AggregatedOSDimension.values()));
+        ALL_METRICS.put("paging_majflt", new MetricAttributes("count", AggregatedOSDimension.values()));
+        ALL_METRICS.put("paging_minflt", new MetricAttributes("count", AggregatedOSDimension.values()));
+        ALL_METRICS.put("rss", new MetricAttributes("count", AggregatedOSDimension.values()));
+        ALL_METRICS.put("runtime", new MetricAttributes("s", AggregatedOSDimension.values()));
+        ALL_METRICS.put("waittime", new MetricAttributes("s", AggregatedOSDimension.values()));
+        ALL_METRICS.put("ctxrate", new MetricAttributes("count", AggregatedOSDimension.values()));
+        ALL_METRICS.put("heap_usage", new MetricAttributes("bps", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgReadThroughputBps", new MetricAttributes("bps", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgWriteThroughputBps", new MetricAttributes("bps", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgTotalThroughputBps", new MetricAttributes("bps", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgReadSyscallRate", new MetricAttributes("sread/s", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgWriteSyscallRate", new MetricAttributes("swrite/s", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgTotalSyscallRate", new MetricAttributes("scall/s", AggregatedOSDimension.values()));
+        ALL_METRICS.put("avgBlockedTime", new MetricAttributes("s", AggregatedOSDimension.values()));
+        ALL_METRICS.put("blockedCount", new MetricAttributes("count", AggregatedOSDimension.values()));
 
         // Elasticsearch Metrics
         // todo: "latency" needs a dimension enum.
-        ALL_METRICS.put("latency", new MetricAttributes("ms", Dimensions.values()));
-        ALL_METRICS.put("itemCount", new MetricAttributes("count", Dimensions.values()));
-        ALL_METRICS.put("count", new MetricAttributes("count", Dimensions.values()));
+        ALL_METRICS.put("latency", new MetricAttributes("ms", LatencyDimension.values()));
+        ALL_METRICS.put("itemCount", new MetricAttributes("count", HttpOnlyDimension.values()));
+        ALL_METRICS.put("count", new MetricAttributes("count", HttpOnlyDimension.values()));
 
         // Circuit Breaker
         ALL_METRICS.put("estimated", new MetricAttributes("b", CircuitBreakerDimension.values()));
@@ -128,7 +129,7 @@ public class MetricsModel {
         ALL_METRICS.put("versionMapMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
 
         // Master Metrics
-        ALL_METRICS.put("pendingTasksCount", new MetricAttributes("count", MasterDimensions.values()));
+        ALL_METRICS.put("pendingTasksCount", new MetricAttributes("count", EmptyDimension.values()));
     }
 
 }

@@ -15,18 +15,18 @@
 
 package com.amazon.opendistro.performanceanalyzer.action;
 
-import com.amazon.opendistro.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.bulk.BulkRequest;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.ActionFilter;
 import org.elasticsearch.action.support.ActionFilterChain;
 import org.elasticsearch.tasks.Task;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.search.SearchRequest;
 
-import java.util.concurrent.atomic.AtomicLong;
-
+import com.amazon.opendistro.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 
 public class PerformanceAnalyzerActionFilter implements ActionFilter {
@@ -45,7 +45,7 @@ public class PerformanceAnalyzerActionFilter implements ActionFilter {
                 newListener.set(RequestType.bulk, id, listener);
                 newListener.saveMetricValues(
                         newListener.generateStartMetrics(startTime, "", bulk.requests().size()),
-                        startTime, RequestType.bulk.name(), id, PerformanceAnalyzerMetrics.START_FILE_NAME);
+                        startTime, RequestType.bulk.toString(), id, PerformanceAnalyzerMetrics.START_FILE_NAME);
                 chain.proceed(task, action, request, newListener);
                 return;
             } else if (request instanceof SearchRequest) {
@@ -56,7 +56,7 @@ public class PerformanceAnalyzerActionFilter implements ActionFilter {
                 newListener.set(RequestType.search, id, listener);
                 newListener.saveMetricValues(
                         newListener.generateStartMetrics(startTime, String.join(",", search.indices()), 0),
-                        startTime, RequestType.search.name(), id, PerformanceAnalyzerMetrics.START_FILE_NAME);
+                        startTime, RequestType.search.toString(), id, PerformanceAnalyzerMetrics.START_FILE_NAME);
                 chain.proceed(task, action, request, newListener);
                 return;
             }

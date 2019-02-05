@@ -15,20 +15,20 @@
 
 package com.amazon.opendistro.performanceanalyzer.transport;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
-import com.amazon.opendistro.performanceanalyzer.metrics.ThreadIDUtil;
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.IOException;
-
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportResponse;
 import org.elasticsearch.transport.TransportResponseOptions;
 
-import java.util.concurrent.atomic.AtomicLong;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
+import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.ThreadIDUtil;
 
 public class PerformanceAnalyzerTransportChannel implements TransportChannel, MetricsProcessor {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerTransportChannel.class);
@@ -51,15 +51,15 @@ public class PerformanceAnalyzerTransportChannel implements TransportChannel, Me
         this.threadID = String.valueOf(ThreadIDUtil.INSTANCE.getNativeCurrentThreadId());
 
         StringBuilder value = new StringBuilder().append(PerformanceAnalyzerMetrics.getCurrentTimeMetric())
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.startTime.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkMetric.START_TIME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(startTime)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.itemCount.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkMetric.ITEM_COUNT.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(itemCount)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.indexName.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.INDEX_NAME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(indexName)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.shardId.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.SHARD_ID.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(shardId)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.primary.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.PRIMARY.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(bPrimary);
 
         saveMetricValues(value.toString(), startTime, threadID, id, PerformanceAnalyzerMetrics.START_FILE_NAME);
@@ -97,21 +97,21 @@ public class PerformanceAnalyzerTransportChannel implements TransportChannel, Me
     private void emitMetricsFinish(Exception exception) {
         long currTime = System.currentTimeMillis();
         StringBuilder value = new StringBuilder().append(PerformanceAnalyzerMetrics.getCurrentTimeMetric())
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.finishTime.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkMetric.FINISH_TIME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(currTime)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.indexName.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.INDEX_NAME.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(indexName)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.shardId.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.SHARD_ID.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(shardId)
-                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.primary.name())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.PRIMARY.toString())
                 .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(primary);
         if (exception != null) {
-            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.exception.name())
+            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.EXCEPTION.toString())
                     .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(exception.getClass().getName());
-            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.failed.name())
+            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.FAILED.toString())
                     .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(true);
         } else {
-            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(AllMetrics.ShardBulk_Metrics.failed.name())
+            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(ShardBulkDimension.FAILED.toString())
                     .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(false);
         }
 

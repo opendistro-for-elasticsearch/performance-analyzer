@@ -46,7 +46,7 @@ public class MemoryDBSnapshot implements Removable {
 
     private static final String WEIGHT = "weight";
 
-    private static final Field<Double> weightField =
+    private static final Field<Double> WEIGHT_FIELD =
             DSL.field(WEIGHT, Double.class);
 
     protected final DSLContext create;
@@ -75,8 +75,8 @@ public class MemoryDBSnapshot implements Removable {
 
    /**
      *
-     * @param conn
-     * @param tableNamePrefix
+     * @param conn In-memory database connection
+     * @param tableNamePrefix db table name prefix
      * @param windowEndTime
      *            When creating un-aligned db snapshot, we use the time stamp
      *            when reader starts processing in a round as the 3rd parameter
@@ -88,16 +88,15 @@ public class MemoryDBSnapshot implements Removable {
      *            end time is 6000. After invoking
      *            PerformanceAnalyzerMetrics.getTimeInterval(6000,
      *            MetricsConfiguration.SAMPLING_INTERVAL), it is 5000.
-     * @param windowEndTime
-     * @param aligned
+     * @param aligned whether this snapshot is for aligning
      */
     public MemoryDBSnapshot(Connection conn, MetricName tableNamePrefix,
             long windowEndTime, boolean aligned) {
         this.create = DSL.using(conn, SQLDialect.SQLITE);
         this.isAligned = aligned;
         String tableNameSuffix = aligned ? "_aligned" : "";
-        this.tableName = tableNamePrefix.toString() + windowEndTime +
-                tableNameSuffix;
+        this.tableName = tableNamePrefix.toString() + windowEndTime
+                + tableNameSuffix;
         lastUpdatedTime = -1;
 
         dimensionNames = MetricPropertiesConfig.getInstance()
@@ -220,7 +219,7 @@ public class MemoryDBSnapshot implements Removable {
         alignedFields.addAll(getDimensions());
         for (Field<Double> metric : getMetrics()) {
             alignedFields.add(DSL.sum(metric)
-                    .div(DSL.sum(weightField))
+                    .div(DSL.sum(WEIGHT_FIELD))
                     .as(metric));
         }
 

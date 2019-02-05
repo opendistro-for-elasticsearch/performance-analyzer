@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ $START_PERF_ANALYZER = "false" ]; then
+    echo "Not starting performance-analyzer-agent"
+    exit 0
+fi
+
 if [ $# -eq 0 ]; then
     echo "No ES_HOME provided, not starting performance-analyzer-agent"
 else

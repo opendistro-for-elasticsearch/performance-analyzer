@@ -19,10 +19,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.amazon.opendistro.performanceanalyzer.metrics_generator.linux.LinuxSchedMetricsGenerator;
-import com.amazon.opendistro.performanceanalyzer.metrics_generator.SchedMetricsGenerator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
+
+import com.amazon.opendistro.performanceanalyzer.metrics_generator.SchedMetricsGenerator;
+import com.amazon.opendistro.performanceanalyzer.metrics_generator.linux.LinuxSchedMetricsGenerator;
 
 public final class ThreadSched {
     public static final ThreadSched INSTANCE = new ThreadSched();
@@ -43,6 +46,7 @@ public final class ThreadSched {
             this.avgWaittime = avgWaittime;
             this.contextSwitchRate = contextSwitchRate;
         }
+        @Override
         public String toString() {
             return new StringBuilder().append("avgruntime: ")
                     .append(avgRuntime).append(" avgwaittime: ").append(avgWaittime)
@@ -69,7 +73,11 @@ public final class ThreadSched {
             pid = OSGlobals.getPid();
             tids = OSGlobals.getTids();
         } catch (Exception e) {
-            LOGGER.error("Error In Initializing ThreadCPU: {}", e.toString(), e);
+            LOGGER.error(
+                    (Supplier<?>) () -> new ParameterizedMessage(
+                            "Error In Initializing ThreadCPU: {}",
+                            e.toString()),
+                    e);
         }
     }
 

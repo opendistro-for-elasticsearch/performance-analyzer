@@ -57,7 +57,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.amazon.opendistro.performanceanalyzer.AbstractTest;
+import com.amazon.opendistro.performanceanalyzer.AbstractTests;
 import com.amazon.opendistro.performanceanalyzer.ESResources;
 import com.amazon.opendistro.performanceanalyzer.OSMetricsGeneratorFactory;
 import com.amazon.opendistro.performanceanalyzer.collectors.CircuitBreakerCollector;
@@ -87,7 +87,7 @@ import com.amazon.opendistro.performanceanalyzer.util.JsonConverter;
         OSGlobals.class })
 @SuppressStaticInitializationFor({ "PluginSettings",
         "OSGlobals" })
-public class CollectMetricsTest extends AbstractTest {
+public class CollectMetricsTest extends AbstractTests {
     @Mock
     CircuitBreakerService circuitBreakerService;
 
@@ -196,10 +196,10 @@ public class CollectMetricsTest extends AbstractTest {
             line = bufferedReader.readLine();
             Map<String, Object> map = JsonConverter.createMapFrom(line);
 
-            String type = CircuitBreakerDimension.type.name();
-            String limitConfigured = CircuitBreakerValue.limitConfigured.name();
-            String estimated = CircuitBreakerValue.estimated.name();
-            String tripped = CircuitBreakerValue.tripped.name();
+            String type = CircuitBreakerDimension.CB_TYPE.toString();
+            String limitConfigured = CircuitBreakerValue.CB_CONFIGURED_SIZE.toString();
+            String estimated = CircuitBreakerValue.CB_ESTIMATED_SIZE.toString();
+            String tripped = CircuitBreakerValue.CB_TRIPPED_EVENTS.toString();
             assertEquals(requestType, map.get(type));
             assertTrue(limit1 == parseLong(map.get(limitConfigured)));
             assertTrue(estimated1 == parseLong(map.get(estimated)));
@@ -279,13 +279,13 @@ public class CollectMetricsTest extends AbstractTest {
 
             Map<String, Object> map = JsonConverter.createMapFrom(line);
 
-            String dest = TCPDimension.dest.name();
-            String txQ = TCPValue.txQ.name();
-            String numFlows = TCPValue.numFlows.name();
-            String rxQ = TCPValue.rxQ.name();
-            String curLost = TCPValue.curLost.name();
-            String sndCWND = TCPValue.sndCWND.name();
-            String SSThresh = TCPValue.SSThresh.name();
+            String dest = TCPDimension.DEST_ADDR.toString();
+            String txQ = TCPValue.Net_TCP_TXQ.toString();
+            String numFlows = TCPValue.Net_TCP_NUM_FLOWS.toString();
+            String rxQ = TCPValue.Net_TCP_RXQ.toString();
+            String curLost = TCPValue.Net_TCP_LOST.toString();
+            String sndCWND = TCPValue.Net_TCP_SEND_CWND.toString();
+            String SSThresh = TCPValue.Net_TCP_SSTHRESH.toString();
             assertEquals(tcpFlow1.destIP, map.get(dest));
             assertEquals(destTcp1.txQueueTot * 1.0 / destTcp1.numFlows,
                     parseDouble(map.get(txQ)), 0.001);
@@ -383,12 +383,12 @@ public class CollectMetricsTest extends AbstractTest {
             // collector object
             assertTrue(lastModifiedTime > timeBeforeCollectorWriting);
 
-            String direction = IPDimension.direction.name();
-            String packetRate4 = IPValue.packetRate4.name();
-            String dropRate4 = IPValue.dropRate4.name();
-            String packetRate6 = IPValue.packetRate6.name();
-            String dropRate6 = IPValue.dropRate6.name();
-            String bps = IPValue.bps.name();
+            String direction = IPDimension.DIRECTION.toString();
+            String packetRate4 = IPValue.NET_PACKET_RATE4.toString();
+            String dropRate4 = IPValue.NET_PACKET_DROP_RATE4.toString();
+            String packetRate6 = IPValue.NET_PACKET_RATE6.toString();
+            String dropRate6 = IPValue.NET_PACKET_DROP_RATE6.toString();
+            String bps = IPValue.NET_THROUGHPUT.toString();
 
             Map<String, Long> curphy = spyNetInterface.getCurrentPhyMetric();
             Map<String, Long> curipv4 = spyNetInterface.getCurrentIpMetric();
@@ -434,7 +434,6 @@ public class CollectMetricsTest extends AbstractTest {
             double outDropRate6 = 1.0e3 * (dropout6) / timeDelta;
 
             line = bufferedReader.readLine();
-
             Map<String, Object> map = JsonConverter.createMapFrom(line);
 
             assertEquals(NetInterfaceSummary.Direction.in.toString(), map.get(direction));
@@ -532,8 +531,8 @@ public class CollectMetricsTest extends AbstractTest {
             // collector object
             assertTrue(lastModifiedTime > timeBeforeCollectorWriting);
 
-            String ID = NodeDetailColumns.ID.name();
-            String hostAddress = NodeDetailColumns.hostAddress.name();
+            String ID = NodeDetailColumns.ID.toString();
+            String hostAddress = NodeDetailColumns.HOST_ADDRESS.toString();
 
             // local node first
             line = bufferedReader.readLine();

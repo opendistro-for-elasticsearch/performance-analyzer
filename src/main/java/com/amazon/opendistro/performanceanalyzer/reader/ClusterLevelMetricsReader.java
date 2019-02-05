@@ -17,11 +17,11 @@ package com.amazon.opendistro.performanceanalyzer.reader;
 
 import java.util.Map;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.NodeDetailColumns;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.performanceanalyzer.util.JsonConverter;
 
 public class ClusterLevelMetricsReader {
@@ -34,19 +34,15 @@ public class ClusterLevelMetricsReader {
      *
      */
     public static class NodeDetails {
-        // Json key used for parsing
-        private static String idKey = NodeDetailColumns.ID.name();
-        private static String hostAddressKey = NodeDetailColumns.hostAddress
-                .name();
-
-        public String id;
-        public String hostAddress;
+        private String id;
+        private String hostAddress;
 
         NodeDetails(String stringifiedMetrics) {
             Map<String, Object> map = JsonConverter
                     .createMapFrom(stringifiedMetrics);
-            id = (String) map.get(idKey);
-            hostAddress = (String) map.get(hostAddressKey);
+            id = (String) map.get(NodeDetailColumns.ID.toString());
+            hostAddress = (String) map.get(NodeDetailColumns.HOST_ADDRESS
+                    .toString());
         }
 
         @Override
@@ -57,6 +53,14 @@ public class ClusterLevelMetricsReader {
             stringBuilder.append(" hostAddress:" + hostAddress);
             stringBuilder.append("}");
             return stringBuilder.toString();
+        }
+
+        public String getId() {
+            return id;
+        }
+
+        public String getHostAddress() {
+            return hostAddress;
         }
     }
 

@@ -1,3 +1,18 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.performanceanalyzer;
 
 import java.util.Collection;
@@ -44,8 +59,9 @@ public class DBUtils {
      * Same implementation as getStringFieldsFromList, but return a list
      * allowing other kinds of fields other than String field.
      *
-     * @param fieldNames
-     * @return
+     * @param fieldNames a collection of field names
+     *
+     * @return a list of org.jooq.Field objects
      *
      */
     public static List<Field<?>> getFieldsFromList(
@@ -84,7 +100,7 @@ public class DBUtils {
                 .fetch();
 
         Set<String> res = new HashSet<>();
-        for (int i = 0; i < records.size(); i ++) {
+        for (int i = 0; i < records.size(); i++) {
             res.add(records.get(i).get(0).toString());
         }
         return res;

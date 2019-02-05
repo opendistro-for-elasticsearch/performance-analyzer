@@ -1,16 +1,5 @@
-## OpenDistro Performance Analyzer
+# Performance Analyzer
 Performance Analyzer exposes a REST API that allows you to query numerous performance metrics for your cluster, including aggregations of those metrics, independent of the Java Virtual Machine (JVM). PerfTop is the default command line interface (CLI) for displaying those metrics.
-
-## License
-
-This library is licensed under the Apache 2.0 License. 
-
-### Development
-- `jdk` (version >= 11)
-
-## Download
-
-Clone or download from Github.
 
 ## Performance Analyzer API
 Performance Analyzer uses a single HTTP method and URI for all requests:

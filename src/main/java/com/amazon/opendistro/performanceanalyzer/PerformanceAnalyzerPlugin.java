@@ -27,20 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import com.amazon.opendistro.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
-import com.amazon.opendistro.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
-import com.amazon.opendistro.performanceanalyzer.collectors.CircuitBreakerCollector;
-import com.amazon.opendistro.performanceanalyzer.collectors.HeapMetricsCollector;
-import com.amazon.opendistro.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.performanceanalyzer.collectors.NetworkE2ECollector;
-import com.amazon.opendistro.performanceanalyzer.collectors.NetworkInterfaceCollector;
-import com.amazon.opendistro.performanceanalyzer.collectors.NodeDetailsCollector;
-import com.amazon.opendistro.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
-import com.amazon.opendistro.performanceanalyzer.http_action.whoami.WhoAmIAction;
-import com.amazon.opendistro.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
-import com.amazon.opendistro.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.elasticsearch.SpecialPermission;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -75,13 +64,25 @@ import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
+import com.amazon.opendistro.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.performanceanalyzer.collectors.DisksCollector;
+import com.amazon.opendistro.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.performanceanalyzer.collectors.MasterServiceMetrics;
 import com.amazon.opendistro.performanceanalyzer.collectors.MetricsPurgeActivity;
+import com.amazon.opendistro.performanceanalyzer.collectors.NetworkE2ECollector;
+import com.amazon.opendistro.performanceanalyzer.collectors.NetworkInterfaceCollector;
+import com.amazon.opendistro.performanceanalyzer.collectors.NodeDetailsCollector;
 import com.amazon.opendistro.performanceanalyzer.collectors.NodeStatsMetricsCollector;
 import com.amazon.opendistro.performanceanalyzer.collectors.OSMetricsCollector;
 import com.amazon.opendistro.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 import com.amazon.opendistro.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
 //import com.amazon.opendistro.performanceanalyzer.listener.PerformanceAnalyzerSearchReduceListener;
+import com.amazon.opendistro.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
+import com.amazon.opendistro.performanceanalyzer.http_action.whoami.WhoAmIAction;
+import com.amazon.opendistro.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
+import com.amazon.opendistro.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
 
 
 public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
@@ -103,7 +104,8 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             try {
                 runner.run();
             } catch(Exception ex) {
-                LOG.debug(ex.toString(), () -> ex);
+                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("{}",
+                        ex.toString()), ex);
             }
             return null;
         } );

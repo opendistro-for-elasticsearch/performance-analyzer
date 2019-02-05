@@ -1,3 +1,18 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.performanceanalyzer.rest;
 
 import java.io.BufferedReader;
@@ -6,12 +21,18 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Arrays;
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.message.ParameterizedMessage;
+import org.apache.logging.log4j.util.Supplier;
 
 import com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerApp;
 import com.amazon.opendistro.performanceanalyzer.metricsdb.MetricsDB;
@@ -20,10 +41,6 @@ import com.amazon.opendistro.performanceanalyzer.model.MetricsModel;
 import com.amazon.opendistro.performanceanalyzer.reader.ClusterLevelMetricsReader;
 import com.amazon.opendistro.performanceanalyzer.reader.ReaderMetricsProcessor;
 import com.amazon.opendistro.performanceanalyzer.util.JsonConverter;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import java.security.InvalidParameterException;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -91,7 +108,11 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 sendResponse(exchange, response, HttpURLConnection.HTTP_OK);
             } catch (Exception e) {
                 LOG.error("DB file path : {}", db.getDBFilePath());
-                LOG.error("QueryException", e.toString(), e);
+                LOG.error(
+                        (Supplier<?>) () -> new ParameterizedMessage(
+                                "QueryException {}.",
+                                e.toString()),
+                        e);
                 String response = "{\"error\":\"" + e.toString() + "\"}";
                 sendResponse(exchange, response, HttpURLConnection.HTTP_INTERNAL_ERROR);
             }
@@ -194,21 +215,21 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
             ClusterLevelMetricsReader.NodeDetails[] nodes = ClusterLevelMetricsReader.getNodes();
             String localNodeId = "local";
             if (nodes.length != 0) {
-                localNodeId = nodes[0].id;
+                localNodeId = nodes[0].getId();
             }
             nodeResponses.put(localNodeId, localResponseWithTimestamp);
             for (int i = 1; i < nodes.length; i++) {
                 ClusterLevelMetricsReader.NodeDetails node = nodes[i];
                 LOG.debug("Collecting remote stats");
                 try {
-                String remoteNodeStats = collectRemoteStats(node.hostAddress,
+                String remoteNodeStats = collectRemoteStats(node.getHostAddress(),
                         PerformanceAnalyzerApp.QUERY_URL,
                         params
                         );
-                nodeResponses.put(node.id, remoteNodeStats);
+                nodeResponses.put(node.getId(), remoteNodeStats);
                 } catch (Exception e) {
                     LOG.error("Unable to collect stats for node, addr:{}",
-                            node.hostAddress);
+                            node.getHostAddress());
                 }
             }
             String response = nodeJsonBuilder(nodeResponses);

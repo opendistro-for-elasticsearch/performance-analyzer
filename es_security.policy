@@ -1,0 +1,10 @@
+grant {
+  permission com.sun.tools.attach.AttachPermission "attachVirtualMachine";
+  permission com.sun.tools.attach.AttachPermission "createAttachProvider";
+  permission java.lang.RuntimePermission "manageProcess";
+  permission java.lang.RuntimePermission "loadLibrary.attach";
+  permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.tools.attach";
+  permission java.io.FilePermission "/-","read,write,delete,execute";
+};
+

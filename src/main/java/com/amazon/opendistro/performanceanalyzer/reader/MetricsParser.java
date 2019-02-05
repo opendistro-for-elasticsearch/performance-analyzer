@@ -1,18 +1,37 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.performanceanalyzer.reader;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.amazon.opendistro.performanceanalyzer.util.FileHelper;
 import org.jooq.BatchBindStep;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.Http_Metrics;
-import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OS_Metrics;
+import com.amazon.opendistro.performanceanalyzer.collectors.OSMetricsCollector;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpMetric;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.performanceanalyzer.util.FileHelper;
 
 /**
  * Read metrics files emitted by Elasticsearch in /dev/shm and efficiently load them into tables for further processing.
@@ -127,7 +146,7 @@ public class MetricsParser {
                             }
                         } catch (Exception e) {
                             LOG.error(e, e);
-                            LOG.error("Error parsing file - {},\n {}", metricsFile.getAbsolutePath());
+                            LOG.error("Error parsing file - {}\n", metricsFile.getAbsolutePath());
                             throw e;
                         }
                     }
@@ -142,12 +161,13 @@ public class MetricsParser {
 
     private void emitStartHttpMetric(File metricFile, String rid,
             String operation, BatchBindStep handle) {
+
         String startMetrics = PerformanceAnalyzerMetrics.getMetric(metricFile.getAbsolutePath());
-        String startTimeVal = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, Http_Metrics.startTime.name());
-        String itemCountVal = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, Http_Metrics.itemCount.name());
+        String startTimeVal = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, HttpMetric.START_TIME.toString());
+        String itemCountVal = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, HttpMetric.HTTP_REQUEST_DOCS.toString());
         try {
             long st = Long.parseLong(startTimeVal);
-            String indices = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, Http_Metrics.indices.name());
+            String indices = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, HttpDimension.INDICES.toString());
             long itemCount = Long.parseLong(itemCountVal);
             handle.bind(rid, operation, indices, null, null, itemCount, st, null);
         } catch (NumberFormatException e) {
@@ -161,9 +181,10 @@ public class MetricsParser {
             String operation, BatchBindStep handle) {
         String finishMetrics = PerformanceAnalyzerMetrics.getMetric(metricFile.getAbsolutePath());
 
-        String finishTimeVal = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, Http_Metrics.finishTime.name());
-        String status = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, Http_Metrics.status.name());
-        String exception = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, Http_Metrics.exception.name());
+
+        String finishTimeVal = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, HttpMetric.FINISH_TIME.toString());
+        String status = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, HttpDimension.HTTP_RESP_CODE.toString());
+        String exception = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, HttpDimension.EXCEPTION.toString());
         try {
         long ft = Long.parseLong(finishTimeVal);
         handle.bind(rid, operation, null, status, exception, null, null, ft);
@@ -185,13 +206,13 @@ public class MetricsParser {
         }
 
         String sOSMetrics = PerformanceAnalyzerMetrics.getMetric(opFile.getAbsolutePath());
-        OS_Metrics[] metrics = OS_Metrics.values();
-        for (OS_Metrics metric : metrics) {
+        OSMetrics[] metrics = OSMetrics.values();
+        for (OSMetrics metric : metrics) {
             try {
-                String metricVal = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics, metric.name());
+                String metricVal = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics, metric.toString());
                 if (metricVal != null) {
                     Double val = Double.parseDouble(metricVal);
-                    osMetrics.put(metric.name(), val);
+                    osMetrics.put(metric.toString(), val);
                 }
             } catch (Exception e) {
                 LOG.error(e, e);
@@ -200,14 +221,15 @@ public class MetricsParser {
             }
         }
 
-        String threadName = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics, "threadName");
+        String threadName = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics,
+                OSMetricsCollector.MetaDataFields.threadName.toString());
 
         int numMetrics = metrics.length + 2;
         Object [] metricVals = new Object[numMetrics];
         metricVals[0] = threadID;
         metricVals[1] = threadName;
         for (int i = 2; i < numMetrics; i++) {
-            metricVals[i] = osMetrics.get(metrics[i - 2].name());
+            metricVals[i] = osMetrics.get(metrics[i - 2].toString());
         }
 
         batchHandle.bind(metricVals);
@@ -235,19 +257,27 @@ public class MetricsParser {
 
     private void emitStartMetric(String startMetrics, String rid, String threadId,
             String operation, BatchBindStep handle) {
-        long st = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, "startTime"));
-        String indexName = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, "indexName");
-        String shardId = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, "shardId");
-        String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, "primary"));
+        long st = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkMetric.START_TIME.toString()));
+        String indexName = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkDimension.INDEX_NAME.toString());
+        String shardId = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkDimension.SHARD_ID.toString());
+        String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkDimension.PRIMARY.toString()));
         handle.bind(shardId, indexName, rid, threadId, operation, primary, st, null);
     }
 
     private void emitFinishMetric(String finishMetrics, String rid, String threadId,
             String operation, BatchBindStep handle) {
-        long ft = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, "finishTime"));
-        String indexName = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, "indexName");
-        String shardId = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, "shardId");
-        String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, "primary"));
+        long ft = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkMetric.FINISH_TIME.toString()));
+        String indexName = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkDimension.INDEX_NAME.toString());
+        String shardId = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkDimension.SHARD_ID.toString());
+        String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkDimension.PRIMARY.toString()));
         handle.bind(shardId, indexName, rid, threadId, operation, primary, null, ft);
     }
 
@@ -261,9 +291,9 @@ public class MetricsParser {
         for (File metricsFile: idFile.listFiles()) {
             String metrics = PerformanceAnalyzerMetrics.getMetric(metricsFile.getAbsolutePath());
             try {
-                if (metricsFile.getName().equals("start")) {
+                if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.START_FILE_NAME)) {
                     emitStartMetric(metrics, rid, threadID, operation, handle);
-                } else  if (metricsFile.getName().equals("finish")) {
+                } else  if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.FINISH_FILE_NAME)) {
                     emitFinishMetric(metrics, rid, threadID, operation, handle);
                 }
             } catch (Exception e) {

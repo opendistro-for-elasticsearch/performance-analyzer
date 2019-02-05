@@ -15,12 +15,15 @@
 
 package com.amazon.opendistro.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.elasticsearch.indices.breaker.CircuitBreakerStats;
 
 import com.amazon.opendistro.performanceanalyzer.ESResources;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CircuitBreakerValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class CircuitBreakerCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(CircuitBreakerCollector.class).samplingInterval;
@@ -64,13 +67,13 @@ public class CircuitBreakerCollector extends PerformanceAnalyzerMetricsCollector
     }
 
     static class CircuitBreakerStatus extends MetricStatus {
-        public final String type;
+        private final String type;
 
-        public final long estimated;
+        private final long estimated;
 
-        public final long tripped;
+        private final long tripped;
 
-        public final long limitConfigured;
+        private final long limitConfigured;
 
         CircuitBreakerStatus(String type, long estimated, long tripped, long limitConfigured) {
             this.type = type;
@@ -78,6 +81,28 @@ public class CircuitBreakerCollector extends PerformanceAnalyzerMetricsCollector
             this.tripped = tripped;
             this.limitConfigured = limitConfigured;
         }
+
+        @JsonProperty(CircuitBreakerDimension.Constants.TYPE_VALUE)
+        public String getType() {
+            return type;
+        }
+
+        @JsonProperty(CircuitBreakerValue.Constants.ESTIMATED_VALUE)
+        public long getEstimated() {
+            return estimated;
+        }
+
+        @JsonProperty(CircuitBreakerValue.Constants.TRIPPED_VALUE)
+        public long getTripped() {
+            return tripped;
+        }
+
+        @JsonProperty(CircuitBreakerValue.Constants.LIMIT_CONFIGURED_VALUE)
+        public long getLimitConfigured() {
+            return limitConfigured;
+        }
+
+
     }
 }
 

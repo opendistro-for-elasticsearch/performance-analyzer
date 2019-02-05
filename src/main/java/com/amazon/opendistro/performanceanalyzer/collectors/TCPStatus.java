@@ -15,23 +15,26 @@
 
 package com.amazon.opendistro.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class TCPStatus extends MetricStatus {
 
-    public String dest;
+    private String dest;
 
-    public int numFlows;
+    private int numFlows;
 
-    public double txQ;
+    private double txQ;
 
-    public double rxQ;
+    private double rxQ;
 
-    public double curLost;
+    private double curLost;
 
-    public double sndCWND;
+    private double sndCWND;
 
-    public double SSThresh;
+    // make this field private so that Jackson uses getter method name
+    private double ssThresh;
 
     public TCPStatus(String dest, int numFlows, double txQ, double rxQ,
                      double curLost, double sndCWND, double sSThresh) {
@@ -42,41 +45,41 @@ public class TCPStatus extends MetricStatus {
         this.rxQ = rxQ;
         this.curLost = curLost;
         this.sndCWND = sndCWND;
-        this.SSThresh = sSThresh;
+        this.ssThresh = sSThresh;
     }
 
-    @JsonProperty("dest")
+    @JsonProperty(TCPDimension.Constants.DEST_VALUE)
     public String getDest() {
         return dest;
     }
 
-    @JsonProperty("numFlows")
+    @JsonProperty(TCPValue.Constants.NUM_FLOWS_VALUE)
     public int getNumFlows() {
         return numFlows;
     }
 
-    @JsonProperty("txQ")
+    @JsonProperty(TCPValue.Constants.TXQ_VALUE)
     public double getTxQ() {
         return txQ;
     }
 
-    @JsonProperty("rxQ")
+    @JsonProperty(TCPValue.Constants.RXQ_VALUE)
     public double getRxQ() {
         return rxQ;
     }
 
-    @JsonProperty("curLost")
+    @JsonProperty(TCPValue.Constants.CUR_LOST_VALUE)
     public double getCurLost() {
         return curLost;
     }
 
-    @JsonProperty("sndCWND")
+    @JsonProperty(TCPValue.Constants.SEND_CWND_VALUE)
     public double getSndCWND() {
         return sndCWND;
     }
 
-    @JsonProperty("SSThresh")
+    @JsonProperty(TCPValue.Constants.SSTHRESH_VALUE)
     public double getSSThresh() {
-        return SSThresh;
+        return ssThresh;
     }
 }

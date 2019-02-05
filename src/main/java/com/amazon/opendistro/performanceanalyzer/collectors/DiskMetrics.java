@@ -15,6 +15,8 @@
 
 package com.amazon.opendistro.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.DiskDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.DiskValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DiskMetrics extends MetricStatus {
@@ -39,22 +41,22 @@ public class DiskMetrics extends MetricStatus {
         super();
     }
 
-    @JsonProperty("name")
+    @JsonProperty(DiskDimension.Constants.NAME_VALUE)
     public String getName() {
         return name;
     }
 
-    @JsonProperty("util")
+    @JsonProperty(DiskValue.Constants.UTIL_VALUE)
     public double getUtilization() {
         return utilization;
     }
 
-    @JsonProperty("wait")
+    @JsonProperty(DiskValue.Constants.WAIT_VALUE)
     public double getAwait() {
         return await;
     }
 
-    @JsonProperty("srate")
+    @JsonProperty(DiskValue.Constants.SRATE_VALUE)
     public double getServiceRate() {
         return serviceRate;
     }

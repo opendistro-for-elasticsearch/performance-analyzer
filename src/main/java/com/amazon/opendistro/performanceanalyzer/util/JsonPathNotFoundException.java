@@ -17,5 +17,5 @@
 package com.amazon.opendistro.performanceanalyzer.util;
 
 public class JsonPathNotFoundException extends Exception {
-    public JsonPathNotFoundException() {}
+    public JsonPathNotFoundException() { }
 }
