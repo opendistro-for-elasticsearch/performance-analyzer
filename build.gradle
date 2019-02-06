@@ -125,17 +125,29 @@ dependencies {
         compile files("${System.properties['java.home']}/../lib/tools.jar")
     }
 
+    configurations {
+        // jarHell reports class name conflicts between securemock and mockito-core
+        // has to disable one of them.
+        all*.exclude group: "org.elasticsearch", module: "securemock"
+    }
+
     compile 'org.jooq:jooq:3.10.8'
     compile 'org.xerial:sqlite-jdbc:3.8.11.2'
     compile 'com.google.guava:guava:27.0.1-jre'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
 
-    testCompile 'org.powermock:powermock-module-junit4-common:1.6.1'
-    testCompile 'org.powermock:powermock-module-junit4:1.6.1'
-    testCompile 'org.powermock:powermock-api-mockito:1.6.1'
-    testCompile 'org.powermock:powermock-api-support:1.6.1'
-    testCompile 'org.powermock:powermock-core:1.6.1'
+    // JDK9+ has to run powermock 2+. https://github.com/powermock/powermock/issues/888
+    testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.0'
+    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.0'
+    testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.0'
+    testCompile group: 'org.powermock', name: 'powermock-core', version: '2.0.0'
+    testCompile group: 'org.powermock', name: 'powermock-api-support', version: '2.0.0'
+    testCompile group: 'org.powermock', name: 'powermock-module-junit4-common', version: '2.0.0'
+    testCompile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
+    testCompile group: 'org.powermock', name: 'powermock-reflect', version: '2.0.0'
+    testCompile group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.3'
+    testCompile group: 'org.objenesis', name: 'objenesis', version: '3.0.1'
 }
 
 dependencyLicenses {

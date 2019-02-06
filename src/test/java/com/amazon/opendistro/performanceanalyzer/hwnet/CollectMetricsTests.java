@@ -87,7 +87,7 @@ import com.amazon.opendistro.performanceanalyzer.util.JsonConverter;
         OSGlobals.class })
 @SuppressStaticInitializationFor({ "PluginSettings",
         "OSGlobals" })
-public class CollectMetricsTest extends AbstractTests {
+public class CollectMetricsTests extends AbstractTests {
     @Mock
     CircuitBreakerService circuitBreakerService;
 

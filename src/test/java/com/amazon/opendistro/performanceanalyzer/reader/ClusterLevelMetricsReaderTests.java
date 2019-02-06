@@ -38,9 +38,9 @@ import com.amazon.opendistro.performanceanalyzer.reader.ClusterLevelMetricsReade
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ PerformanceAnalyzerMetrics.class, PluginSettings.class })
 @SuppressStaticInitializationFor({ "PluginSettings" })
-public class ClusterLevelMetricsReaderTest extends AbstractReaderTests {
+public class ClusterLevelMetricsReaderTests extends AbstractReaderTests {
 
-    public ClusterLevelMetricsReaderTest() throws SQLException, ClassNotFoundException {
+    public ClusterLevelMetricsReaderTests() throws SQLException, ClassNotFoundException {
         super();
         // TODO Auto-generated constructor stub
     }
