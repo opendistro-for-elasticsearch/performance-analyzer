@@ -20,15 +20,27 @@ import java.util.Map;
 
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.AggregatedOSDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CircuitBreakerValue;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CommonMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.DiskDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.DiskValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.EmptyDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HeapDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HeapValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpOnlyDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.IPDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.IPValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.LatencyDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MasterPendingValue;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MetricUnits;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsDerivedDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ThreadPoolValue;
 
 public class MetricsModel {
 
@@ -36,100 +48,177 @@ public class MetricsModel {
 
     static {
         // OS Metrics
-        ALL_METRICS.put("cpu", new MetricAttributes("cores", AggregatedOSDimension.values()));
-        ALL_METRICS.put("paging_majflt", new MetricAttributes("count", AggregatedOSDimension.values()));
-        ALL_METRICS.put("paging_minflt", new MetricAttributes("count", AggregatedOSDimension.values()));
-        ALL_METRICS.put("rss", new MetricAttributes("count", AggregatedOSDimension.values()));
-        ALL_METRICS.put("runtime", new MetricAttributes("s", AggregatedOSDimension.values()));
-        ALL_METRICS.put("waittime", new MetricAttributes("s", AggregatedOSDimension.values()));
-        ALL_METRICS.put("ctxrate", new MetricAttributes("count", AggregatedOSDimension.values()));
-        ALL_METRICS.put("heap_usage", new MetricAttributes("bps", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgReadThroughputBps", new MetricAttributes("bps", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgWriteThroughputBps", new MetricAttributes("bps", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgTotalThroughputBps", new MetricAttributes("bps", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgReadSyscallRate", new MetricAttributes("sread/s", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgWriteSyscallRate", new MetricAttributes("swrite/s", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgTotalSyscallRate", new MetricAttributes("scall/s", AggregatedOSDimension.values()));
-        ALL_METRICS.put("avgBlockedTime", new MetricAttributes("s", AggregatedOSDimension.values()));
-        ALL_METRICS.put("blockedCount", new MetricAttributes("count", AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.CPU_UTILIZATION.toString(),
+                new MetricAttributes(MetricUnits.CORES.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.PAGING_MAJ_FLT_RATE.toString(),
+                new MetricAttributes(MetricUnits.COUNT_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.PAGING_MIN_FLT_RATE.toString(),
+                new MetricAttributes(MetricUnits.COUNT_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.PAGING_RSS.toString(),
+                new MetricAttributes(MetricUnits.PAGES.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.SCHED_RUNTIME.toString(),
+                new MetricAttributes(MetricUnits.SEC_PER_CONTEXT_SWITCH.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.SCHED_WAITTIME.toString(),
+                new MetricAttributes(MetricUnits.SEC_PER_CONTEXT_SWITCH.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.SCHED_CTX_RATE.toString(),
+                new MetricAttributes(MetricUnits.COUNT_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.HEAP_ALLOC_RATE.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.IO_READ_THROUGHPUT.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.IO_WRITE_THROUGHPUT.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.IO_TOT_THROUGHPUT.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.IO_READ_SYSCALL_RATE.toString(),
+                new MetricAttributes(MetricUnits.COUNT_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.IO_WRITE_SYSCALL_RATE.toString(),
+                new MetricAttributes(MetricUnits.COUNT_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.IO_TOTAL_SYSCALL_RATE.toString(),
+                new MetricAttributes(MetricUnits.COUNT_PER_SEC.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.THREAD_BLOCKED_TIME.toString(),
+                new MetricAttributes(MetricUnits.SEC_PER_EVENT.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(OSMetrics.THREAD_BLOCKED_EVENT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), AggregatedOSDimension.values()));
 
-        // Elasticsearch Metrics
-        // todo: "latency" needs a dimension enum.
-        ALL_METRICS.put("latency", new MetricAttributes("ms", LatencyDimension.values()));
-        ALL_METRICS.put("itemCount", new MetricAttributes("count", HttpOnlyDimension.values()));
-        ALL_METRICS.put("count", new MetricAttributes("count", HttpOnlyDimension.values()));
+        // Latency Metric
+        ALL_METRICS.put(CommonMetric.LATENCY.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), LatencyDimension.values()));
 
-        // Circuit Breaker
-        ALL_METRICS.put("estimated", new MetricAttributes("b", CircuitBreakerDimension.values()));
-        ALL_METRICS.put("limitConfigured", new MetricAttributes("b", CircuitBreakerDimension.values()));
-        ALL_METRICS.put("tripped", new MetricAttributes("count", CircuitBreakerDimension.values()));
+        // HTTP Metrics
+        ALL_METRICS.put(HttpMetric.HTTP_REQUEST_DOCS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), HttpOnlyDimension.values()));
+        ALL_METRICS.put(HttpMetric.HTTP_TOTAL_REQUESTS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), HttpOnlyDimension.values()));
+
+        // Circuit Breaker Metrics
+        ALL_METRICS.put(CircuitBreakerValue.CB_ESTIMATED_SIZE.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), CircuitBreakerDimension.values()));
+        ALL_METRICS.put(CircuitBreakerValue.CB_CONFIGURED_SIZE.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), CircuitBreakerDimension.values()));
+        ALL_METRICS.put(CircuitBreakerValue.CB_TRIPPED_EVENTS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), CircuitBreakerDimension.values()));
 
         // Heap Metrics
-        ALL_METRICS.put("collectionCount", new MetricAttributes("count", HeapDimension.values()));
-        ALL_METRICS.put("collectionTime", new MetricAttributes("ms", HeapDimension.values()));
-        ALL_METRICS.put("committed", new MetricAttributes("b", HeapDimension.values()));
-        ALL_METRICS.put("init", new MetricAttributes("b", HeapDimension.values()));
-        ALL_METRICS.put("max", new MetricAttributes("b", HeapDimension.values()));
-        ALL_METRICS.put("used", new MetricAttributes("b", HeapDimension.values()));
+        ALL_METRICS.put(HeapValue.GC_COLLECTION_EVENT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), HeapDimension.values()));
+        ALL_METRICS.put(HeapValue.GC_COLLECTION_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), HeapDimension.values()));
+        ALL_METRICS.put(HeapValue.HEAP_COMMITTED.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), HeapDimension.values()));
+        ALL_METRICS.put(HeapValue.HEAP_INIT.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), HeapDimension.values()));
+        ALL_METRICS.put(HeapValue.HEAP_MAX.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), HeapDimension.values()));
+        ALL_METRICS.put(HeapValue.HEAP_USED.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), HeapDimension.values()));
 
         // Disk Metrics
-        ALL_METRICS.put("srate", new MetricAttributes("mb/s", DiskDimension.values()));
-        ALL_METRICS.put("util", new MetricAttributes("%", DiskDimension.values()));
-        ALL_METRICS.put("wait", new MetricAttributes("ms", DiskDimension.values()));
+        ALL_METRICS.put(DiskValue.DISK_UTILIZATION.toString(),
+                new MetricAttributes(MetricUnits.PERCENT.toString(), DiskDimension.values()));
+        ALL_METRICS.put(DiskValue.DISK_WAITTIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), DiskDimension.values()));
+        ALL_METRICS.put(DiskValue.DISK_SERVICE_RATE.toString(),
+                new MetricAttributes(MetricUnits.MEGABYTE_PER_SEC.toString(), DiskDimension.values()));
 
         // TCP Metrics
-        ALL_METRICS.put("curLost", new MetricAttributes("count", TCPDimension.values()));
-        ALL_METRICS.put("numFlows", new MetricAttributes("count", TCPDimension.values()));
-        ALL_METRICS.put("rxQ", new MetricAttributes("count", TCPDimension.values()));
-        ALL_METRICS.put("sndCWND", new MetricAttributes("b", TCPDimension.values()));
-        ALL_METRICS.put("SSThresh", new MetricAttributes("b", TCPDimension.values()));
-        ALL_METRICS.put("txQ", new MetricAttributes("count", TCPDimension.values()));
+        ALL_METRICS.put(TCPValue.Net_TCP_NUM_FLOWS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), TCPDimension.values()));
+        ALL_METRICS.put(TCPValue.Net_TCP_TXQ.toString(),
+                new MetricAttributes(MetricUnits.SEGMENT_PER_FLOW.toString(), TCPDimension.values()));
+        ALL_METRICS.put(TCPValue.Net_TCP_RXQ.toString(),
+                new MetricAttributes(MetricUnits.SEGMENT_PER_FLOW.toString(), TCPDimension.values()));
+        ALL_METRICS.put(TCPValue.Net_TCP_LOST.toString(),
+                new MetricAttributes(MetricUnits.SEGMENT_PER_FLOW.toString(), TCPDimension.values()));
+        ALL_METRICS.put(TCPValue.Net_TCP_SEND_CWND.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_FLOW.toString(), TCPDimension.values()));
+        ALL_METRICS.put(TCPValue.Net_TCP_SSTHRESH.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_FLOW.toString(), TCPDimension.values()));
 
         // IP Metrics
-        ALL_METRICS.put("bps", new MetricAttributes("bps", IPDimension.values()));
-        ALL_METRICS.put("dropRate4", new MetricAttributes("count", IPDimension.values()));
-        ALL_METRICS.put("dropRate6", new MetricAttributes("count", IPDimension.values()));
-        ALL_METRICS.put("packetRate4", new MetricAttributes("count", IPDimension.values()));
-        ALL_METRICS.put("packetRate6", new MetricAttributes("count", IPDimension.values()));
+        ALL_METRICS.put(IPValue.NET_PACKET_RATE4.toString(),
+                new MetricAttributes(MetricUnits.PACKET_PER_SEC.toString(), IPDimension.values()));
+        ALL_METRICS.put(IPValue.NET_PACKET_DROP_RATE4.toString(),
+                new MetricAttributes(MetricUnits.PACKET_PER_SEC.toString(), IPDimension.values()));
+        ALL_METRICS.put(IPValue.NET_PACKET_RATE6.toString(),
+                new MetricAttributes(MetricUnits.PACKET_PER_SEC.toString(), IPDimension.values()));
+        ALL_METRICS.put(IPValue.NET_PACKET_DROP_RATE6.toString(),
+                new MetricAttributes(MetricUnits.PACKET_PER_SEC.toString(), IPDimension.values()));
+        ALL_METRICS.put(IPValue.NET_THROUGHPUT.toString(),
+                new MetricAttributes(MetricUnits.BYTE_PER_SEC.toString(), IPDimension.values()));
 
         // Thread Pool Metrics
-        ALL_METRICS.put("queueSize", new MetricAttributes("b", ThreadPoolDimension.values()));
-        ALL_METRICS.put("rejected", new MetricAttributes("count", ThreadPoolDimension.values()));
-        ALL_METRICS.put("threadsActive", new MetricAttributes("count", ThreadPoolDimension.values()));
-        ALL_METRICS.put("threadsCount", new MetricAttributes("count", ThreadPoolDimension.values()));
+        ALL_METRICS.put(ThreadPoolValue.THREADPOOL_QUEUE_SIZE.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ThreadPoolDimension.values()));
+        ALL_METRICS.put(ThreadPoolValue.THREADPOOL_REJECTED_REQS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ThreadPoolDimension.values()));
+        ALL_METRICS.put(ThreadPoolValue.THREADPOOL_TOTAL_THREADS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ThreadPoolDimension.values()));
+        ALL_METRICS.put(ThreadPoolValue.THREADPOOL_ACTIVE_THREADS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ThreadPoolDimension.values()));
 
         // Shard Stats Metrics
-        ALL_METRICS.put("indexingThrottleTime", new MetricAttributes("ms", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("queryCacheHitCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("queryCacheMissCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("queryCacheInBytes", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("fieldDataEvictions", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("fieldDataInBytes", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("requestCacheHitCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("requestCacheMissCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("requestCacheEvictions", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("requestCacheInBytes", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("refreshCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("refreshTime", new MetricAttributes("ms", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("flushCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("flushTime", new MetricAttributes("ms", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("mergeCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("mergeTime", new MetricAttributes("ms", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("mergeCurrent", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("indexBufferBytes", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("segmentCount", new MetricAttributes("count", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("segmentsMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("termsMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("storedFieldsMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("termVectorsMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("normsMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("pointsMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("docValuesMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("indexWriterMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
-        ALL_METRICS.put("versionMapMemory", new MetricAttributes("b", ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.INDEXING_THROTTLE_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_QUERY_HIT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_QUERY_MISS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_QUERY_SIZE.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_FIELDDATA_EVICTION.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_FIELDDATA_SIZE.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_REQUEST_HIT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_REQUEST_MISS.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_REQUEST_EVICTION.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.CACHE_REQUEST_SIZE.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.REFRESH_EVENT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.REFRESH_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.FLUSH_EVENT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.FLUSH_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.MERGE_EVENT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.MERGE_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.MERGE_CURRENT_EVENT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.INDEXING_BUFFER.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.SEGMENTS_TOTAL.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.SEGMENTS_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.TERMS_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.STORED_FIELDS_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.TERM_VECTOR_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.NORMS_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.POINTS_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.DOC_VALUES_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.INDEX_WRITER_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.VERSION_MAP_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
+        ALL_METRICS.put(ShardStatsValue.BITSET_MEMORY.toString(),
+                new MetricAttributes(MetricUnits.BYTE.toString(), ShardStatsDerivedDimension.values()));
 
         // Master Metrics
-        ALL_METRICS.put("pendingTasksCount", new MetricAttributes("count", EmptyDimension.values()));
+        ALL_METRICS.put(MasterPendingValue.MASTER_PENDING_QUEUE_SIZE.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), EmptyDimension.values()));
     }
-
 }

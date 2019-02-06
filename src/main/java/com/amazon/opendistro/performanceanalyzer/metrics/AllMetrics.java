@@ -807,4 +807,50 @@ public class AllMetrics {
             return value;
         }
     }
+
+    public enum MetricUnits {
+        CORES(Constants.CORES_VALUE),
+        COUNT_PER_SEC(Constants.COUNT_PER_SEC_VALUE),
+        COUNT(Constants.COUNT_VALUE),
+        PAGES(Constants.PAGES_VALUE),
+        SEC_PER_CONTEXT_SWITCH(Constants.SEC_PER_CONTEXT_SWITCH_VALUE),
+        BYTE_PER_SEC(Constants.BYTE_PER_SEC_VALUE),
+        SEC_PER_EVENT(Constants.SEC_PER_EVENT_VALUE),
+        MILLISECOND(Constants.MILLISECOND_VALUE),
+        BYTE(Constants.BYTE_VALUE),
+        PERCENT(Constants.PERCENT_VALUE),
+        MEGABYTE_PER_SEC(Constants.MEGABYTE_PER_SEC_VALUE),
+        SEGMENT_PER_FLOW(Constants.SEGMENT_PER_FLOW_VALUE),
+        BYTE_PER_FLOW(Constants.BYTE_PER_FLOW_VALUE),
+        PACKET_PER_SEC(Constants.PACKET_PER_SEC_VALUE);
+
+        private final String value;
+
+        MetricUnits(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+
+        public static class Constants {
+            public static final String CORES_VALUE = "cores";
+            public static final String COUNT_PER_SEC_VALUE = "count/s";
+            public static final String COUNT_VALUE = "count";
+            public static final String PAGES_VALUE = "pages";
+            public static final String SEC_PER_CONTEXT_SWITCH_VALUE = "s/ctxswitch";
+            public static final String BYTE_PER_SEC_VALUE = "B/s";
+            public static final String SEC_PER_EVENT_VALUE = "s/event";
+            public static final String MILLISECOND_VALUE = "ms";
+            public static final String BYTE_VALUE = "B";
+            public static final String PERCENT_VALUE = "%";
+            public static final String MEGABYTE_PER_SEC_VALUE = "MB/s";
+            public static final String SEGMENT_PER_FLOW_VALUE = "segments/flow";
+            public static final String BYTE_PER_FLOW_VALUE = "B/flow";
+            public static final String PACKET_PER_SEC_VALUE = "packets/s";
+
+        }
+    }
 }

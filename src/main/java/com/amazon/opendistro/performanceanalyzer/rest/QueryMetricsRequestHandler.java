@@ -61,7 +61,6 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
-        //MetricsDB db = mp.getMetricsDB();
         Map.Entry<Long, MetricsDB> dbEntry = ReaderMetricsProcessor.current.getMetricsDB();
         if (dbEntry == null) {
             sendResponse(exchange,
@@ -98,10 +97,9 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                     return;
                 }
 
-//                TODO: Will uncomment after "AllMetrics.java" redaction.
-//                if (!validParams(exchange, metricList, dimList)) {
-//                    return;
-//                }
+                if (!validParams(exchange, metricList, dimList)) {
+                    return;
+                }
 
                 String nodes = params.get("nodes");
                 String response = collectStats(db, dbTimestamp, metricList, aggList, dimList, nodes);
@@ -151,7 +149,8 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 for (String dim : dimList) {
                     if (!MetricsModel.ALL_METRICS.get(metric).dimensionNames.contains(dim)) {
                         sendResponse(exchange,
-                                String.format("{\"error\":\"%s is an invalid dimension.\"}", dim),
+                                String.format("{\"error\":\"%s is an invalid dimension for %s metric.\"}",
+                                        dim, metric),
                                 HttpURLConnection.HTTP_BAD_REQUEST);
                         return false;
                     }
