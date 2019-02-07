@@ -48,7 +48,7 @@ public class PerformanceAnalyzerApp {
                         ReaderMetricsProcessor.current = mp;
                         mp.run();
                     } catch (Throwable e) {
-                        if (TroubleshootingConfig.EnableDevAssert) {
+                        if (TroubleshootingConfig.getEnableDevAssert()) {
                             break;
                         }
                         LOG.error("Error in ReaderMetricsProcessor...restarting");
@@ -81,7 +81,7 @@ public class PerformanceAnalyzerApp {
                 return WEBSERVICE_DEFAULT_PORT;
             }
 
-            return Integer.valueOf(readerPortValue);
+            return Integer.parseInt(readerPortValue);
         } catch (Exception ex) {
             LOG.error("Invalid Configured: {} Using default value: {} AND Error: {}",
                     WEBSERVICE_PORT_CONF_NAME, WEBSERVICE_DEFAULT_PORT, ex.toString());

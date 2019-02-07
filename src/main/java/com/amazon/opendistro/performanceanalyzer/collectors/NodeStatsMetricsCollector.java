@@ -50,7 +50,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
     private static final int KEYS_PATH_LENGTH = 2;
     private static final Logger LOG = LogManager.getLogger(NodeStatsMetricsCollector.class);
     private HashMap<ShardId, CachedStats> cachedInfo;
-    private static HashMap<ShardId, IndexShard> currentShards;
+    private HashMap<ShardId, IndexShard> currentShards;
 
     public NodeStatsMetricsCollector() {
         super(SAMPLING_TIME_INTERVAL, "NodeStatsMetrics");
@@ -58,7 +58,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         currentShards = new HashMap<>();
     }
 
-    private static void populateCurrentShards() {
+    private void populateCurrentShards() {
         currentShards.clear();
         Iterator<IndexService> indexServices = ESResources.INSTANCE.getIndicesService().iterator();
         while (indexServices.hasNext()) {
@@ -120,7 +120,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
 
     } };
 
-    private static long getIndexBufferBytes(ShardStats shardStats) {
+    private long getIndexBufferBytes(ShardStats shardStats) {
         IndexShard shard = currentShards.get(shardStats.getShardRouting().shardId());
 
         if (shard == null) {

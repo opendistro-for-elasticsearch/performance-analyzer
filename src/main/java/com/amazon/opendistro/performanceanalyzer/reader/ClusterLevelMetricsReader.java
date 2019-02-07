@@ -71,7 +71,7 @@ public class ClusterLevelMetricsReader {
     private static NodeDetails[] nodesDetails = new NodeDetails[0];
 
     public static NodeDetails[] getNodes() {
-        return nodesDetails;
+        return nodesDetails.clone();
     }
 
     public static void collectNodeMetrics(long startTime) throws Exception {

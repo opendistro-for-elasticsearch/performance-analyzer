@@ -38,7 +38,7 @@ public class MetricsPurgeActivity extends PerformanceAnalyzerMetricsCollector {
             return;
         }
         for (int i = 0; i < children.length; i++) {
-            if (Long.valueOf(children[i]) < PerformanceAnalyzerMetrics.getTimeInterval(startTime - purgeInterval)) {
+            if (Long.parseLong(children[i]) < PerformanceAnalyzerMetrics.getTimeInterval(startTime - purgeInterval)) {
                 PerformanceAnalyzerMetrics.removeMetrics(new File(root, children[i]));
             }
         }

@@ -34,6 +34,11 @@ import org.jooq.Result;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.amazon.opendistro.performanceanalyzer.config.TroubleshootingConfig;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CommonMetric;
@@ -46,6 +51,9 @@ import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetr
 import com.amazon.opendistro.performanceanalyzer.metricsdb.Dimensions;
 import com.amazon.opendistro.performanceanalyzer.metricsdb.MetricsDB;
 
+@PowerMockIgnore({ "org.apache.logging.log4j.*" })
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ TroubleshootingConfig.class })
 public class MetricsEmitterTests extends AbstractReaderTests {
     public MetricsEmitterTests() throws SQLException, ClassNotFoundException {
         super();
@@ -115,8 +123,10 @@ public class MetricsEmitterTests extends AbstractReaderTests {
 
     @Test(expected = Exception.class)
     public void testMetricsEmitterInvalidData() throws Exception {
-        TroubleshootingConfig.EnableDevAssert = true;
         //
+        PowerMockito.mockStatic(TroubleshootingConfig.class);
+        PowerMockito.when(TroubleshootingConfig.getEnableDevAssert()).thenReturn(true);
+
         Connection conn = DriverManager.getConnection(DB_URL);
         ShardRequestMetricsSnapshot rqMetricsSnap = new ShardRequestMetricsSnapshot(conn, 1535065195000L);
         Map<String, String> dimensions = new HashMap<>();
@@ -171,7 +181,6 @@ public class MetricsEmitterTests extends AbstractReaderTests {
 
     @Test
     public void testHttpMetricsEmitter() throws Exception {
-        TroubleshootingConfig.EnableDevAssert = false;
         Connection conn = DriverManager.getConnection(DB_URL);
         HttpRequestMetricsSnapshot rqMetricsSnap = new HttpRequestMetricsSnapshot(conn, 1L);
         Map<String, String> dimensions = new HashMap<>();

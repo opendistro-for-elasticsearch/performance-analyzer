@@ -94,9 +94,9 @@ public class MetricProperties {
     public MetricProperties(
             MetricDimension[] derivedDimension, MetricDimension[] dimensions,
             MetricValue[] values, FileHandler handler,
-            Map<MetricValue, String> cutomizedTableNames) {
+            Map<String, String> customizedTableNames) {
         this(derivedDimension, dimensions, values, handler);
-        cutomizeMetricTableName(cutomizedTableNames);
+        customizeMetricTableName(customizedTableNames);
 
         initializeTableSelectFields();
     }
@@ -106,9 +106,9 @@ public class MetricProperties {
             MetricValue[] values, FileHandler handler) {
         super();
         this.handler = handler;
-        this.derivedDimension = derivedDimension;
-        this.directDimensions = dimensions;
-        this.metadata = values;
+        this.derivedDimension = derivedDimension.clone();
+        this.directDimensions = dimensions.clone();
+        this.metadata = values.clone();
         this.inMemoryTableSelectFieldsMap = new HashMap<>();
 
         initializeFields();
@@ -298,8 +298,7 @@ public class MetricProperties {
      * Initialize fields used for database operation. Customize some of the
      * table names. See the comments of metricTableNames for details.
      */
-    private void cutomizeMetricTableName(
-            Map<MetricValue, String> tableName) {
+    private void customizeMetricTableName(Map<String, String> tableName) {
         for (int i = 0; i < metadataTableNames.size(); i++) {
             String metricName = metadataTableNames.get(i).toString();
             if (tableName.containsKey(metricName)) {

@@ -27,8 +27,8 @@ import org.apache.logging.log4j.util.Supplier;
 import com.amazon.opendistro.performanceanalyzer.metrics_generator.linux.LinuxCPUPagingActivityGenerator;
 
 public final class ThreadCPU  {
-    public static ThreadCPU INSTANCE = new ThreadCPU();
     private static final Logger LOGGER = LogManager.getLogger(ThreadCPU.class);
+    public static final ThreadCPU INSTANCE = new ThreadCPU();
     private long scClkTck = 0;
     private String pid = null;
     private List<String> tids = null;

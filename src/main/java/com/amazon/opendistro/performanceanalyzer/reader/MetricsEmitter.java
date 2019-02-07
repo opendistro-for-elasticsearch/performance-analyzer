@@ -156,7 +156,7 @@ public class MetricsEmitter {
     @SuppressWarnings("unchecked")
     private static void checkInvalidData(SelectHavingStep<Record> rqTable, SelectHavingStep<Record> osTable,
                                          final DSLContext create) {
-        if (!TroubleshootingConfig.EnableDevAssert) {
+        if (!TroubleshootingConfig.getEnableDevAssert()) {
             return;
         }
 

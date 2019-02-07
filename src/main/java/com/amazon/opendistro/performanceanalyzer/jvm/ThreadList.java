@@ -45,10 +45,10 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * remote VM */
 public class ThreadList {
     private static final Map<Long, String> jTidNameMap = new ConcurrentHashMap<>();
-    private static final Map<Long, threadState> nativeTidMap = new ConcurrentHashMap<>();
-    private static final Map<Long, threadState> oldNativeTidMap = new ConcurrentHashMap<>();
-    private static final Map<Long, threadState> jTidMap = new ConcurrentHashMap<>();
-    private static final Map<String, threadState> nameMap = new ConcurrentHashMap<>();
+    private static final Map<Long, ThreadState> nativeTidMap = new ConcurrentHashMap<>();
+    private static final Map<Long, ThreadState> oldNativeTidMap = new ConcurrentHashMap<>();
+    private static final Map<Long, ThreadState> jTidMap = new ConcurrentHashMap<>();
+    private static final Map<String, ThreadState> nameMap = new ConcurrentHashMap<>();
     private static final String pid = OSMetricsGeneratorFactory.getInstance().getPid();
     static final Logger LOGGER = LogManager.getLogger(ThreadList.class);
     static final int samplingInterval = MetricsConfiguration.CONFIG_MAP.get(ThreadList.class).samplingInterval;
@@ -57,7 +57,7 @@ public class ThreadList {
     private static final Pattern linePattern = Pattern.compile("\"([^\"]*)\"");
     private static long lastRunTime = 0;
 
-    public static class threadState {
+    public static class ThreadState {
         public long javaTid;
         public long nativeTid;
         public long heapUsage;
@@ -70,7 +70,7 @@ public class ThreadList {
         public double heapAllocRate;
         public double avgBlockedTime;
 
-        threadState() {
+        ThreadState() {
             javaTid = -1;
             nativeTid = -1;
             heapUsage = -1;
@@ -91,7 +91,7 @@ public class ThreadList {
         }
     }
 
-    public static Map<Long, threadState> getNativeTidMap() {
+    public static Map<Long, ThreadState> getNativeTidMap() {
         synchronized (ThreadList.class) {
             if (System.currentTimeMillis() > lastRunTime + minRunInterval) {
                 runThreadDump(pid, new String[0]);
@@ -102,10 +102,10 @@ public class ThreadList {
         }
     }
 
-    public static threadState getCurrentThreadState() {
+    public static ThreadState getCurrentThreadState() {
         long currentThreadId = Thread.currentThread().getId();
 
-        threadState retVal = jTidMap.get(currentThreadId);
+        ThreadState retVal = jTidMap.get(currentThreadId);
 
         if (retVal != null) {
             return retVal;
@@ -155,7 +155,7 @@ public class ThreadList {
             // and it is cumulative
             long mem = ((com.sun.management.ThreadMXBean) threadBean).getThreadAllocatedBytes(id);
 
-            threadState t = jTidMap.get(id);
+            ThreadState t = jTidMap.get(id);
             if (t == null) {
                 continue;
             }
@@ -167,7 +167,7 @@ public class ThreadList {
                 (state == Thread.State.BLOCKED) ? samplingInterval : 0);
 
             long curRunTime = System.currentTimeMillis();
-            threadState oldt = oldNativeTidMap.get(t.nativeTid);
+            ThreadState oldt = oldNativeTidMap.get(t.nativeTid);
             if (curRunTime > lastRunTime && oldt != null) {
                 t.heapAllocRate = Math.max(t.heapUsage - oldt.heapUsage, 0) * 1.0e3
                     /(curRunTime - lastRunTime);
@@ -203,7 +203,7 @@ public class ThreadList {
 
     private static void parseLine(String line) {
         String[] tokens = line.split(" os_prio=[0-9]* ");
-        threadState t = new threadState();
+        ThreadState t = new ThreadState();
         t.javaTid = -1;
 
         Matcher m = linePattern.matcher(tokens[0]);

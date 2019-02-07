@@ -32,6 +32,8 @@ import com.amazon.opendistro.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 
 public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     private static final Logger LOG = LogManager.getLogger(HeapMetricsCollector.class);
@@ -53,12 +55,12 @@ public class HeapMetricsCollector extends PerformanceAnalyzerMetricsCollector im
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         value.append(new HeapStatus(GCType.TOT_YOUNG_GC.toString(),
-                GCMetrics.totYoungGCCollectionCount,
-                GCMetrics.totYoungGCCollectionTime).serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+                GCMetrics.getTotYoungGCCollectionCount(),
+                GCMetrics.getTotYoungGCCollectionTime()).serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
         value.append(new HeapStatus(GCType.TOT_FULL_GC.toString(),
-                GCMetrics.totFullGCCollectionCount,
-                GCMetrics.totFullGCCollectionTime).serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+                GCMetrics.getTotFullGCCollectionCount(),
+                GCMetrics.getTotFullGCCollectionTime()).serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
         for (Map.Entry<String, Supplier<MemoryUsage>> entry : HeapMetrics
                 .getMemoryUsageSuppliers().entrySet()) {

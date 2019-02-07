@@ -47,12 +47,8 @@ public class NetworkE2E {
     private static String pid = OSGlobals.getPid();
 
     static class TCPFlowMetrics {
-        String srcIP;
-        String srcPort;
         String destIP;
-        String destPort;
 
-        String state;
         long txQueue;
         long rxQueue;
         long currentLost;
@@ -113,11 +109,7 @@ public class NetworkE2E {
             return;
         }
         TCPFlowMetrics m = new TCPFlowMetrics();
-        m.srcIP = toks[1].split(":")[0];
-        m.srcPort = toks[1].split(":")[1];
         m.destIP = toks[2].split(":")[0];
-        m.destPort = toks[2].split(":")[1];
-        m.state = toks[3];
         m.txQueue = Long.decode("0x" + toks[4].split(":")[0]);
         m.rxQueue = Long.decode("0x" + toks[4].split(":")[1]);
         m.currentLost = Long.decode("0x" + toks[6]);

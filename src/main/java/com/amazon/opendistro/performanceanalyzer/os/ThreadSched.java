@@ -28,8 +28,8 @@ import com.amazon.opendistro.performanceanalyzer.metrics_generator.SchedMetricsG
 import com.amazon.opendistro.performanceanalyzer.metrics_generator.linux.LinuxSchedMetricsGenerator;
 
 public final class ThreadSched {
-    public static final ThreadSched INSTANCE = new ThreadSched();
     private static final Logger LOGGER = LogManager.getLogger(ThreadSched.class);
+    public static final ThreadSched INSTANCE = new ThreadSched();
     private String pid = null;
     private List<String> tids = null;
     private Map<String, Map<String, Object>> tidKVMap = new HashMap<>();

@@ -69,11 +69,11 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
     }
 
     public static class ThreadPoolStatus extends MetricStatus {
-        private String type;
-        private int queueSize;
-        private long rejected;
-        private int threadsCount;
-        private int threadsActive;
+        public final String type;
+        public final int queueSize;
+        public final long rejected;
+        public final int threadsCount;
+        public final int threadsActive;
 
         public ThreadPoolStatus(String type,
                                 int queueSize,

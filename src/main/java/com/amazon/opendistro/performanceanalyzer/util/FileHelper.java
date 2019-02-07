@@ -58,9 +58,12 @@ public class FileHelper {
         }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String[] fields = reader.readLine().split(PerformanceAnalyzerMetrics.sKeyValueDelimitor);
-            if (fields[0].equals(PerformanceAnalyzerMetrics.METRIC_CURRENT_TIME)) {
-                return Long.valueOf(fields[1]);
+            String line = reader.readLine();
+            if (line != null) {
+                String[] fields = line.split(PerformanceAnalyzerMetrics.sKeyValueDelimitor);
+                if (fields[0].equals(PerformanceAnalyzerMetrics.METRIC_CURRENT_TIME)) {
+                    return Long.parseLong(fields[1]);
+                }
             }
         } catch (Exception ex) {
             log.debug("Having issue to read current time from the content of file. Using file metadata.", ex);

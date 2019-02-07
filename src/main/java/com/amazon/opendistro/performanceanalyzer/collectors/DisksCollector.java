@@ -75,8 +75,8 @@ public class DisksCollector extends PerformanceAnalyzerMetricsCollector implemen
         value.setLength(0);
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-        for (String disk : map.keySet()) {
-            value.append(map.get(disk).serialize())
+        for (Map.Entry<String, DiskMetrics> entry : map.entrySet()) {
+            value.append(entry.getValue().serialize())
                     .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         }
         return value.toString();

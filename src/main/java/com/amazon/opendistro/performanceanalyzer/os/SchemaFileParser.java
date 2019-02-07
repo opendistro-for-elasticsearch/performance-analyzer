@@ -43,16 +43,16 @@ public class SchemaFileParser {
 
     public SchemaFileParser (String file, String[] keys, FieldTypes[] types) {
         this.filename = file;
-        this.keys = keys;
-        this.types = types;
+        this.keys = keys.clone();
+        this.types = types.clone();
     }
 
     //- from java 11 onwards, there is thread name in /proc/pid/task/tid/stat, which has spaces in it
     //- And threadname has "()" around it. Introduced a preprocess step to combine all of them
     public SchemaFileParser (String file, String[] keys, FieldTypes[] types, boolean preProcess) {
         this.filename = file;
-        this.keys = keys;
-        this.types = types;
+        this.keys = keys.clone();
+        this.types = types.clone();
         this.preProcess = preProcess;
     }
 

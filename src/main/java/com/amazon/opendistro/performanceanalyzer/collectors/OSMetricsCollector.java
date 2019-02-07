@@ -53,7 +53,7 @@ public class OSMetricsCollector extends PerformanceAnalyzerMetricsCollector impl
         SchedMetricsGenerator schedMetricsGenerator = osMetricsGenerator.getSchedMetricsGenerator();
         schedMetricsGenerator.addSample();
 
-        Map<Long, ThreadList.threadState> threadStates = ThreadList.getNativeTidMap();
+        Map<Long, ThreadList.ThreadState> threadStates = ThreadList.getNativeTidMap();
 
         DiskIOMetricsGenerator diskIOMetricsGenerator = osMetricsGenerator.getDiskIOMetricsGenerator();
         diskIOMetricsGenerator.addSample();
@@ -101,7 +101,7 @@ public class OSMetricsCollector extends PerformanceAnalyzerMetricsCollector impl
                                 .getContextSwitchRate(threadId));
             }
 
-            ThreadList.threadState threadState = threadStates
+            ThreadList.ThreadState threadState = threadStates
                     .get(Long.valueOf(threadId));
             if (threadState != null) {
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)

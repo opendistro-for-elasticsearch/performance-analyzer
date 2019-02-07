@@ -137,7 +137,7 @@ public class PluginSettings {
         }
 
         try {
-            int interval = Integer.valueOf(settings.getProperty(DELETION_INTERVAL_KEY));
+            int interval = Integer.parseInt(settings.getProperty(DELETION_INTERVAL_KEY));
             if (interval < DELETION_INTERVAL_MIN || interval > DELETION_INTERVAL_MAX) {
                 log.error("metrics-deletion-interval out of range. Value should in ({}-{}). Using default value {}.",
                         DELETION_INTERVAL_MIN, DELETION_INTERVAL_MAX, instance.metricsDeletionInterval);

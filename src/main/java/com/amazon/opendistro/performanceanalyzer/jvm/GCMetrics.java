@@ -24,10 +24,10 @@ public class GCMetrics  {
     private static GarbageCollectorMXBean fullGC = null;
     private static GarbageCollectorMXBean youngGC = null;
 
-    public static long totYoungGCCollectionCount = 0;
-    public static long totYoungGCCollectionTime = 0;
-    public static long totFullGCCollectionCount = 0;
-    public static long totFullGCCollectionTime = 0;
+    private static long totYoungGCCollectionCount = 0;
+    private static long totYoungGCCollectionTime = 0;
+    private static long totFullGCCollectionCount = 0;
+    private static long totFullGCCollectionTime = 0;
 
     private static long lastYoungGCCollectionCount = 0;
     private static long lastYoungGCCollectionTime = 0;
@@ -59,6 +59,22 @@ public class GCMetrics  {
                 LOGGER.error("MX bean missing: {}", () -> item.getName());
             }
         }
+    }
+
+    public static long getTotYoungGCCollectionCount() {
+        return totYoungGCCollectionCount;
+    }
+
+    public static long getTotYoungGCCollectionTime() {
+        return totYoungGCCollectionTime;
+    }
+
+    public static long getTotFullGCCollectionCount() {
+        return totFullGCCollectionCount;
+    }
+
+    public static long getTotFullGCCollectionTime() {
+        return totFullGCCollectionTime;
     }
 
     private static long getYoungGCCollectionCount() {
@@ -112,10 +128,10 @@ public class GCMetrics  {
 
     static void printGCMetrics() {
         if (lastYoungGCCollectionCount >= 0) {
-            System.out.println("GC:: yC:" + totYoungGCCollectionCount +
-                " yT:" + totYoungGCCollectionTime +
-                " oC:" + totFullGCCollectionCount +
-                " oT:" + totFullGCCollectionTime);
+            System.out.println("GC:: yC:" + getTotYoungGCCollectionCount() +
+                " yT:" + getTotYoungGCCollectionTime() +
+                " oC:" + getTotFullGCCollectionCount() +
+                " oT:" + getTotFullGCCollectionTime());
         }
     }
 }

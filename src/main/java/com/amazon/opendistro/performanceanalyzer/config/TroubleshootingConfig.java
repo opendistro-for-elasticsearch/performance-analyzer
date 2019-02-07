@@ -17,6 +17,10 @@
 package com.amazon.opendistro.performanceanalyzer.config;
 
 public class TroubleshootingConfig {
-    public static boolean EnableDevAssert = false;
+    public static final boolean enableDevAssert = false;
+
+    public static final boolean getEnableDevAssert() {
+        return enableDevAssert;
+    }
 }
 
