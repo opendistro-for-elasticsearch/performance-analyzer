@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $START_PERF_ANALYZER = "false" ]; then
+if [ "$START_PERF_ANALYZER" = "false" ]; then
     echo "Not starting performance-analyzer-agent"
     exit 0
 fi
