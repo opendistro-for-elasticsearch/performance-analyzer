@@ -16,7 +16,9 @@
 package com.amazon.opendistro.performanceanalyzer.reader;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +31,6 @@ import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
-import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.performanceanalyzer.util.FileHelper;
 
@@ -43,32 +44,31 @@ public class MetricsParser {
         return PerformanceAnalyzerMetrics.getTimeInterval(startTime);
     }
 
-    public boolean parseOSMetrics(String rootLocation,
-            long startTime, OSMetricsSnapshot osMetricsSnap, long lastSnapTimestamp) throws Exception {
+    public void parseOSMetrics(String rootLocation, long startTime, long endTime,
+                               OSMetricsSnapshot osMetricsSnap) throws Exception {
         long startTimeThirtySecondBucket = getThirtySecondBucket(startTime);
-        long prevThirtySecondBucket = startTimeThirtySecondBucket - MetricsConfiguration.ROTATION_INTERVAL;
 
         File threadsFile = new File(rootLocation + File.separator
                 + startTimeThirtySecondBucket + File.separator
                 + PerformanceAnalyzerMetrics.sThreadsPath);
 
-        File prevThreadsFile = new File(rootLocation + File.separator
-                + prevThirtySecondBucket + File.separator
-                + PerformanceAnalyzerMetrics.sThreadsPath);
-
         BatchBindStep handle = osMetricsSnap.startBatchPut();
-        boolean retVal = processOSMetricsForFile(threadsFile, osMetricsSnap, startTime, lastSnapTimestamp, handle);
-        boolean prevRetVal = processOSMetricsForFile(prevThreadsFile, osMetricsSnap, startTime, lastSnapTimestamp, handle);
+        List<String> tidToDelete = new ArrayList<>();
+        processOSMetricsForFile(threadsFile, osMetricsSnap, startTime, endTime, handle, tidToDelete);
+
+        osMetricsSnap.deleteByTid(tidToDelete);
 
         if (handle.size() > 0) {
             handle.execute();
         }
-        return retVal || prevRetVal;
     }
 
-    public boolean processOSMetricsForFile(File threadsFile,
-            OSMetricsSnapshot osMetricsSnap, long startTime, long lastSnapTimestamp,
-            BatchBindStep batchHandle) throws Exception {
+    public void processOSMetricsForFile(File threadsFile,
+                                        OSMetricsSnapshot osMetricsSnap, long startTime, long endTime,
+                                        BatchBindStep batchHandle, List<String> tidToDelete) throws Exception {
+
+        Map<String, Long> lastUpdateTimePerTid = osMetricsSnap.getLastUpdateTimePerTid();
+
         boolean retVal = false;
         if (threadsFile.exists()) {
             for (File threadIDFile: threadsFile.listFiles()) {
@@ -77,15 +77,15 @@ public class MetricsParser {
 
                     for (File opFile: threadIDFile.listFiles()) {
                         if (opFile.getName().equals(PerformanceAnalyzerMetrics.sOSPath)) {
-                            retVal = processOSMetrics(opFile, threadID, osMetricsSnap, startTime,
-                                    lastSnapTimestamp, batchHandle)
-                                || retVal;
+                            retVal = processOSMetrics(opFile, threadID, lastUpdateTimePerTid, startTime,
+                                    endTime, batchHandle, tidToDelete)
+                                    || retVal;
                         }
                     }
                 }
             }
         }
-        return retVal;
+        LOG.info("processOSMetricsForFile ret: {}", retVal);;
     }
 
     public void parseRequestMetrics(String rootLocation, long startTime,
@@ -196,13 +196,26 @@ public class MetricsParser {
     }
 
     private boolean processOSMetrics(File opFile, String threadID,
-            OSMetricsSnapshot osMetricsSnap, long startTime, long lastSnapTimestamp,
-            BatchBindStep batchHandle) throws Exception {
+                                     Map<String, Long> lastUpdateTimePerTid,
+                                     long startTime, long endTime,
+                                     BatchBindStep batchHandle, List<String> tidToDelete) throws Exception {
         Map<String, Double> osMetrics = new HashMap<>();
-        long opFileLastModified = FileHelper.getLastModified(opFile, startTime, lastSnapTimestamp);
-        //Only consider os metrics if the file has been updated in the 5 second window.
-        if (opFileLastModified > startTime || opFileLastModified <= lastSnapTimestamp) {
+        long opFileLastModified = FileHelper.getLastModified(opFile, startTime, endTime);
+        if (opFileLastModified > endTime) {
+            opFileLastModified = endTime;
+            LOG.info("File last modified time is greater than endTime - {}", opFile.getAbsolutePath());
+        }
+        //Discard os metrics if the file has not been updated in the 5 second window.
+        if (opFileLastModified < startTime) {
             return false;
+        }
+        //Only put data when opFile.lastModified() is newer than the lastUpdateTime in database.
+        //If there is an update, We'll delete existing data and insert new data.
+        if (lastUpdateTimePerTid.containsKey(threadID)) {
+            if (lastUpdateTimePerTid.get(threadID) == opFileLastModified) {
+                return false;
+            }
+            tidToDelete.add(threadID);
         }
 
         String sOSMetrics = PerformanceAnalyzerMetrics.getMetric(opFile.getAbsolutePath());
@@ -224,18 +237,16 @@ public class MetricsParser {
         String threadName = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics,
                 OSMetricsCollector.MetaDataFields.threadName.toString());
 
-        int numMetrics = metrics.length + 2;
+        int numMetrics = metrics.length + 3;
         Object [] metricVals = new Object[numMetrics];
         metricVals[0] = threadID;
         metricVals[1] = threadName;
-        for (int i = 2; i < numMetrics; i++) {
+        for (int i = 2; i < numMetrics - 1; i++) {
             metricVals[i] = osMetrics.get(metrics[i - 2].toString());
         }
+        metricVals[numMetrics - 1] =  opFileLastModified;
 
         batchHandle.bind(metricVals);
-        if (osMetricsSnap.getLastUpdatedTime() < opFile.lastModified()) {
-            osMetricsSnap.setLastUpdatedTime(opFile.lastModified());
-        }
         return true;
     }
 
@@ -303,4 +314,5 @@ public class MetricsParser {
         }
     }
 }
+
 

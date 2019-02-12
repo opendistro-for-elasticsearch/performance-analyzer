@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.BatchBindStep;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record;
@@ -36,7 +37,6 @@ import org.jooq.SelectField;
 import org.jooq.SelectHavingStep;
 import org.jooq.impl.DSL;
 
-import com.amazon.opendistro.performanceanalyzer.DBUtils;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
 
 @SuppressWarnings("serial")
@@ -45,8 +45,8 @@ public class OSMetricsSnapshot implements Removable {
 
     private final DSLContext create;
     private final String tableName;
-    private long lastUpdatedTime;
     private Set<String> dimensionColumns;
+    private static final String LAST_UPDATE_TIME_FIELD = "lastUpdateTime";
 
     private static final LinkedHashSet<String> METRIC_COLUMNS;
 
@@ -76,9 +76,7 @@ public class OSMetricsSnapshot implements Removable {
 
         LOG.debug("Creating a new os snapshot table - {}", tableName);
         create
-            .createTable(this.tableName)
-            .columns(DBUtils.getStringFieldsFromList(dimensionColumns))
-            .columns(DBUtils.getDoubleFieldsFromList(METRIC_COLUMNS))
+            .createTable(this.tableName).columns(getFields())
             .execute();
     }
 
@@ -86,17 +84,10 @@ public class OSMetricsSnapshot implements Removable {
         this(conn, "os_", windowEndTime);
     }
 
-    public long getLastUpdatedTime() {
-        return this.lastUpdatedTime;
-    }
-
-    public void setLastUpdatedTime(long lastUpdatedTime) {
-        this.lastUpdatedTime = lastUpdatedTime;
-    }
-
-    public void putMetric(Map<String, Double> metrics, Map<String, String> dimensions) {
+    public void putMetric(Map<String, Double> metrics, Map<String, String> dimensions, long updateTime) {
         Map<Field<?>, String> dimensionMap = new HashMap<Field<?>, String>();
         Map<Field<?>, Double> metricMap = new HashMap<Field<?>, Double>();
+        Map<Field<?>, Long> updateTimeMap = new HashMap<Field<?>, Long>();
 
         for (Map.Entry<String, String> dimension: dimensions.entrySet()) {
             dimensionMap.put(DSL.field(
@@ -108,9 +99,12 @@ public class OSMetricsSnapshot implements Removable {
                             DSL.name(metricName.getKey()), Double.class), metricName.getValue());
         }
 
+        updateTimeMap.put(DSL.field(LAST_UPDATE_TIME_FIELD, Long.class), updateTime);
+
         create.insertInto(DSL.table(this.tableName))
             .set(metricMap)
             .set(dimensionMap)
+            .set(updateTimeMap)
             .execute();
     }
 
@@ -122,7 +116,15 @@ public class OSMetricsSnapshot implements Removable {
         for (int i = 0; i < METRIC_COLUMNS.size(); i++) {
             dummyValues.add(null);
         }
+        // last update time column
+        dummyValues.add(null);
         return create.batch(create.insertInto(DSL.table(this.tableName)).values(dummyValues));
+    }
+
+    public void deleteByTid(List<String> tids) {
+        create.delete(DSL.table(this.tableName))
+                .where(DSL.field(Fields.tid.name(), String.class).in(tids))
+                .execute();
     }
 
     public List<Field<?>> getMetricColumnFields() {
@@ -197,59 +199,267 @@ public class OSMetricsSnapshot implements Removable {
             .fetch();
     }
 
+    public Map<String, Long> getLastUpdateTimePerTid() {
+        List<SelectField<?>> fields = new ArrayList<SelectField<?>>();
+        fields.add(DSL.field(Fields.tid.name()).as(Fields.tid.name()));
+        fields.add(DSL.field(LAST_UPDATE_TIME_FIELD).as(LAST_UPDATE_TIME_FIELD));
+        Result<Record> ret = create.select(fields)
+                .from(this.tableName)
+                .fetch();
+
+        Map<String, Long> lastUpdateTimePerTid = new HashMap<>();
+        for (int i = 0; i < ret.size(); i ++) {
+            lastUpdateTimePerTid.put(ret.get(i).get(Fields.tid.name()).toString(),
+                    Long.parseLong(ret.get(i).get(LAST_UPDATE_TIME_FIELD).toString()));
+        }
+        return lastUpdateTimePerTid;
+    }
+
     /**
      * Given metrics in two windows calculates a new window which overlaps with the given windows.
      * |------leftWindow-------|-------rightWindow--------|
-     *                         t
-     *            a                              b
-     *            |-----------alignedWindow------|
+     *   leftLastUpdateTime       rightLastUpdateTime
+     *
+     * a                       b
+     * |-----alignedWindow-----|
+     *
+     * leftWeight = leftLastUpdateTime - a
+     * rightWeight = b - (rightLastUpdateTime - simpleInterval)
      *
      * This method assumes that both left/right windows are greater than or equal to 5 seconds.
      *
      *  @param leftWindow a snapshot of the left window metrics
      *  @param rightWindow a snapshot of the right window metrics
      *  @param alignedWindow aligned window combinging left and right window
-     *  @param t leftWindow end time, as well as right window start time
      *  @param a aligned window start time.
      *  @param b aligned window end time.
      *
      */
     public static void alignWindow(OSMetricsSnapshot leftWindow,
-            OSMetricsSnapshot rightWindow, String alignedWindow,
-            long t, long a, long b) {
+                                   OSMetricsSnapshot rightWindow, String alignedWindow,
+                                   long a, long b) {
         DSLContext create = leftWindow.getDSLContext();
-        ArrayList<SelectField<?>> alignedFields = new ArrayList<SelectField<?>>();
-        alignedFields.add(DSL.field(Fields.tid.toString()).as(Fields.tid.toString()));
-        alignedFields.add(DSL.field(Fields.tName.toString()).as(Fields.tName.toString()));
-        for (String metricName: METRIC_COLUMNS) {
-            alignedFields.add(DSL.sum(DSL.field(metricName, Double.class))
-                    .div(DSL.sum(DSL.field(Fields.weight.toString(), Double.class))).as(metricName));
-        }
 
-        List<SelectField<?>> leftWinFields = new ArrayList<SelectField<?>>();
-        leftWinFields.add(DSL.field(Fields.tid.toString(), String.class).as(Fields.tid.toString()));
-        leftWinFields.add(DSL.field(Fields.tName.toString(), String.class).as(Fields.tName.toString()));
-        leftWinFields.add(DSL.val(t - a).as(Fields.weight.toString()));
-        for (String c: METRIC_COLUMNS) {
-            leftWinFields.add(DSL.field(c, Double.class).mul(t - a).as(c));
-        }
-        List<SelectField<?>> rightWinFields = new ArrayList<SelectField<?>>();
-        rightWinFields.add(DSL.field(Fields.tid.toString(), String.class).as(Fields.tid.toString()));
-        rightWinFields.add(DSL.field(Fields.tName.toString(), String.class).as(Fields.tName.toString()));
-        rightWinFields.add(DSL.val(b - t).as(Fields.weight.toString()));
-        for (String c: METRIC_COLUMNS) {
-            rightWinFields.add(DSL.field(c, Double.class).mul(b - t).as(c));
-        }
+        String leftPrefix = "l_";
+        String rightPrefix = "r_";
+
+        SelectHavingStep<Record> alignWindow = selectAlignWindow(create,
+                leftWindow.tableName, rightWindow.tableName, leftPrefix, rightPrefix);
 
         create.insertInto(DSL.table(alignedWindow)).select(
-                create.select(alignedFields).from(
-                    create.select(leftWinFields).from(leftWindow.tableName)
-                        .unionAll(create
-                            .select(rightWinFields).from(rightWindow.getTableName())
-                        )
-                )
-                .groupBy(DSL.field(Fields.tid.toString(), String.class)))
-            .execute();
+                selectFieldsHasLeftAndRight(create, leftPrefix, rightPrefix, a, b, alignWindow)
+                        .unionAll(selectFieldsHasLeftOnly(create, leftPrefix, rightPrefix, alignWindow))
+                        .unionAll(selectFieldsHasRightOnly(create, leftPrefix, rightPrefix, alignWindow))
+        ).execute();
+    }
+
+    /**
+     * Select records that exists in both left window and right window. Calc result by its weight.
+     *
+     * MetricValue = ((l_updateTime - a) * l_Metric + (b - l_updateTime) * r_metric) / 5
+     *
+     * Example:
+     * alignWindow:
+     * |tid|l_lastModifiTime|l_cpu|l_rss|r_lastModifiTime|r_cpu|r_rss|
+     * +---+----------------+-----+-----+----------------+-----+-----+
+     * |  1|               3|   10|   10|                |     |     |
+     * |  1|                |     |     |               7|   20|   20|
+     * |  2|               4|   10|   10|                |     |     |
+     * |  3|                |     |     |               8|   10|   10|
+     *
+     * Return:
+     * |tid|lastModifiTime|cpu|rss|
+     * +---+--------------+---+---+
+     * |  1|             3| 16| 16|
+     *
+     * @param leftPrefix field prefix when merge from left table to align table
+     * @param rightPrefix field prefix when merge from right table to align table
+     * @param alignWindow align window return from selectAlignWindow
+     * @return see above example
+     */
+    private static SelectHavingStep<Record> selectFieldsHasLeftAndRight(
+            DSLContext create,
+            String leftPrefix, String rightPrefix, long a, long b,
+            SelectHavingStep<Record> alignWindow) {
+        ArrayList<SelectField<?>> fieldsHasLeftAndRight = new ArrayList<SelectField<?>>();
+        fieldsHasLeftAndRight.add(DSL.field(Fields.tid.name()).as(Fields.tid.name()));
+        fieldsHasLeftAndRight.add(DSL.field(Fields.tName.name()).as(Fields.tName.name()));
+        for (String metricName: METRIC_COLUMNS) {
+            fieldsHasLeftAndRight.add(
+                    DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD, Long.class).sub(a).mul(DSL.field(leftPrefix + metricName, Double.class))
+                            .add(DSL.val(b).sub(DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD, Long.class))
+                                    .mul(DSL.field(rightPrefix + metricName, Double.class)))
+                            .div(b - a).as(metricName));
+        }
+        fieldsHasLeftAndRight.add(DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD).as(LAST_UPDATE_TIME_FIELD));
+
+        Condition conditionHasLeftAndRight = DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD, Long.class).isNotNull()
+                .and(DSL.field(rightPrefix + LAST_UPDATE_TIME_FIELD, Long.class).isNotNull());
+
+        return create.select(fieldsHasLeftAndRight).from(alignWindow).where(conditionHasLeftAndRight);
+    }
+
+    /**
+     * Select records that only exists in the left window.
+     *
+     * Example:
+     * alignWindow:
+     * |tid|l_lastModifiTime|l_cpu|l_rss|r_lastModifiTime|r_cpu|r_rss|
+     * +---+----------------+-----+-----+----------------+-----+-----+
+     * |  1|               3|   10|   10|                |     |     |
+     * |  1|                |     |     |               7|   20|   20|
+     * |  2|               4|   10|   10|                |     |     |
+     * |  3|                |     |     |               8|   10|   10|
+     *
+     * Return:
+     * |tid|lastModifiTime|cpu|rss|
+     * +---+--------------+---+---+
+     * |  2|             4| 10| 10|
+     *
+     * @param leftPrefix field prefix when merge from left table to align table
+     * @param rightPrefix field prefix when merge from right table to align table
+     * @param alignWindow align window return from selectAlignWindow
+     * @return see above example
+     */
+    private static SelectHavingStep<Record> selectFieldsHasLeftOnly(
+            DSLContext create,
+            String leftPrefix, String rightPrefix,
+            SelectHavingStep<Record> alignWindow) {
+        ArrayList<SelectField<?>> fieldsHasLeftOnly = new ArrayList<SelectField<?>>();
+        fieldsHasLeftOnly.add(DSL.field(Fields.tid.name()).as(Fields.tid.name()));
+        fieldsHasLeftOnly.add(DSL.field(Fields.tName.name()).as(Fields.tName.name()));
+        for (String metricName: METRIC_COLUMNS) {
+            fieldsHasLeftOnly.add(DSL.field(leftPrefix + metricName, Double.class).as(metricName));
+        }
+        fieldsHasLeftOnly.add(DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD).as(LAST_UPDATE_TIME_FIELD));
+
+        Condition conditionHasLeftOnly = DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD, Long.class).isNotNull()
+                .and(DSL.field(rightPrefix + LAST_UPDATE_TIME_FIELD, Long.class).isNull());
+
+        return create.select(fieldsHasLeftOnly).from(alignWindow).where(conditionHasLeftOnly);
+    }
+
+    /**
+     * Select records that only exists in the right window.
+     *
+     * Example:
+     * alignWindow:
+     * |tid|l_lastModifiTime|l_cpu|l_rss|r_lastModifiTime|r_cpu|r_rss|
+     * +---+----------------+-----+-----+----------------+-----+-----+
+     * |  1|               3|   10|   10|                |     |     |
+     * |  1|                |     |     |               7|   20|   20|
+     * |  2|               4|   10|   10|                |     |     |
+     * |  3|                |     |     |               8|   10|   10|
+     *
+     * Return:
+     * |tid|lastModifiTime|cpu|rss|
+     * +---+--------------+---+---+
+     * |  3|              | 10| 10|
+     *
+     * @param leftPrefix field prefix when merge from left table to align table
+     * @param rightPrefix field prefix when merge from right table to align table
+     * @param alignWindow align window return from selectAlignWindow
+     * @return see above example
+     */
+    private static SelectHavingStep<Record> selectFieldsHasRightOnly(
+            DSLContext create,
+            String leftPrefix, String rightPrefix,
+            SelectHavingStep<Record> alignWindow) {
+        ArrayList<SelectField<?>> fieldsHasRightOnly = new ArrayList<SelectField<?>>();
+        fieldsHasRightOnly.add(DSL.field(Fields.tid.name()).as(Fields.tid.name()));
+        fieldsHasRightOnly.add(DSL.field(Fields.tName.name()).as(Fields.tName.name()));
+        for (String metricName: METRIC_COLUMNS) {
+            fieldsHasRightOnly.add(DSL.field(rightPrefix + metricName, Double.class).as(metricName));
+        }
+        fieldsHasRightOnly.add(DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD).as(LAST_UPDATE_TIME_FIELD));
+
+        Condition conditionHasRightOnly = DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD, Long.class).isNull()
+                .and(DSL.field(rightPrefix + LAST_UPDATE_TIME_FIELD, Long.class).isNotNull());
+
+        return create.select(fieldsHasRightOnly).from(alignWindow).where(conditionHasRightOnly);
+    }
+
+    /**
+     * Merge left window table and right window table into align window.
+     *
+     * Example:
+     * Left window table
+     * |tid|lastModifiTime|cpu|rss|
+     * +---+--------------+---+---+
+     * |  1|             3| 10| 10|
+     * |  2|             4| 10| 10|
+     *
+     * Right window table
+     * |tid|lastModifiTime|cpu|rss|
+     * +---+--------------+---+---+
+     * |  1|             7| 20| 20|
+     * |  3|             8| 10| 10|
+     *
+     * Return align window
+     * |tid|l_lastModifiTime|l_cpu|l_rss|r_lastModifiTime|r_cpu|r_rss|
+     * +---+----------------+-----+-----+----------------+-----+-----+
+     * |  1|               3|   10|   10|                |     |     |
+     * |  1|                |     |     |               7|   20|   20|
+     * |  2|               4|   10|   10|                |     |     |
+     * |  3|                |     |     |               8|   10|   10|
+     *
+     * @param create DSLContext
+     * @param leftTableName left table name
+     * @param rightTableName right table name
+     * @param leftPrefix field prefix when merge from left table to align table
+     * @param rightPrefix field prefix when merge from right table to align table
+     * @return see above example
+     */
+    private static SelectHavingStep<Record> selectAlignWindow(
+            DSLContext create, String leftTableName, String rightTableName, String leftPrefix, String rightPrefix) {
+        List<SelectField<?>> fields = new ArrayList<SelectField<?>>();
+        fields.add(DSL.field(Fields.tid.name(), String.class).as(Fields.tid.name()));
+        fields.add(DSL.field(Fields.tName.name(), String.class).as(Fields.tName.name()));
+        fields.add(DSL.max(DSL.field(leftPrefix + LAST_UPDATE_TIME_FIELD, Long.class)).as(leftPrefix + LAST_UPDATE_TIME_FIELD));
+        for (String c: METRIC_COLUMNS) {
+            fields.add(DSL.max(DSL.field(leftPrefix + c, Double.class)).as(leftPrefix + c));
+        }
+        fields.add(DSL.max(DSL.field(rightPrefix + LAST_UPDATE_TIME_FIELD, Long.class)).as(rightPrefix + LAST_UPDATE_TIME_FIELD));
+        for (String c: METRIC_COLUMNS) {
+            fields.add(DSL.max(DSL.field(rightPrefix + c, Double.class)).as(rightPrefix + c));
+        }
+
+        return create.select(fields).from(
+                selectAlignWindowFromLeft(create, leftTableName, leftPrefix, rightPrefix)
+                        .unionAll(selectAlignWindowFromRight(create, rightTableName, leftPrefix, rightPrefix))
+        ).groupBy(DSL.field(Fields.tid.name(), String.class));
+    }
+
+    private static SelectHavingStep<Record> selectAlignWindowFromLeft(
+            DSLContext create, String tableName, String leftPrefix, String rightPrefix) {
+        List<SelectField<?>> fields = new ArrayList<SelectField<?>>();
+        fields.add(DSL.field(Fields.tid.name(), String.class).as(Fields.tid.name()));
+        fields.add(DSL.field(Fields.tName.name(), String.class).as(Fields.tName.name()));
+        fields.add(DSL.field(LAST_UPDATE_TIME_FIELD, Long.class).as(leftPrefix + LAST_UPDATE_TIME_FIELD));
+        for (String c : METRIC_COLUMNS) {
+            fields.add(DSL.field(c, Double.class).as(leftPrefix + c));
+        }
+        fields.add(DSL.val(null, Long.class).as(rightPrefix + LAST_UPDATE_TIME_FIELD));
+        for (String c : METRIC_COLUMNS) {
+            fields.add(DSL.val(null, Double.class).as(rightPrefix + c));
+        }
+        return create.select(fields).from(tableName);
+    }
+
+    private static SelectHavingStep<Record> selectAlignWindowFromRight(
+            DSLContext create, String tableName, String leftPrefix, String rightPrefix) {
+        List<SelectField<?>> fields = new ArrayList<SelectField<?>>();
+        fields.add(DSL.field(Fields.tid.name(), String.class).as(Fields.tid.name()));
+        fields.add(DSL.field(Fields.tName.name(), String.class).as(Fields.tName.name()));
+        fields.add(DSL.val(null, Long.class).as(leftPrefix + LAST_UPDATE_TIME_FIELD));
+        for (String c : METRIC_COLUMNS) {
+            fields.add(DSL.val(null, Double.class).as(leftPrefix + c));
+        }
+        fields.add(DSL.field(LAST_UPDATE_TIME_FIELD, Long.class).as(rightPrefix + LAST_UPDATE_TIME_FIELD));
+        for (String c : METRIC_COLUMNS) {
+            fields.add(DSL.field(c, Double.class).as(rightPrefix + c));
+        }
+        return create.select(fields).from(tableName);
     }
 
     public List<Field<?>> getFields() {
@@ -260,6 +470,7 @@ public class OSMetricsSnapshot implements Removable {
         for (String metric: METRIC_COLUMNS) {
             fields.add(DSL.field(metric, Double.class));
         }
+        fields.add(DSL.field(DSL.name(LAST_UPDATE_TIME_FIELD), Long.class));
         return fields;
     }
 
@@ -267,4 +478,5 @@ public class OSMetricsSnapshot implements Removable {
         return OSMetricsSnapshot.METRIC_COLUMNS;
     }
 }
+
 

@@ -93,6 +93,8 @@ public class ReaderMetricsProcessor implements Runnable {
                 stmt.close();
             }
 
+            long runInterval = MetricsConfiguration.SAMPLING_INTERVAL / 2;
+
             while (true) {
                 //Create snapshots.
                 Statement vacuumStmt = conn.createStatement();
@@ -114,8 +116,8 @@ public class ReaderMetricsProcessor implements Runnable {
                 conn.setAutoCommit(true);
                 long duration = System.currentTimeMillis() - startTime;
                 LOG.info("Total time taken: {}", duration);
-                if (duration < MetricsConfiguration.SAMPLING_INTERVAL) {
-                    Thread.sleep(MetricsConfiguration.SAMPLING_INTERVAL - duration);
+                if (duration < runInterval) {
+                    Thread.sleep(runInterval - duration);
                 }
             }
         } catch (Throwable e) {
@@ -182,29 +184,27 @@ public class ReaderMetricsProcessor implements Runnable {
      * sqlite table with the results. A few metrics available are - cpu, rss, minor pagefaults etc.
      *
      * @param rootLocation where to find metric files
-     * @param currTimestamp when reader starts processing metric files
+     * @param startTime OSMetrics window start time
+     * @param endTime OSMetrics window end time
      * @throws Exception thrown if the metric file could not be parsed correctly.
      */
-    public void parseOSMetrics(String rootLocation, long currTimestamp) throws Exception {
+    public void parseOSMetrics(String rootLocation, long startTime,
+                               long endTime) throws Exception {
         long mCurrT = System.currentTimeMillis();
-        LOG.info("Creating OsSnap {}", currTimestamp);
-        OSMetricsSnapshot osSnap = new OSMetricsSnapshot(this.conn, "os_", currTimestamp);
-        //parse metrics for last window.
-        Map.Entry<Long, OSMetricsSnapshot> lastOSMetricsEntry = osMetricsMap.lastEntry();
-        long lastOSMetricsSnapshotTime = 0;
-        if (lastOSMetricsEntry == null) {
-            lastOSMetricsSnapshotTime = 0L;
-        } else {
-            lastOSMetricsSnapshotTime = lastOSMetricsEntry.getKey();
-        }
+        if (osMetricsMap.get(endTime) == null) {
+            // handle last bucket before creating new bucket
+            if (osMetricsMap.lastEntry() != null) {
+                metricsParser.parseOSMetrics(rootLocation, startTime - MetricsConfiguration.SAMPLING_INTERVAL,
+                        startTime, osMetricsMap.lastEntry().getValue());
+            }
 
-        if (metricsParser.parseOSMetrics(rootLocation, currTimestamp, osSnap, lastOSMetricsSnapshotTime)) {
-            LOG.info("Adding new OS snapshot- currTimestamp {}, actualTime {}", currTimestamp, osSnap.getLastUpdatedTime());
-            osMetricsMap.put(osSnap.getLastUpdatedTime(), osSnap);
-        } else {
-            LOG.info("Did not add values into osSnap. Clearing it {}", currTimestamp);
-            osSnap.remove();
+            LOG.info("Creating OsSnap {}", endTime);
+            OSMetricsSnapshot osSnap = new OSMetricsSnapshot(this.conn, "os_", endTime);
+            osMetricsMap.put(endTime, osSnap);
         }
+        OSMetricsSnapshot osSnap = osMetricsMap.get(endTime);
+
+        metricsParser.parseOSMetrics(rootLocation, startTime, endTime, osSnap);
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing OS Metrics: {}", mFinalT - mCurrT);
@@ -372,7 +372,7 @@ public class ReaderMetricsProcessor implements Runnable {
         //This is object holds a reference to the temporary os snapshot. It is used to delete tables at the end of this
         //reader cycle. The OSMetricsSnapshot expects windowEndTime in the constructor.
         OSMetricsSnapshot alignedOSSnapHolder = new OSMetricsSnapshot(this.conn, "os_aligned_",
-                prevWindowStartTime + MetricsConfiguration.SAMPLING_INTERVAL);
+                currWindowStartTime);
 
         OSMetricsSnapshot osAlignedSnap = alignOSMetrics(prevWindowStartTime,
                 prevWindowStartTime + MetricsConfiguration.SAMPLING_INTERVAL, alignedOSSnapHolder);
@@ -402,10 +402,10 @@ public class ReaderMetricsProcessor implements Runnable {
     }
 
     public void processMetrics(String rootLocation, long currTimestamp) throws Exception {
-        parseOSMetrics(rootLocation, currTimestamp);
         parseNodeMetrics(currTimestamp);
         long currWindowEndTime = PerformanceAnalyzerMetrics.getTimeInterval(currTimestamp, MetricsConfiguration.SAMPLING_INTERVAL);
         long currWindowStartTime = currWindowEndTime - MetricsConfiguration.SAMPLING_INTERVAL;
+        parseOSMetrics(rootLocation, currWindowEndTime, currWindowEndTime + MetricsConfiguration.SAMPLING_INTERVAL);
         parseRequestMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         parseHttpRequestMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         emitMetrics(currWindowStartTime);
@@ -447,7 +447,7 @@ public class ReaderMetricsProcessor implements Runnable {
             return null;
         }
 
-        Map.Entry<Long, OSMetricsSnapshot> entry = osMetricsMap.ceilingEntry(startTime);
+        Map.Entry<Long, OSMetricsSnapshot> entry = osMetricsMap.higherEntry(startTime);
         //There is no snapshot taken after startTime.
         if (entry == null) {
             LOG.error("No OS snapshot above startTime.");
@@ -468,14 +468,8 @@ public class ReaderMetricsProcessor implements Runnable {
             return entry.getValue();
         }
 
-        //t1 and startTime are already aligned. Just return the snapshot between t2 and t1.
-        if (t1 == startTime) {
-            LOG.info("Found matching OS snapshot.");
-            return osMetricsMap.get(t2);
-        }
-
-        if (t2 <= endTime) {
-            LOG.error("Right window snapshot ends at or before endTime. rw: {}, lw: {}, startTime: {}, endTime: {}",
+        if (t2 < endTime) {
+            LOG.error("Right window snapshot ends before endTime. rw: {}, lw: {}, startTime: {}, endTime: {}",
                     t2, t1, startTime, endTime);
             //TODO: As a quick fix we ignore this window. We might want to consider multiple windows instead.
             return null;
@@ -485,7 +479,7 @@ public class ReaderMetricsProcessor implements Runnable {
         OSMetricsSnapshot leftWindow = osMetricsMap.get(t1);
         OSMetricsSnapshot rightWindow = osMetricsMap.get(t2);
         OSMetricsSnapshot.alignWindow(leftWindow, rightWindow, alignedWindow.getTableName(),
-                t1, startTime, endTime);
+                startTime, endTime);
         return alignedWindow;
     }
 
@@ -726,4 +720,5 @@ public class ReaderMetricsProcessor implements Runnable {
         this.nodeMetricsMap.put(name, metricsMap);
     }
 }
+
 

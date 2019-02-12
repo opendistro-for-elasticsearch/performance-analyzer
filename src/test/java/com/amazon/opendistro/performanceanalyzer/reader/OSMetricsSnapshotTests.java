@@ -225,7 +225,7 @@ public class OSMetricsSnapshotTests {
     public void testCreateOSMetrics() throws Exception {
         //
         Connection conn = DriverManager.getConnection(DB_URL);
-        OSMetricsSnapshot osMetricsSnap = new OSMetricsSnapshot(conn, 1000L);
+        OSMetricsSnapshot osMetricsSnap = new OSMetricsSnapshot(conn, 7000L);
         //Create OSMetricsSnapshot
         Map<String, Double> metrics = new HashMap<>();
         Map<String, String> dimensions = new HashMap<>();
@@ -233,29 +233,29 @@ public class OSMetricsSnapshotTests {
         dimensions.put("tName", "dummy thread");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 2.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        osMetricsSnap.putMetric(metrics, dimensions);
+        osMetricsSnap.putMetric(metrics, dimensions, 7000L);
         dimensions.put("tid", "2");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 5.0d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        osMetricsSnap.putMetric(metrics, dimensions);
-        OSMetricsSnapshot os2 = new OSMetricsSnapshot(conn, 2000L);
+        osMetricsSnap.putMetric(metrics, dimensions, 7000L);
+        OSMetricsSnapshot os2 = new OSMetricsSnapshot(conn, 12000L);
         dimensions.put("tid", "1");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 2.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        os2.putMetric(metrics, dimensions);
+        os2.putMetric(metrics, dimensions, 12000L);
         dimensions.put("tid", "2");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 3.0d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        os2.putMetric(metrics, dimensions);
+        os2.putMetric(metrics, dimensions, 12000L);
         dimensions.put("tid", "3");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 3.0d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        os2.putMetric(metrics, dimensions);
+        os2.putMetric(metrics, dimensions, 12000L);
 
 
         OSMetricsSnapshot osFinal = new OSMetricsSnapshot(conn, 3L);
         OSMetricsSnapshot.alignWindow(osMetricsSnap, os2,
-                osFinal.getTableName(), 7000L, 5000L, 10000L);
+                osFinal.getTableName(),5000L, 10000L);
         Result<Record> res = osFinal.fetchAll();
         //System.out.println(res);
         Double cpu = Double.parseDouble(res.get(0).get(OSMetrics.CPU_UTILIZATION.toString()).toString());
@@ -263,5 +263,43 @@ public class OSMetricsSnapshotTests {
         cpu = Double.parseDouble(res.get(1).get(OSMetrics.CPU_UTILIZATION.toString()).toString());
         assertEquals(cpu.doubleValue(), 3.8d, 0);
     }
+
+    @Test
+    public void testAlignWindow() throws Exception {
+        //
+        Connection conn = DriverManager.getConnection(DB_URL);
+        OSMetricsSnapshot osMetricsSnap = new OSMetricsSnapshot(conn, 5000L);
+        //Create OSMetricsSnapshot
+        Map<String, Double> metrics = new HashMap<>();
+        Map<String, String> dimensions = new HashMap<>();
+        dimensions.put("tid", "1");
+        dimensions.put("tName", "dummy thread");
+        metrics.put("CPU_Utilization", 10d);
+        osMetricsSnap.putMetric(metrics, dimensions, 7000L);
+        dimensions.put("tid", "2");
+        metrics.put("CPU_Utilization", 20d);
+        osMetricsSnap.putMetric(metrics, dimensions, 8000L);
+        OSMetricsSnapshot os2 = new OSMetricsSnapshot(conn, 10000L);
+        dimensions.put("tid", "1");
+        metrics.put("CPU_Utilization", 20d);
+        os2.putMetric(metrics, dimensions, 13000L);
+        dimensions.put("tid", "3");
+        metrics.put("CPU_Utilization", 30d);
+        os2.putMetric(metrics, dimensions, 12000L);
+
+        OSMetricsSnapshot osFinal = new OSMetricsSnapshot(conn, 3L);
+        OSMetricsSnapshot.alignWindow(osMetricsSnap, os2,
+                osFinal.getTableName(),5000L, 10000L);
+        Result<Record> res = osFinal.fetchAll();
+        assertEquals(3, res.size());
+        //System.out.println(res);
+        Double cpu = Double.parseDouble(res.get(0).get("CPU_Utilization").toString());
+        assertEquals(cpu.doubleValue(), 16d, 0);
+        cpu = Double.parseDouble(res.get(1).get("CPU_Utilization").toString());
+        assertEquals(cpu.doubleValue(), 20, 0);
+        cpu = Double.parseDouble(res.get(2).get("CPU_Utilization").toString());
+        assertEquals(cpu.doubleValue(), 30, 0);
+    }
 }
+
 

@@ -95,17 +95,17 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         osDim.put("tName", "elasticsearch[E-C7clp][search][T#1]");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 2.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        osMetricsSnap.putMetric(metrics, osDim);
+        osMetricsSnap.putMetric(metrics, osDim, 1L);
         osDim.put("tid", "2");
         osDim.put("tName", "elasticsearch[E-C7clp][bulk][T#2]");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 3.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 1.63d);
-        osMetricsSnap.putMetric(metrics, osDim);
+        osMetricsSnap.putMetric(metrics, osDim, 1L);
         osDim.put("tid", "3");
         osDim.put("tName", "GC");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 3.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 1.63d);
-        osMetricsSnap.putMetric(metrics, osDim);
+        osMetricsSnap.putMetric(metrics, osDim, 1L);
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
         MetricsDB db = new MetricsDB(System.currentTimeMillis());
@@ -157,17 +157,17 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         osDim.put("tName", "elasticsearch[E-C7clp][search][T#1]");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 2.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 3.63d);
-        osMetricsSnap.putMetric(metrics, osDim);
+        osMetricsSnap.putMetric(metrics, osDim, 1L);
         osDim.put("tid", "2");
         osDim.put("tName", "GC thread");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 3.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 1.63d);
-        osMetricsSnap.putMetric(metrics, osDim);
+        osMetricsSnap.putMetric(metrics, osDim, 1L);
         osDim.put("tid", "3");
         osDim.put("tName", "GC");
         metrics.put(OSMetrics.CPU_UTILIZATION.toString(), 3.3333d);
         metrics.put(OSMetrics.PAGING_RSS.toString(), 1.63d);
-        osMetricsSnap.putMetric(metrics, osDim);
+        osMetricsSnap.putMetric(metrics, osDim, 1L);
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
         MetricsDB db = new MetricsDB(System.currentTimeMillis());
