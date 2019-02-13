@@ -443,7 +443,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         //If we have insufficient snapshots just return
         if (osMetricsMap.size() < OS_SNAPSHOTS) {
-            LOG.error("Exited due to too few snapshots");
+            LOG.warn("Exited due to too few snapshots - {}", osMetricsMap.size());
             return null;
         }
 
@@ -544,7 +544,7 @@ public class ReaderMetricsProcessor implements Runnable {
             NavigableMap<Long, MemoryDBSnapshot> metricMap, long readerStartTime,
             long readerEndTime, MemoryDBSnapshot alignedWindow) throws Exception {
 
-        LOG.info("Aligning metrics for {}, from {} to {}", metricName, readerStartTime,
+        LOG.info("Aligning node metrics for {}, from {} to {}", metricName, readerStartTime,
                 readerEndTime);
         // Find metric windows that overlap with the expected window.
         // This is at most 2 but maybe less than 2. If less than 2, simply
@@ -554,7 +554,7 @@ public class ReaderMetricsProcessor implements Runnable {
         // We need left writer window, right writer window. Also since we are
         // dealing with previous reader window, we need at least 3 snapshots.
         if (metricMap.size() < 3) {
-            LOG.error("Exited due to too few snapshots");
+            LOG.warn("Exited node metrics for {}, due to too few snapshots", metricName);
             return null;
         }
 
@@ -563,7 +563,7 @@ public class ReaderMetricsProcessor implements Runnable {
                 .ceilingEntry(readerStartTime);
         // There is no snapshot taken after startTime.
         if (entry == null) {
-            LOG.error("No {} snapshot above startTime.", metricName);
+            LOG.error("No {} metrics snapshot above startTime.", metricName);
             return null;
         }
 

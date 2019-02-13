@@ -67,7 +67,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                     "{\"error\":\"There are no metrics databases. The reader has run into an issue or has just started.\"}",
                     HttpURLConnection.HTTP_UNAVAILABLE);
 
-            LOG.error("There are no metrics databases. The reader has run into an issue or has just started.");
+            LOG.warn("There are no metrics databases. The reader has run into an issue or has just started.");
             return;
         }
         MetricsDB db = dbEntry.getValue();
