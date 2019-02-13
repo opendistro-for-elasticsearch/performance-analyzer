@@ -23,7 +23,12 @@ public final class ThreadIDUtil {
     public static final ThreadIDUtil INSTANCE = new ThreadIDUtil();
 
     public long getNativeCurrentThreadId() {
-        ThreadList.ThreadState threadState1 = ThreadList.getCurrentThreadState();
+
+        return getNativeThreadId(Thread.currentThread().getId());
+    }
+
+    public long getNativeThreadId(long jTid) {
+        ThreadList.ThreadState threadState1 = ThreadList.getThreadState(jTid);
 
         long nid = -1;
         if (threadState1 != null) {

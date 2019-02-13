@@ -41,6 +41,7 @@ public class PerformanceAnalyzerMetrics {
     public static final String sShardFetchPath = "shardfetch";
     public static final String sShardQueryPath = "shardquery";
 //    public static final String sSearchReducePath = "search_reduce";
+    public static final String sMasterTaskPath = "master_task";
     public static final String sHttpPath = "http";
     public static final String sOSPath = "os_metrics";
     public static final String sHeapPath = "heap_metrics";
@@ -87,6 +88,16 @@ public class PerformanceAnalyzerMetrics {
         }
 
         return stringBuilder.toString();
+    }
+
+    public static void addMetricEntry(StringBuilder value, String metricKey, String metricValue) {
+        value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(metricKey)
+                .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(metricValue);
+    }
+
+    public static void addMetricEntry(StringBuilder value, String metricKey, long metricValue) {
+        value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(metricKey)
+                .append(PerformanceAnalyzerMetrics.sKeyValueDelimitor).append(metricValue);
     }
 
     public static void emitMetric(String keyPath, String value) {

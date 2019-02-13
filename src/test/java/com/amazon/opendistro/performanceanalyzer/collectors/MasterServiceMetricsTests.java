@@ -57,10 +57,13 @@ public class MasterServiceMetricsTests {
             //- expecting exception...only 3 values passed; 2 expected
         }
 
+        MasterServiceEventMetrics masterServiceEventMetrics = new MasterServiceEventMetrics();
         try {
-            masterServiceMetrics.getMasterServiceTPExecutorField();
-            masterServiceMetrics.getPrioritizedTPExecutorCurrentField();
-            masterServiceMetrics.getPrioritizedTPExecutorAddPendingMethod();
+            masterServiceEventMetrics.getMasterServiceTPExecutorField();
+            masterServiceEventMetrics.getPrioritizedTPExecutorCurrentField();
+            masterServiceEventMetrics.getPrioritizedTPExecutorAddPendingMethod();
+            masterServiceEventMetrics.getTPExecutorWorkersField();
+            masterServiceEventMetrics.getWorkerThreadField();
         } catch (Exception exception) {
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
         }

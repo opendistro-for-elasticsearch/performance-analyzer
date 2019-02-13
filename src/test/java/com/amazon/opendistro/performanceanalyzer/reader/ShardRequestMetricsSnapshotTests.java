@@ -29,8 +29,9 @@ import org.junit.Test;
 public class ShardRequestMetricsSnapshotTests {
     private static final String DB_URL = "jdbc:sqlite:";
 
-    public ShardRequestMetricsSnapshotTests() {
+    public ShardRequestMetricsSnapshotTests() throws ClassNotFoundException {
         System.setProperty("java.io.tmpdir", "/tmp");
+        Class.forName("org.sqlite.JDBC");
     }
 
     @Test

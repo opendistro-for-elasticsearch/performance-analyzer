@@ -102,17 +102,16 @@ public class ThreadList {
         }
     }
 
-    public static ThreadState getCurrentThreadState() {
-        long currentThreadId = Thread.currentThread().getId();
 
-        ThreadState retVal = jTidMap.get(currentThreadId);
+    public static ThreadState getThreadState(long threadId) {
+        ThreadState retVal = jTidMap.get(threadId);
 
         if (retVal != null) {
             return retVal;
         }
 
         synchronized (ThreadList.class) {
-            retVal = jTidMap.get(currentThreadId);
+            retVal = jTidMap.get(threadId);
 
             if (retVal != null) {
                 return  retVal;
@@ -121,7 +120,7 @@ public class ThreadList {
             runThreadDump(pid, new String[0]);
         }
 
-        return jTidMap.get(currentThreadId);
+        return jTidMap.get(threadId);
     }
 
     // Attach to pid and perform a thread dump

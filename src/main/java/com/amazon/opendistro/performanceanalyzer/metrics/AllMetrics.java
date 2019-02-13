@@ -526,9 +526,6 @@ public class AllMetrics {
         }
     }
 
-    public enum MasterMetrics {
-        ID, priority, startTime, type, metadata, ageInMillis, finishTime
-    }
 
     public enum OSMetrics {
         CPU_UTILIZATION(Constants.CPU_VALUE),
@@ -576,6 +573,41 @@ public class AllMetrics {
             public static final String TOTAL_SYSCALL_RATE_VALUE = "IO_TotalSyscallRate";
             public static final String BLOCKED_TIME_VALUE = "Thread_Blocked_Time";
             public static final String BLOCKED_COUNT_VALUE = "Thread_Blocked_Event";
+        }
+    }
+
+    public enum Master_Metric_Dimensions implements MetricDimension {
+        MASTER_TASK_PRIORITY("Master_Task_Priority"),
+        MASTER_TASK_TYPE("Master_Task_Type"),
+        MASTER_TASK_METADATA("Master_Task_Metadata"),
+        MASTER_TASK_AGE("Master_Task_Age");
+
+        private final String value;
+
+        Master_Metric_Dimensions(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+    }
+
+    public enum Master_Metric_Values implements MetricValue {
+        //-todo : Migrate to CommonMetric.Constants
+        START_TIME("StartTime"),
+        FINISH_TIME("FinishTime");
+
+        private final String value;
+
+        Master_Metric_Values(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
         }
     }
 
