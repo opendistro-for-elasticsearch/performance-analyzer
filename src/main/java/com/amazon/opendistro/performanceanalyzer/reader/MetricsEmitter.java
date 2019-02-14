@@ -48,6 +48,20 @@ public class MetricsEmitter {
 
     private static final Logger LOG = LogManager.getLogger(MetricsEmitter.class);
 
+    private static final Pattern GC_PATTERN = Pattern.compile(".*(GC|CMS|Parallel).*");
+    private static final Pattern REFRESH_PATTERN = Pattern.compile(".*elasticsearch.*\\[refresh\\].*");
+    private static final Pattern MANAGEMENT_PATTERN = Pattern.compile(".*elasticsearch.*\\[management\\].*");
+    private static final Pattern MERGE_PATTERN = Pattern.compile(".*elasticsearch\\[.*\\]\\[\\[(.*)\\]\\[(.*)\\].*Lucene Merge.*");
+    private static final Pattern SEARCH_PATTERN = Pattern.compile(".*elasticsearch.*\\[search\\].*");
+    private static final Pattern BULK_PATTERN = Pattern.compile(".*elasticsearch.*\\[bulk\\].*");
+    //ES 6.4 onwards uses write threadpool.
+    private static final Pattern WRITE_PATTERN = Pattern.compile(".*elasticsearch.*\\[write\\].*");
+    //Pattern otherPattern = Pattern.compile(".*(elasticsearch).*");
+    private static final Pattern HTTP_SERVER_PATTERN = Pattern.compile(".*elasticsearch.*\\[http_server_worker\\].*");
+    private static final Pattern TRANS_SERVER_PATTERN = Pattern.compile(".*elasticsearch.*\\[transport_server_worker.*");
+    private static final Pattern TRANS_CLIENT_PATTERN = Pattern.compile(".*elasticsearch.*\\[transport_client_boss\\].*");
+
+
     public static void emitAggregatedOSMetrics(final DSLContext create,
         final MetricsDB db, final OSMetricsSnapshot osMetricsSnap,
         final ShardRequestMetricsSnapshot rqMetricsSnap) throws Exception {
@@ -265,31 +279,34 @@ public class MetricsEmitter {
     }
 
     public static String categorizeThreadName(String threadName, Dimensions dimensions) {
-        Pattern gcPattern = Pattern.compile(".*(GC|CMS|Parallel).*");
-        Pattern refreshPattern = Pattern.compile(".*elasticsearch.*\\[refresh\\].*");
-        Pattern managementPattern = Pattern.compile(".*elasticsearch.*\\[management\\].*");
-        Pattern mergePattern = Pattern.compile(".*elasticsearch\\[.*\\]\\[\\[(.*)\\]\\[(.*)\\].*Lucene Merge.*");
-        Pattern searchPattern = Pattern.compile(".*elasticsearch.*\\[search\\].*");
-        Pattern bulkPattern = Pattern.compile(".*elasticsearch.*\\[bulk\\].*");
-        //Pattern otherPattern = Pattern.compile(".*(elasticsearch).*");
-        if (gcPattern.matcher(threadName).matches()) {
-            return "GC";
-        }
-        if (refreshPattern.matcher(threadName).matches()) {
-            return "refresh";
-        }
-        if (managementPattern.matcher(threadName).matches()) {
-            return "management";
-        }
         //shardSearch and shardBulk os metrics are emitted by emitAggregatedOSMetrics and emitWorkloadMetrics functions.
         //Hence these are ignored in this emitter.
-        if (searchPattern.matcher(threadName).matches()) {
+        if (SEARCH_PATTERN.matcher(threadName).matches()) {
             return null;
         }
-        if (bulkPattern.matcher(threadName).matches()) {
+        if (BULK_PATTERN.matcher(threadName).matches() || WRITE_PATTERN.matcher(threadName).matches()) {
             return null;
         }
-        Matcher mergeMatcher = mergePattern.matcher(threadName);
+
+        if (GC_PATTERN.matcher(threadName).matches()) {
+            return "GC";
+        }
+        if (REFRESH_PATTERN.matcher(threadName).matches()) {
+            return "refresh";
+        }
+        if (MANAGEMENT_PATTERN.matcher(threadName).matches()) {
+            return "management";
+        }
+        if (HTTP_SERVER_PATTERN.matcher(threadName).matches()) {
+            return "httpServer";
+        }
+        if (TRANS_CLIENT_PATTERN.matcher(threadName).matches()) {
+            return "transportClient";
+        }
+        if (TRANS_SERVER_PATTERN.matcher(threadName).matches()) {
+            return "transportServer";
+        }
+        Matcher mergeMatcher = MERGE_PATTERN.matcher(threadName);
         if (mergeMatcher.matches()) {
             dimensions.put(
                     ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString(),
