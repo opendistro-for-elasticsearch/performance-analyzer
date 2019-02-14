@@ -450,7 +450,7 @@ public class ReaderMetricsProcessor implements Runnable {
         Map.Entry<Long, OSMetricsSnapshot> entry = osMetricsMap.higherEntry(startTime);
         //There is no snapshot taken after startTime.
         if (entry == null) {
-            LOG.error("No OS snapshot above startTime.");
+            LOG.warn("No OS snapshot above startTime.");
             return null;
         }
 
@@ -563,7 +563,7 @@ public class ReaderMetricsProcessor implements Runnable {
                 .ceilingEntry(readerStartTime);
         // There is no snapshot taken after startTime.
         if (entry == null) {
-            LOG.error("No {} metrics snapshot above startTime.", metricName);
+            LOG.warn("No {} metrics snapshot above startTime.", metricName);
             return null;
         }
 
