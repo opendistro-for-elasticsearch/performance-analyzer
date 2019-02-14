@@ -21,7 +21,7 @@ else
                 -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
                 -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
                 -Dlog4j.configurationFile=$1/plugins/performance-analyzer/pa_config/log4j2.xml \
-                -cp $1/lib/*:$1/plugins/performance-analyzer/* com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerApp &> /dev/null &
+                -cp $1/lib/*:$1/plugins/performance-analyzer/* com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerApp &
 
         pid=$!
         PID_LOC=/tmp/performance-analyzer-agent
