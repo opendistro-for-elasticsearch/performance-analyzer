@@ -224,15 +224,32 @@ public class MetricsDB implements Removable {
         //Join all the individual metric tables to generate the final table.
         Select<Record> finalTable = null;
         for (int i = 0; i < tList.size(); i++) {
-            List<Field<?>> selectFields = DBUtils.getFieldsFromList(dimensions);
+            boolean metricTableExists = DBUtils.checkIfTableExists(create, metrics.get(i));
+            if (!metricTableExists) {
+                LOG.info(String.format("%s metric table does not exist. " +
+                        "Returning null for the metric/dimension.", metrics.get(i)));
+            }
+
+            List<Field<?>> selectFields = new ArrayList<>();
+            TableLike<Record> metricTable;
+            if (metricTableExists) {
+                selectFields = DBUtils.getFieldsFromList(dimensions);
+                metricTable = tList.get(i);
+            } else {
+                for (int j = 0; j < dimensions.size(); j ++) {
+                    selectFields.add(DSL.val(null, Double.class).as(dimensions.get(j)));
+                }
+                metricTable = create.select(selectFields).asTable();
+            }
+
             for (int j = 0; j < metrics.size(); j ++) {
-                if (i == j) {
+                if (i == j && metricTableExists) {
                     selectFields.add(DSL.field(metrics.get(i), Double.class).as(metrics.get(j)));
                 } else {
                     selectFields.add(DSL.val(null, Double.class).as(metrics.get(j)));
                 }
             }
-            Select<Record> curTable = create.select(selectFields).from(tList.get(i));
+            Select<Record> curTable = create.select(selectFields).from(metricTable);
 
             if (finalTable == null) {
                 finalTable = curTable;
