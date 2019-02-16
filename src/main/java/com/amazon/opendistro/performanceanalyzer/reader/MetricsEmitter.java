@@ -210,6 +210,16 @@ public class MetricsEmitter {
         BatchBindStep handle = db.startBatchPut(new Metric<Double>(
                 CommonMetric.LATENCY.toString(), 0d), dims);
 
+        //Dims need to be changed.
+        db.createMetric(new Metric<Double>(AllMetrics.ShardOperationMetric.SHARD_OP_COUNT.toString(), 0d),
+                       dims);
+        BatchBindStep countHandle = db.startBatchPut(new Metric<Double>(
+                "ShardOpCount", 0d), dims);
+
+        db.createMetric(new Metric<Double>(AllMetrics.ShardBulkMetric.DOC_COUNT.toString(), 0d),
+                       dims);
+        BatchBindStep bulkDocHandle = db.startBatchPut(new Metric<Double>(
+                AllMetrics.ShardBulkMetric.DOC_COUNT.toString(), 0d), dims);
 
         for (Record r: res) {
             Double sumLatency = Double.parseDouble(r.get(DBUtils.
@@ -237,7 +247,41 @@ public class MetricsEmitter {
                         minLatency,
                         maxLatency
                     );
+
+            Double count = Double.parseDouble(r.get("ShardOpCount").toString());
+            countHandle.bind(r.get(ShardRequestMetricsSnapshot.Fields.OPERATION.toString()).toString(),
+                        null,
+                        null,
+                        null,
+                        r.get(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString()).toString(),
+                        r.get(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString()).toString(),
+                        r.get(ShardRequestMetricsSnapshot.Fields.SHARD_ROLE.toString()).toString(),
+                        count,
+                        count,
+                        count,
+                        count
+                    );
+
+            Object bulkDocCountObj = r.get(AllMetrics.ShardBulkMetric.DOC_COUNT.toString());
+            if (bulkDocCountObj != null) {
+                Double bulkDocCount = Double.parseDouble(bulkDocCountObj.toString());
+                bulkDocHandle.bind(r.get(ShardRequestMetricsSnapshot.Fields.OPERATION.toString()).toString(),
+                        null,
+                        null,
+                        null,
+                        r.get(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString()).toString(),
+                        r.get(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString()).toString(),
+                        r.get(ShardRequestMetricsSnapshot.Fields.SHARD_ROLE.toString()).toString(),
+                        bulkDocCount,
+                        bulkDocCount,
+                        bulkDocCount,
+                        bulkDocCount
+                    );
+            }
         }
+        handle.execute();
+        countHandle.execute();
+        bulkDocHandle.execute();
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for writing workload metrics metricsdb: {}", mFinalT - mCurrT);
     }

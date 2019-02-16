@@ -37,6 +37,8 @@ import org.jooq.impl.DSL;
 
 import com.amazon.opendistro.performanceanalyzer.DBUtils;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CommonDimension;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardOperationMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.performanceanalyzer.metricsdb.MetricsDB;
 
@@ -70,7 +72,8 @@ public class ShardRequestMetricsSnapshot implements Removable {
         LAT(HttpRequestMetricsSnapshot.Fields.LAT.toString()),
         TUTIL("tUtil"),
         TTIME("ttime"),
-        LATEST("latest");
+        LATEST("latest"),
+        DOC_COUNT(ShardBulkMetric.DOC_COUNT.toString());
 
         private final String fieldValue;
 
@@ -99,6 +102,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
+            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Long.class));
         } };
 
         create.createTable(this.tableName)
@@ -173,6 +177,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
+            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Double.class));
             this.add(DSL.field(Fields.ET.toString()).minus(DSL.field(Fields.ST.toString())).as(DSL.name(Fields.LAT.toString())));
         } };
 
@@ -217,6 +222,9 @@ public class ShardRequestMetricsSnapshot implements Removable {
                     .as(DBUtils.getAggFieldName(Fields.LAT.toString(), MetricsDB.MIN)));
             this.add(DSL.max(DSL.field(DSL.name(Fields.LAT.toString()), Double.class))
                     .as(DBUtils.getAggFieldName(Fields.LAT.toString(), MetricsDB.MAX)));
+            this.add(DSL.count().as(ShardOperationMetric.SHARD_OP_COUNT.toString()));
+            this.add(DSL.sum(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Double.class))
+                    .as(ShardBulkMetric.DOC_COUNT.toString()));
         } };
 
         ArrayList<Field<?>> groupByFields = new ArrayList<Field<?>>() { {
@@ -299,6 +307,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.TID.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.OPERATION.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
+            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Double.class));
             this.add(DSL.max(DSL.field(Fields.ST.toString())).as(DSL.name(Fields.ST.toString())));
             this.add(DSL.max(DSL.field(Fields.ET.toString())).as(DSL.name(Fields.ET.toString())));
         } };
@@ -321,6 +330,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
+            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Double.class));
             this.add(DSL.field(DSL.name(Fields.LATEST.toString()), Long.class));
         } };
         SelectHavingStep<Record2<Long, String>> threadTable = create
@@ -376,6 +386,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
+            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Long.class));
         } };
 
         SelectHavingStep<Record> reqPerThread = requestsPerThreadSelect();
