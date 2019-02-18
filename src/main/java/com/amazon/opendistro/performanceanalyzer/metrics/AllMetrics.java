@@ -714,7 +714,7 @@ public class AllMetrics {
             public static final String ITEM_COUNT_VALUE = "ItemCount";
             public static final String FINISH_TIME_VALUE = CommonMetric.FINISH_TIME.toString();
             public static final String LATENCY_VALUE = CommonMetric.LATENCY.toString();
-            public static final String DOC_COUNT = "ShardBulkDocCount";
+            public static final String DOC_COUNT = "ShardBulkDocs";
         }
     }
 
@@ -733,7 +733,7 @@ public class AllMetrics {
         }
 
         public static class Constants {
-            public static final String SHARD_OP_COUNT_VALUE = "ShardOpCount";
+            public static final String SHARD_OP_COUNT_VALUE = "ShardEvents";
         }
     }
 
