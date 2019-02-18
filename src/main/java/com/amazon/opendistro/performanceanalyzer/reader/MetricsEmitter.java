@@ -221,7 +221,7 @@ public class MetricsEmitter {
         db.createMetric(new Metric<Double>(AllMetrics.ShardOperationMetric.SHARD_OP_COUNT.toString(), 0d),
                        shardDims);
         BatchBindStep countHandle = db.startBatchPut(new Metric<Double>(
-                "ShardOpCount", 0d), shardDims);
+                AllMetrics.ShardOperationMetric.SHARD_OP_COUNT.toString(), 0d), shardDims);
 
         db.createMetric(new Metric<Double>(AllMetrics.ShardBulkMetric.DOC_COUNT.toString(), 0d),
                        shardDims);
@@ -255,7 +255,7 @@ public class MetricsEmitter {
                         maxLatency
                     );
 
-            Double count = Double.parseDouble(r.get("ShardOpCount").toString());
+            Double count = Double.parseDouble(r.get(AllMetrics.ShardOperationMetric.SHARD_OP_COUNT.toString()).toString());
             countHandle.bind(r.get(ShardRequestMetricsSnapshot.Fields.OPERATION.toString()).toString(),
                         r.get(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString()).toString(),
                         r.get(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString()).toString(),
