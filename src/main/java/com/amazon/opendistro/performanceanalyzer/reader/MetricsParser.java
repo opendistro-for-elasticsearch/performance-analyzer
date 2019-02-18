@@ -276,7 +276,13 @@ public class MetricsParser {
                 ShardBulkDimension.SHARD_ID.toString());
         String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
                 ShardBulkDimension.PRIMARY.toString()));
-        handle.bind(shardId, indexName, rid, threadId, operation, primary, st, null);
+        String docCountString = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkMetric.ITEM_COUNT.toString());
+        long docCount = 0;
+        if (docCountString != null) {
+            docCount = Long.parseLong(docCountString);
+        }
+        handle.bind(shardId, indexName, rid, threadId, operation, primary, st, null, docCount);
     }
 
     private void emitFinishMetric(String finishMetrics, String rid, String threadId,
@@ -289,7 +295,7 @@ public class MetricsParser {
                 ShardBulkDimension.SHARD_ID.toString());
         String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
                 ShardBulkDimension.PRIMARY.toString()));
-        handle.bind(shardId, indexName, rid, threadId, operation, primary, null, ft);
+        handle.bind(shardId, indexName, rid, threadId, operation, primary, null, ft, null);
     }
 
     private void handleidFile(File idFile, String threadID, long startTime,

@@ -35,6 +35,8 @@ import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.LatencyDimen
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MasterPendingValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MetricUnits;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardOperationMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardStatsDerivedDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPDimension;
@@ -84,6 +86,11 @@ public class MetricsModel {
         // Latency Metric
         ALL_METRICS.put(CommonMetric.LATENCY.toString(),
                 new MetricAttributes(MetricUnits.MILLISECOND.toString(), LatencyDimension.values()));
+
+        ALL_METRICS.put(ShardOperationMetric.SHARD_OP_COUNT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), AggregatedOSDimension.values()));
+        ALL_METRICS.put(ShardBulkMetric.DOC_COUNT.toString(),
+                new MetricAttributes(MetricUnits.COUNT.toString(), AggregatedOSDimension.values()));
 
         // HTTP Metrics
         ALL_METRICS.put(HttpMetric.HTTP_REQUEST_DOCS.toString(),

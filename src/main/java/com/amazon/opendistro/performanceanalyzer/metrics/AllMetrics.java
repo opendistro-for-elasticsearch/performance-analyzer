@@ -695,7 +695,8 @@ public class AllMetrics {
         START_TIME(Constants.START_TIME_VALUE),
         ITEM_COUNT(Constants.ITEM_COUNT_VALUE),
         FINISH_TIME(Constants.FINISH_TIME_VALUE),
-        LATENCY(Constants.LATENCY_VALUE);
+        LATENCY(Constants.LATENCY_VALUE),
+        DOC_COUNT(Constants.DOC_COUNT);
 
         private final String value;
 
@@ -713,6 +714,26 @@ public class AllMetrics {
             public static final String ITEM_COUNT_VALUE = "ItemCount";
             public static final String FINISH_TIME_VALUE = CommonMetric.FINISH_TIME.toString();
             public static final String LATENCY_VALUE = CommonMetric.LATENCY.toString();
+            public static final String DOC_COUNT = "ShardBulkDocs";
+        }
+    }
+
+    public enum ShardOperationMetric implements MetricValue {
+        SHARD_OP_COUNT(Constants.SHARD_OP_COUNT_VALUE);
+
+        private final String value;
+
+        ShardOperationMetric(String value) {
+            this.value = value;
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+
+        public static class Constants {
+            public static final String SHARD_OP_COUNT_VALUE = "ShardEvents";
         }
     }
 
