@@ -249,7 +249,9 @@ public class MetricsDB implements Removable {
                     selectFields.add(DSL.val(null, Double.class).as(metrics.get(j)));
                 }
             }
-            Select<Record> curTable = create.select(selectFields).from(metricTable);
+            Select<Record> curTable = create.select(selectFields)
+                    .from(metricTable)
+                    .where(DSL.field(metrics.get(i), Double.class).isNotNull());
 
             if (finalTable == null) {
                 finalTable = curTable;
