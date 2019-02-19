@@ -73,7 +73,7 @@ test {
 licenseHeaders.enabled = false
 
 esplugin {
-    name 'performance-analyzer'
+    name 'opendistro_performance-analyzer'
     description 'Performance Analyzer Plugin'
     classname 'com.amazon.opendistro.performanceanalyzer.PerformanceAnalyzerPlugin'
     version "1.0"
