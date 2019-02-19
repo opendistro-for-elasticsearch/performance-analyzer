@@ -88,7 +88,7 @@ import com.amazon.opendistro.performanceanalyzer.collectors.ThreadPoolMetricsCol
 
 public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
-    public static final String PLUGIN_NAME = "opendistro_performance-analyzer";
+    public static final String PLUGIN_NAME = "opendistro_performance_analyzer";
     private static SecurityManager sm = null;
 
     static {
