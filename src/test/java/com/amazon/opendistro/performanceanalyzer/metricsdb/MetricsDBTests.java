@@ -16,7 +16,9 @@
 package com.amazon.opendistro.performanceanalyzer.metricsdb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,17 +88,15 @@ public class MetricsDBTests {
         Result<Record> res = db.queryMetric(Arrays.asList("pseudocpu"),
                 Arrays.asList("sum"),
                 Arrays.asList("shard", "index"));
-        assertEquals(1, res.size());
-        assertTrue(res.get(0).get("shard") == null);
-        assertTrue(res.get(0).get("index") == null);
+        assertNull(res);
 
         res = db.queryMetric(Arrays.asList("cpu", "pseudocpu"),
                 Arrays.asList("sum", "sum"),
                 Arrays.asList("shard", "index"));
 
-        assertEquals(2, res.size());
-        assertEquals(14D, Double.parseDouble(res.get(1).get("cpu").toString()), 0);
-        assertTrue(res.get(0).get("pseudocpu") == null);
+        assertEquals(1, res.size());
+        assertEquals(14D, Double.parseDouble(res.get(0).get("cpu").toString()), 0);
+        assertNull(res.get(0).get("pseudocpu"));
 
         db.close();
     }

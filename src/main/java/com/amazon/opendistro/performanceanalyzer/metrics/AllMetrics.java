@@ -565,7 +565,7 @@ public class AllMetrics {
             public static final String WAITTIME_VALUE = "Sched_Waittime";
             public static final String CTXRATE_VALUE = "Sched_CtxRate";
             public static final String HEAP_ALLOC_VALUE = "Heap_AllocRate";
-            public static final String READ_THROUGHPUT_VALUE = "IO_ReadThroughtput";
+            public static final String READ_THROUGHPUT_VALUE = "IO_ReadThroughput";
             public static final String WRITE_THROUGHPUT_VALUE = "IO_WriteThroughput";
             public static final String TOTAL_THROUGHPUT_VALUE = "IO_TotThroughput";
             public static final String READ_SYSCALL_RATE_VALUE = "IO_ReadSyscallRate";

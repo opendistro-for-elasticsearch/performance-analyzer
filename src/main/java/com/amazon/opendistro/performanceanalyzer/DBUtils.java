@@ -84,6 +84,18 @@ public class DBUtils {
             .collect(Collectors.toList());
     }
 
+    public static List<Field<?>> getSelectFieldsForMetricName(String metricName, List<String> metrics, List<String> dimensions) {
+        List<Field<?>> selectFields = DBUtils.getFieldsFromList(dimensions);
+        for (String metric : metrics) {
+            if (metric.equals(metricName)) {
+                selectFields.add(DSL.field(metric, Double.class).as(metric));
+            } else {
+                selectFields.add(DSL.val(null, Double.class).as(metric));
+            }
+        }
+        return selectFields;
+    }
+
     /**
      * Get records by field and return as a set.
      * @param table table select

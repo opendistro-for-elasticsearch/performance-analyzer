@@ -43,6 +43,8 @@ import com.amazon.opendistro.performanceanalyzer.reader.ReaderMetricsProcessor;
 import com.amazon.opendistro.performanceanalyzer.util.JsonConverter;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.jooq.Record;
+import org.jooq.Result;
 
 /**
  * Request handler that supports querying MetricsDB on every EC2 instance.
@@ -195,8 +197,13 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
             List<String> aggList, List<String> dimList, String nodeParam) throws Exception {
         String localResponse = "";
         if (db != null) {
-            localResponse =  db.queryMetric(
-                        metricList, aggList, dimList).formatJSON();
+            Result<Record> metricResult = db.queryMetric(
+                    metricList, aggList, dimList);
+            if (metricResult == null) {
+                localResponse = "{}";
+            } else {
+                localResponse = metricResult.formatJSON();
+            }
         } else {
             //Empty JSON.
             localResponse = "{}";
