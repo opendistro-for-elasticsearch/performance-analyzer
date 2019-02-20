@@ -218,10 +218,10 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         Connection conn = DriverManager.getConnection(DB_URL);
         ShardRequestMetricsSnapshot rqMetricsSnap = new ShardRequestMetricsSnapshot(conn, 1535065195000L);
         BatchBindStep handle = rqMetricsSnap.startBatchPut();
-        handle.bind("shardId", "indexName", "1", "threadId", "operation", "primary", 1535065195000l, null, 10);
-        handle.bind("shardId", "indexName", "1", "threadId", "operation", "primary", null, 1535065196000l, null);
-        handle.bind("shardId", "indexName", "2", "threadId", "operation", "primary", 1535065197000l, null, 10);
-        handle.bind("shardId", "indexName", "2", "threadId", "operation", "primary", null, 1535065198000l, null);
+        handle.bind("shardId", "indexName", "1", "threadId", "operation", "primary", 1535065195000L, null, 10);
+        handle.bind("shardId", "indexName", "1", "threadId", "operation", "primary", null, 1535065196000L, null);
+        handle.bind("shardId", "indexName", "2", "threadId", "operation", "primary", 1535065197000L, null, 10);
+        handle.bind("shardId", "indexName", "2", "threadId", "operation", "primary", null, 1535065198000L, null);
         handle.execute();
 
         System.out.println(rqMetricsSnap.fetchAll());
