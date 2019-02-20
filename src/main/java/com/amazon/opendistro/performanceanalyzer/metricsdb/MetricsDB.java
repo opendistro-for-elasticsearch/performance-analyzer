@@ -165,10 +165,14 @@ public class MetricsDB implements Removable {
             } else {
                 throw new Exception("Unknown agg type");
             }
-            tList.add(create.select(selectFields)
-                    .from(DSL.table(metric))
-                    .groupBy(groupByFields)
-                    .asTable());
+            if (!DBUtils.checkIfTableExists(create, metrics.get(i))) {
+                tList.add(null);
+            } else {
+                tList.add(create.select(selectFields)
+                        .from(DSL.table(metric))
+                        .groupBy(groupByFields)
+                        .asTable());
+            }
         }
         return tList;
     }
@@ -224,31 +228,13 @@ public class MetricsDB implements Removable {
         //Join all the individual metric tables to generate the final table.
         Select<Record> finalTable = null;
         for (int i = 0; i < tList.size(); i++) {
-            boolean metricTableExists = DBUtils.checkIfTableExists(create, metrics.get(i));
-            if (!metricTableExists) {
+            TableLike<Record> metricTable = tList.get(i);
+            if (metricTable == null) {
                 LOG.info(String.format("%s metric table does not exist. " +
                         "Returning null for the metric/dimension.", metrics.get(i)));
+                continue;
             }
-
-            List<Field<?>> selectFields = new ArrayList<>();
-            TableLike<Record> metricTable;
-            if (metricTableExists) {
-                selectFields = DBUtils.getFieldsFromList(dimensions);
-                metricTable = tList.get(i);
-            } else {
-                for (int j = 0; j < dimensions.size(); j ++) {
-                    selectFields.add(DSL.val(null, Double.class).as(dimensions.get(j)));
-                }
-                metricTable = create.select(selectFields).asTable();
-            }
-
-            for (int j = 0; j < metrics.size(); j ++) {
-                if (i == j && metricTableExists) {
-                    selectFields.add(DSL.field(metrics.get(i), Double.class).as(metrics.get(j)));
-                } else {
-                    selectFields.add(DSL.val(null, Double.class).as(metrics.get(j)));
-                }
-            }
+            List<Field<?>> selectFields = DBUtils.getSelectFieldsForMetricName(metrics.get(i), metrics, dimensions);
             Select<Record> curTable = create.select(selectFields).from(metricTable);
 
             if (finalTable == null) {
@@ -263,6 +249,9 @@ public class MetricsDB implements Removable {
             allFields.add(DSL.max(DSL.field(metric, Double.class)).as(metric));
         }
         List<Field<?>> groupByFields = DBUtils.getFieldsFromList(dimensions);
+        if (finalTable == null) {
+            return null;
+        }
         return create.select(allFields).from(finalTable).groupBy(groupByFields).fetch();
     }
 

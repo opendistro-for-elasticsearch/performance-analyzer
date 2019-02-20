@@ -16,7 +16,9 @@
 package com.amazon.opendistro.performanceanalyzer.metricsdb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,6 +73,31 @@ public class MetricsDBTests {
             Double sum = Double.parseDouble(r.get("cpu").toString());
             assertEquals(14D, sum.doubleValue(), 0);
         }
+        db.close();
+    }
+
+    @Test
+    public void testTableNonexistent() throws Exception {
+
+        List<String> columns = Arrays.asList("shard", "index");
+        db.createMetric(Metric.cpu(10D), columns);
+
+        putCPUMetric(db, 10D, "1", "ac-test");
+        putCPUMetric(db, 4D, "1", "ac-test");
+
+        Result<Record> res = db.queryMetric(Arrays.asList("pseudocpu"),
+                Arrays.asList("sum"),
+                Arrays.asList("shard", "index"));
+        assertNull(res);
+
+        res = db.queryMetric(Arrays.asList("cpu", "pseudocpu"),
+                Arrays.asList("sum", "sum"),
+                Arrays.asList("shard", "index"));
+
+        assertEquals(1, res.size());
+        assertEquals(14D, Double.parseDouble(res.get(0).get("cpu").toString()), 0);
+        assertNull(res.get(0).get("pseudocpu"));
+
         db.close();
     }
 
