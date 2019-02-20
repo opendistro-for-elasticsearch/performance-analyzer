@@ -177,7 +177,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
-            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Double.class));
+            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Long.class));
             this.add(DSL.field(Fields.ET.toString()).minus(DSL.field(Fields.ST.toString())).as(DSL.name(Fields.LAT.toString())));
         } };
 
@@ -307,7 +307,7 @@ public class ShardRequestMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.TID.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.OPERATION.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.SHARD_ROLE.toString()), String.class));
-            this.add(DSL.field(DSL.name(Fields.DOC_COUNT.toString()), Double.class));
+            this.add(DSL.max(DSL.field(Fields.DOC_COUNT.toString())).as(DSL.name(Fields.DOC_COUNT.toString())));
             this.add(DSL.max(DSL.field(Fields.ST.toString())).as(DSL.name(Fields.ST.toString())));
             this.add(DSL.max(DSL.field(Fields.ET.toString())).as(DSL.name(Fields.ET.toString())));
         } };

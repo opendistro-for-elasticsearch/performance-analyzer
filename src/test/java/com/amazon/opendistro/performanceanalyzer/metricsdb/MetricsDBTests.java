@@ -75,33 +75,6 @@ public class MetricsDBTests {
     }
 
     @Test
-    public void testTableNonexistent() throws Exception {
-
-        List<String> columns = Arrays.asList("shard", "index");
-        db.createMetric(Metric.cpu(10D), columns);
-
-        putCPUMetric(db, 10D, "1", "ac-test");
-        putCPUMetric(db, 4D, "1", "ac-test");
-
-        Result<Record> res = db.queryMetric(Arrays.asList("pseudocpu"),
-                Arrays.asList("sum"),
-                Arrays.asList("shard", "index"));
-        assertEquals(1, res.size());
-        assertTrue(res.get(0).get("shard") == null);
-        assertTrue(res.get(0).get("index") == null);
-
-        res = db.queryMetric(Arrays.asList("cpu", "pseudocpu"),
-                Arrays.asList("sum", "sum"),
-                Arrays.asList("shard", "index"));
-
-        assertEquals(2, res.size());
-        assertEquals(14D, Double.parseDouble(res.get(1).get("cpu").toString()), 0);
-        assertTrue(res.get(0).get("pseudocpu") == null);
-
-        db.close();
-    }
-
-    @Test
     public void testMultiMetric() throws Exception {
         List<String> columns = Arrays.asList("shard", "index");
         db.createMetric(Metric.cpu(10D), columns);

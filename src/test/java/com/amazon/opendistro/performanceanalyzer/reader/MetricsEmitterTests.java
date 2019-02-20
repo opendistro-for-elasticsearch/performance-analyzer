@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jooq.BatchBindStep;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.jooq.Result;
@@ -45,6 +46,8 @@ import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.CommonMetric
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.HttpMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.MetricName;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
+import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.ShardOperationMetric;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPDimension;
 import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.TCPValue;
 import com.amazon.opendistro.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
@@ -208,6 +211,34 @@ public class MetricsEmitterTests extends AbstractReaderTests {
 
         Float latency = Float.parseFloat(res.get(0).get(CommonMetric.LATENCY.toString()).toString());
         assertEquals(20490.0f, latency.floatValue(), 0);
+    }
+
+    @Test
+    public void testWorkloadMetricsEmitter() throws Exception {
+        Connection conn = DriverManager.getConnection(DB_URL);
+        ShardRequestMetricsSnapshot rqMetricsSnap = new ShardRequestMetricsSnapshot(conn, 1535065195000L);
+        BatchBindStep handle = rqMetricsSnap.startBatchPut();
+        handle.bind("shardId", "indexName", "1", "threadId", "operation", "primary", 1535065195000l, null, 10);
+        handle.bind("shardId", "indexName", "1", "threadId", "operation", "primary", null, 1535065196000l, null);
+        handle.bind("shardId", "indexName", "2", "threadId", "operation", "primary", 1535065197000l, null, 10);
+        handle.bind("shardId", "indexName", "2", "threadId", "operation", "primary", null, 1535065198000l, null);
+        handle.execute();
+
+        System.out.println(rqMetricsSnap.fetchAll());
+        System.out.println(rqMetricsSnap.fetchLatencyByOp());
+
+        DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
+        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsEmitter.emitWorkloadMetrics(create, db, rqMetricsSnap);
+        Result<Record> res = db.queryMetric(Arrays.asList(ShardBulkMetric.DOC_COUNT.toString(),
+                    ShardOperationMetric.SHARD_OP_COUNT.toString()),
+                Arrays.asList("sum", "sum"),
+                Arrays.asList(HttpRequestMetricsSnapshot.Fields.OPERATION.toString()));
+
+        Double bulkDocs = Double.parseDouble(res.get(0).get(ShardBulkMetric.DOC_COUNT.toString()).toString());
+        Double shardOps = Double.parseDouble(res.get(0).get(ShardOperationMetric.SHARD_OP_COUNT.toString()).toString());
+        assertEquals(20.0d, bulkDocs.doubleValue(), 0);
+        assertEquals(2d, shardOps.doubleValue(), 0);
     }
 
     @Test
