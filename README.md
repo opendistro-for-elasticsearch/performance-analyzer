@@ -127,6 +127,8 @@ This page contains all Performance Analyzer metrics. All metrics support the avg
 |IndexWriter_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage by the index writer in bytes.|
 |Bitset_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage for the cached bit sets in bytes.|
 |VersionMap_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of the version map in bytes.|
+|ShardEvents|ShardId, IndexName, Operation, ShardRole|The total number of events executed on a shard in the past five seconds.|
+|ShardBulkDocs|ShardId, IndexName, Operation, ShardRole|The total number of documents indexed in the past five seconds.|
 |Latency|Operation, Exception, Indices, HTTPRespCode, ShardID, IndexName, ShardRole|Latency (milliseconds) of a request.|
 |GC_Collection_Event|MemType|The number of garbage collections that have occurred in the past five seconds.|
 |GC_Collection_Time|MemType|The approximate accumulated time (milliseconds) of all garbage collections that have occurred in the past five seconds.|
