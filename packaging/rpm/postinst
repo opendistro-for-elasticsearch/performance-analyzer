@@ -1,0 +1,42 @@
+
+
+# Post install script for Redhat like distros. Tested on CentOS 7.
+
+IS_UPGRADE=false
+
+if ! grep -q '## OpenDistro Performance Analyzer' /etc/elasticsearch/jvm.options; then
+   CLK_TCK=`/usr/bin/getconf CLK_TCK`
+   echo <<EOF
+## OpenDistro Performance Analyzer
+-Dclk.tck=$CLK_TCK
+-Djdk.attach.allowAttachSelf=true
+-Djava.security.policy=file:///usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_config/es_security.policy
+EOF >> /etc/elasticsearch/jvm.options
+fi
+
+case "$1" in
+    1)
+        # If $1=1 this is an install
+        IS_UPGRADE=false
+    ;;
+    2)
+        # If $1=2 this is an upgrade
+        IS_UPGRADE=true
+    ;;
+
+    *)
+        echo "post install script called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+if [ "x$IS_UPGRADE" != "xtrue" ]; then
+    if command -v systemctl > /dev/null; then
+        echo '# Enabling opendistro performance analyzer to start and stop along with elasticsearch.service'
+        systemctl enable opendistro-performance-analyser.service
+
+    elif command -v chkconfig >/dev/null; then
+        echo "### Non systemd distro. Please start and stop performance analyzer manually using the command: "
+        echo "sh /usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_bin/performance-analyzer-agent /usr/share/elasticsearch -d"
+    fi
+fi

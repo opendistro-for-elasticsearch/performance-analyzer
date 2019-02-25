@@ -1,0 +1,10 @@
+[Unit]
+Description=Opendistro for Elasticsearch Performance Analyzer
+PartOf=elasticsearch.service
+
+[Service]
+ExecStart=/usr/share/elasticsearch/bin/performance-analyzer-agent-cli
+Restart=on-failure
+
+[Install]
+WantedBy=elasticsearch.service

@@ -30,7 +30,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'nebula.ospackage'
+    id 'nebula.ospackage' version "5.3.0"
 }
 
 ext {
@@ -169,3 +169,54 @@ gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "thirdPartyAudit",
                                              "namingConventions"]
 
+// This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
+afterEvaluate {
+    ospackage {
+        packageName = "${esplugin.name}"
+        release = isSnapshot ? "0.1" : '1'
+        version = "${project.version}" - "-SNAPSHOT"
+
+        into '/usr/share/elasticsearch/plugins'
+        from(zipTree(bundlePlugin.archivePath)) {
+            into esplugin.name
+        }
+
+        configurationFile '/usr/lib/systemd/system/opendistro-elasticsearch.service'
+        into('/usr/lib/systemd/system') {
+            fileType CONFIG | NOREPLACE
+            from "packagin/opendistro-performance-analyzer.service"
+            fileMode 0644
+        }
+        into('/usr/share/elasticsearch/bin') {
+            from ('packaging/performance-analyzer-agent-cli') {
+                fileMode 0755
+            }
+        }
+        postInstall file('packaging/rpm/postinst')
+
+        user 'root'
+        permissionGroup 'root'
+        fileMode 0644
+        dirMode 0755
+
+        requires('elasticsearch-oss', versions.elasticsearch, EQUAL)
+        arch = 'NOARCH'
+        packager = 'Amazon'
+        vendor = 'Amazon'
+        os = 'LINUX'
+        prefix '/usr'
+
+        license 'ASL-2.0'
+        maintainer 'OpenDistro for Elasticsearch Team <opendistro@amazon.com>'
+        url 'https://opendistro.github.io/elasticsearch/downloads'
+        summary '''
+         SQL plugin for OpenDistro for Elasticsearch. 
+         Reference documentation can be found at https://opendistro.github.io/elasticsearch/docs.
+    '''.stripIndent().replace('\n', ' ').trim()
+    }
+
+    buildRpm {
+        archiveName "${packageName}-${version}.rpm"
+        dependsOn 'assemble'
+    }
+}
