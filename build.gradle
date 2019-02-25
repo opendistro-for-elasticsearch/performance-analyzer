@@ -172,7 +172,7 @@ gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {
     ospackage {
-        packageName = "${esplugin.name}"
+        packageName = "opendistro-performance-analyzer"
         release = isSnapshot ? "0.1" : '1'
         version = "${project.version}" - "-SNAPSHOT"
 
@@ -184,7 +184,7 @@ afterEvaluate {
         configurationFile '/usr/lib/systemd/system/opendistro-elasticsearch.service'
         into('/usr/lib/systemd/system') {
             fileType CONFIG | NOREPLACE
-            from "packagin/opendistro-performance-analyzer.service"
+            from "packaging/opendistro-performance-analyzer.service"
             fileMode 0644
         }
         into('/usr/share/elasticsearch/bin') {

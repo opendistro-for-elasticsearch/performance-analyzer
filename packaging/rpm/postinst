@@ -2,18 +2,16 @@
 
 # Post install script for Redhat like distros. Tested on CentOS 7.
 
-IS_UPGRADE=false
-
 if ! grep -q '## OpenDistro Performance Analyzer' /etc/elasticsearch/jvm.options; then
    CLK_TCK=`/usr/bin/getconf CLK_TCK`
-   echo <<EOF
-## OpenDistro Performance Analyzer
--Dclk.tck=$CLK_TCK
--Djdk.attach.allowAttachSelf=true
--Djava.security.policy=file:///usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_config/es_security.policy
-EOF >> /etc/elasticsearch/jvm.options
+   echo >> /etc/elasticsearch/jvm.options
+   echo '## OpenDistro Performance Analyzer' >> /etc/elasticsearch/jvm.options
+   echo "-Dclk.tck=$CLK_TCK" >> /etc/elasticsearch/jvm.options
+   echo "-Djdk.attach.allowAttachSelf=true" >> /etc/elasticsearch/jvm.options
+   echo "-Djava.security.policy=file:///usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_config/es_security.policy" >> /etc/elasticsearch/jvm.options
 fi
 
+IS_UPGRADE=false
 case "$1" in
     1)
         # If $1=1 this is an install
@@ -33,7 +31,8 @@ esac
 if [ "x$IS_UPGRADE" != "xtrue" ]; then
     if command -v systemctl > /dev/null; then
         echo '# Enabling opendistro performance analyzer to start and stop along with elasticsearch.service'
-        systemctl enable opendistro-performance-analyser.service
+        systemctl daemon-reload
+        systemctl enable opendistro-performance-analyzer.service || true
 
     elif command -v chkconfig >/dev/null; then
         echo "### Non systemd distro. Please start and stop performance analyzer manually using the command: "
