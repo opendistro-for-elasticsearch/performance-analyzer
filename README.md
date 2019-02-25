@@ -82,53 +82,53 @@ This page contains all Performance Analyzer metrics. All metrics support the avg
 
 |Metric|Dimensions|Description|
 |------|----------|-----------|
-|CPU_Utilization|ShardId, IndexName, Operation, ShardRole|CPU usage ratio. CPU time (in milliseconds) used by the associated thread(s) in the past five seconds, divided by 5000 milliseconds.|
-|Paging_MajfltRate|ShardId, IndexName, Operation, ShardRole|The number of major faults per second in the past five seconds. A major fault requires the process to load a memory page from disk.|
-|Paging_MinfltRate|ShardId, IndexName, Operation, ShardRole|The number of minor faults per second in the past five seconds. A minor fault does not requires the process to load a memory page from disk.|
-|Paging_RSS|ShardId, IndexName, Operation, ShardRole|The number of pages the process has in real memory- the pages that count towards text, data, or stack space. This number does not include pages that have not been demand-loaded in or swapped out.|
-|Sched_Runtime|ShardId, IndexName, Operation, ShardRole|Time (seconds) spent executing on the CPU per context switch.|
-|Sched_Waittime|ShardId, IndexName, Operation, ShardRole|Time (seconds) spent waiting on a run queue per context switch.|
-|Sched_CtxRate|ShardId, IndexName, Operation, ShardRole|Number of times run on the CPU per second in the past five seconds.|
-|Heap_AllocRate|ShardId, IndexName, Operation, ShardRole|An approximation of the heap memory allocated, in bytes, per second in the past five seconds|
-|IO_ReadThroughtput|ShardId, IndexName, Operation, ShardRole|Number of bytes read per second in the last five seconds.|
-|IO_WriteThroughput|ShardId, IndexName, Operation, ShardRole|Number of bytes written per second in the last five seconds.|
-|IO_TotThroughput|ShardId, IndexName, Operation, ShardRole|Number of bytes read or written per second in the last five seconds.|
-|IO_ReadSyscallRate|ShardId, IndexName, Operation, ShardRole|Read system calls per second in the last five seconds.|
-|IO_WriteSyscallRate|ShardId, IndexName, Operation, ShardRole|Write system calls per second in the last five seconds.|
-|IO_TotalSyscallRate|ShardId, IndexName, Operation, ShardRole|Read and write system calls per second in the last five seconds.|
-|Thread_Blocked_Time|ShardId, IndexName, Operation, ShardRole|Average time (seconds) that the associated thread(s) blocked to enter or reenter a monitor.|
-|Thread_Blocked_Event|ShardId, IndexName, Operation, ShardRole|The total number of times that the associated thread(s) blocked to enter or reenter a monitor (i.e. the number of times a thread has been in the blocked state).|
-|Indexing_ThrottleTime|ShardId, IndexName, Operation, ShardRole|ShardID, IndexName	Time (milliseconds) that the index has been under merge throttling control in the past five seconds.|
-|Cache_Query_Hit|ShardId, IndexName, Operation, ShardRole|The number of successful lookups in the query cache in the past five seconds.|
-|Cache_Query_Miss|ShardId, IndexName, Operation, ShardRole|The number of lookups in the query cache that failed to retrieve a `DocIdSet` in the past five seconds. `DocIdSet` is a set of document IDs in Lucene.|
-|Cache_Query_Size|ShardId, IndexName, Operation, ShardRole|Query cache memory size in bytes.|
-|Cache_FieldData_Eviction|ShardId, IndexName, Operation, ShardRole|The number of times Elasticsearch has evicted data from the fielddata heap space (occurs when the heap space is full) in the past five seconds.|
-|Cache_FieldData_Size|ShardId, IndexName, Operation, ShardRole|Fielddata memory size in bytes.|
-|Cache_Request_Hit|ShardId, IndexName, Operation, ShardRole|The number of successful lookups in the shard request cache in the past five seconds.|
-|Cache_Request_Miss|ShardId, IndexName, Operation, ShardRole|The number of lookups in the request cache that failed to retrieve the results of search requests in the past five seconds.|
-|Cache_Request_Eviction|ShardId, IndexName, Operation, ShardRole|The number of times Elasticsearch evicts data from shard request cache (occurs when the request cache is full) in the past five seconds.|
-|Cache_Request_Size|ShardId, IndexName, Operation, ShardRole|Shard request cache memory size in bytes.|
-|Refresh_Event|ShardId, IndexName, Operation, ShardRole|The total number of refreshes executed in the past five seconds.|
-|Refresh_Time|ShardId, IndexName, Operation, ShardRole|The total time (milliseconds) spent executing refreshes in the past five seconds|
-|Flush_Event|ShardId, IndexName, Operation, ShardRole|The total number of flushes executed in the past five seconds.|
-|Flush_Time|ShardId, IndexName, Operation, ShardRole|The total time (milliseconds) spent executing flushes in the past five seconds.|
-|Merge_Event|ShardId, IndexName, Operation, ShardRole|The total number of merges executed in the past five seconds.|
-|Merge_Time|ShardId, IndexName, Operation, ShardRole|The total time (milliseconds) spent executing merges in the past five seconds.|
-|Merge_CurrentEvent|ShardId, IndexName, Operation, ShardRole|The current number of merges executing.|
-|Indexing_Buffer|ShardId, IndexName, Operation, ShardRole|Index buffer memory size in bytes.|
-|Segments_Total|ShardId, IndexName, Operation, ShardRole|The number of segments.|
-|Segments_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of segments in bytes.|
-|Terms_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of terms dictionaries in bytes.|
-|StoredFields_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of stored fields in bytes.|
-|TermVectors_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of term vectors in bytes.|
-|Norms_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of norms (normalization factors) in bytes.|
-|Points_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of points in bytes.|
-|DocValues_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of doc values in bytes.|
-|IndexWriter_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage by the index writer in bytes.|
-|Bitset_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage for the cached bit sets in bytes.|
-|VersionMap_Memory|ShardId, IndexName, Operation, ShardRole|Estimated memory usage of the version map in bytes.|
-|ShardEvents|ShardId, IndexName, Operation, ShardRole|The total number of events executed on a shard in the past five seconds.|
-|ShardBulkDocs|ShardId, IndexName, Operation, ShardRole|The total number of documents indexed in the past five seconds.|
+|CPU_Utilization|ShardID, IndexName, Operation, ShardRole|CPU usage ratio. CPU time (in milliseconds) used by the associated thread(s) in the past five seconds, divided by 5000 milliseconds.|
+|Paging_MajfltRate|ShardID, IndexName, Operation, ShardRole|The number of major faults per second in the past five seconds. A major fault requires the process to load a memory page from disk.|
+|Paging_MinfltRate|ShardID, IndexName, Operation, ShardRole|The number of minor faults per second in the past five seconds. A minor fault does not requires the process to load a memory page from disk.|
+|Paging_RSS|ShardID, IndexName, Operation, ShardRole|The number of pages the process has in real memory- the pages that count towards text, data, or stack space. This number does not include pages that have not been demand-loaded in or swapped out.|
+|Sched_Runtime|ShardID, IndexName, Operation, ShardRole|Time (seconds) spent executing on the CPU per context switch.|
+|Sched_Waittime|ShardID, IndexName, Operation, ShardRole|Time (seconds) spent waiting on a run queue per context switch.|
+|Sched_CtxRate|ShardID, IndexName, Operation, ShardRole|Number of times run on the CPU per second in the past five seconds.|
+|Heap_AllocRate|ShardID, IndexName, Operation, ShardRole|An approximation of the heap memory allocated, in bytes, per second in the past five seconds|
+|IO_ReadThroughtput|ShardID, IndexName, Operation, ShardRole|Number of bytes read per second in the last five seconds.|
+|IO_WriteThroughput|ShardID, IndexName, Operation, ShardRole|Number of bytes written per second in the last five seconds.|
+|IO_TotThroughput|ShardID, IndexName, Operation, ShardRole|Number of bytes read or written per second in the last five seconds.|
+|IO_ReadSyscallRate|ShardID, IndexName, Operation, ShardRole|Read system calls per second in the last five seconds.|
+|IO_WriteSyscallRate|ShardID, IndexName, Operation, ShardRole|Write system calls per second in the last five seconds.|
+|IO_TotalSyscallRate|ShardID, IndexName, Operation, ShardRole|Read and write system calls per second in the last five seconds.|
+|Thread_Blocked_Time|ShardID, IndexName, Operation, ShardRole|Average time (seconds) that the associated thread(s) blocked to enter or reenter a monitor.|
+|Thread_Blocked_Event|ShardID, IndexName, Operation, ShardRole|The total number of times that the associated thread(s) blocked to enter or reenter a monitor (i.e. the number of times a thread has been in the blocked state).|
+|Indexing_ThrottleTime|ShardID, IndexName, Operation, ShardRole|ShardID, IndexName	Time (milliseconds) that the index has been under merge throttling control in the past five seconds.|
+|Cache_Query_Hit|ShardID, IndexName, Operation, ShardRole|The number of successful lookups in the query cache in the past five seconds.|
+|Cache_Query_Miss|ShardID, IndexName, Operation, ShardRole|The number of lookups in the query cache that failed to retrieve a `DocIdSet` in the past five seconds. `DocIdSet` is a set of document IDs in Lucene.|
+|Cache_Query_Size|ShardID, IndexName, Operation, ShardRole|Query cache memory size in bytes.|
+|Cache_FieldData_Eviction|ShardID, IndexName, Operation, ShardRole|The number of times Elasticsearch has evicted data from the fielddata heap space (occurs when the heap space is full) in the past five seconds.|
+|Cache_FieldData_Size|ShardID, IndexName, Operation, ShardRole|Fielddata memory size in bytes.|
+|Cache_Request_Hit|ShardID, IndexName, Operation, ShardRole|The number of successful lookups in the shard request cache in the past five seconds.|
+|Cache_Request_Miss|ShardID, IndexName, Operation, ShardRole|The number of lookups in the request cache that failed to retrieve the results of search requests in the past five seconds.|
+|Cache_Request_Eviction|ShardID, IndexName, Operation, ShardRole|The number of times Elasticsearch evicts data from shard request cache (occurs when the request cache is full) in the past five seconds.|
+|Cache_Request_Size|ShardID, IndexName, Operation, ShardRole|Shard request cache memory size in bytes.|
+|Refresh_Event|ShardID, IndexName, Operation, ShardRole|The total number of refreshes executed in the past five seconds.|
+|Refresh_Time|ShardID, IndexName, Operation, ShardRole|The total time (milliseconds) spent executing refreshes in the past five seconds|
+|Flush_Event|ShardID, IndexName, Operation, ShardRole|The total number of flushes executed in the past five seconds.|
+|Flush_Time|ShardID, IndexName, Operation, ShardRole|The total time (milliseconds) spent executing flushes in the past five seconds.|
+|Merge_Event|ShardID, IndexName, Operation, ShardRole|The total number of merges executed in the past five seconds.|
+|Merge_Time|ShardID, IndexName, Operation, ShardRole|The total time (milliseconds) spent executing merges in the past five seconds.|
+|Merge_CurrentEvent|ShardID, IndexName, Operation, ShardRole|The current number of merges executing.|
+|Indexing_Buffer|ShardID, IndexName, Operation, ShardRole|Index buffer memory size in bytes.|
+|Segments_Total|ShardID, IndexName, Operation, ShardRole|The number of segments.|
+|Segments_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of segments in bytes.|
+|Terms_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of terms dictionaries in bytes.|
+|StoredFields_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of stored fields in bytes.|
+|TermVectors_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of term vectors in bytes.|
+|Norms_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of norms (normalization factors) in bytes.|
+|Points_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of points in bytes.|
+|DocValues_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of doc values in bytes.|
+|IndexWriter_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage by the index writer in bytes.|
+|Bitset_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage for the cached bit sets in bytes.|
+|VersionMap_Memory|ShardID, IndexName, Operation, ShardRole|Estimated memory usage of the version map in bytes.|
+|ShardEvents|ShardID, IndexName, Operation, ShardRole|The total number of events executed on a shard in the past five seconds.|
+|ShardBulkDocs|ShardID, IndexName, Operation, ShardRole|The total number of documents indexed in the past five seconds.|
 |Latency|Operation, Exception, Indices, HTTPRespCode, ShardID, IndexName, ShardRole|Latency (milliseconds) of a request.|
 |GC_Collection_Event|MemType|The number of garbage collections that have occurred in the past five seconds.|
 |GC_Collection_Time|MemType|The approximate accumulated time (milliseconds) of all garbage collections that have occurred in the past five seconds.|
