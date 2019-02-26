@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.sql.SQLException;
 
-import org.junit.Test;
+//import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
@@ -45,7 +45,7 @@ public class ClusterLevelMetricsReaderTests extends AbstractReaderTests {
         // TODO Auto-generated constructor stub
     }
 
-    @Test
+    //@Test
     public void testCollectNodeMetrics() throws Exception {
         PluginSettings config = Mockito.mock(PluginSettings.class);
         Mockito.when(config.getMetricsLocation()).thenReturn(rootLocation);

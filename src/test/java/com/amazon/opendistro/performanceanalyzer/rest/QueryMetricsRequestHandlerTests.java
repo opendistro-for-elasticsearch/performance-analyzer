@@ -31,7 +31,8 @@ import com.amazon.opendistro.performanceanalyzer.reader.ReaderMetricsProcessor;
 @SuppressWarnings("serial")
 public class QueryMetricsRequestHandlerTests {
 
-    public QueryMetricsRequestHandlerTests() {
+    public QueryMetricsRequestHandlerTests() throws ClassNotFoundException {
+        Class.forName("org.sqlite.JDBC");
         System.setProperty("java.io.tmpdir", "/tmp");
     }
 

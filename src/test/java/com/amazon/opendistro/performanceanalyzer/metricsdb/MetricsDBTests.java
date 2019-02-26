@@ -41,6 +41,10 @@ public class MetricsDBTests {
         this.db = new MetricsDB(System.currentTimeMillis());
     }
 
+    public MetricsDBTests() throws ClassNotFoundException {
+        Class.forName("org.sqlite.JDBC");
+    }
+
     @After
     public void tearDown() throws Exception {
         this.db.remove();
