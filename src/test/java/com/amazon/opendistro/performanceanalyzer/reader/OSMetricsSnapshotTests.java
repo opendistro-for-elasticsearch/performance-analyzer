@@ -34,7 +34,8 @@ import com.amazon.opendistro.performanceanalyzer.metrics.AllMetrics.OSMetrics;
 public class OSMetricsSnapshotTests {
     private static final String DB_URL = "jdbc:sqlite:";
 
-    public OSMetricsSnapshotTests() {
+    public OSMetricsSnapshotTests() throws ClassNotFoundException {
+        Class.forName("org.sqlite.JDBC");
         System.setProperty("java.io.tmpdir", "/tmp");
     }
 

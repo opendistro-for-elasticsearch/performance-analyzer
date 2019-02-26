@@ -53,6 +53,7 @@ ext {
 }
 test {
     enabled = true
+    parallelism = 1
 }
 licenseHeaders.enabled = false
 
