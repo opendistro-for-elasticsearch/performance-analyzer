@@ -22,7 +22,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
  * need to hardcode the exact enum name in the parser. The parser only needs to
  * know this enum has a metric's dimensions and use its members as Json key to
  * parse out the concrete metric dimensions. See
- * src/main/java/com/amazon/opendistro/performanceanalyzer/reader/MetricProperties.java
+ * src/main/java/com/amazon/opendistro/elasticsearch/performanceanalyzer/reader/MetricProperties.java
  *
  *
  */
