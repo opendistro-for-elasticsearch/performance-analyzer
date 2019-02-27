@@ -280,9 +280,15 @@ public class MetricsEmitter {
                     );
             }
         }
-        handle.execute();
-        countHandle.execute();
-        bulkDocHandle.execute();
+        if (handle.size() > 0) {
+            handle.execute();
+        }
+        if (countHandle.size() > 0) {
+            countHandle.execute();
+        }
+        if (bulkDocHandle.size() > 0) {
+            bulkDocHandle.execute();
+        }
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for writing workload metrics metricsdb: {}", mFinalT - mCurrT);
     }
