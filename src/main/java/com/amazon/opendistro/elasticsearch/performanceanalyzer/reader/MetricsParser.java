@@ -1,0 +1,324 @@
+/*
+ * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
+package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jooq.BatchBindStep;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.HttpDimension;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.HttpMetric;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.OSMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardBulkDimension;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.FileHelper;
+
+/**
+ * Read metrics files emitted by Elasticsearch in /dev/shm and efficiently load them into tables for further processing.
+ */
+public class MetricsParser {
+    private static final Logger LOG = LogManager.getLogger(MetricsParser.class);
+
+    public long getThirtySecondBucket(long startTime) {
+        return PerformanceAnalyzerMetrics.getTimeInterval(startTime);
+    }
+
+    public void parseOSMetrics(String rootLocation, long startTime, long endTime,
+                               OSMetricsSnapshot osMetricsSnap) throws Exception {
+        long startTimeThirtySecondBucket = getThirtySecondBucket(startTime);
+
+        File threadsFile = new File(rootLocation + File.separator
+                + startTimeThirtySecondBucket + File.separator
+                + PerformanceAnalyzerMetrics.sThreadsPath);
+
+        BatchBindStep handle = osMetricsSnap.startBatchPut();
+        List<String> tidToDelete = new ArrayList<>();
+        processOSMetricsForFile(threadsFile, osMetricsSnap, startTime, endTime, handle, tidToDelete);
+
+        osMetricsSnap.deleteByTid(tidToDelete);
+
+        if (handle.size() > 0) {
+            handle.execute();
+        }
+    }
+
+    public void processOSMetricsForFile(File threadsFile,
+                                        OSMetricsSnapshot osMetricsSnap, long startTime, long endTime,
+                                        BatchBindStep batchHandle, List<String> tidToDelete) throws Exception {
+
+        Map<String, Long> lastUpdateTimePerTid = osMetricsSnap.getLastUpdateTimePerTid();
+
+        boolean retVal = false;
+        if (threadsFile.exists()) {
+            for (File threadIDFile: threadsFile.listFiles()) {
+                if (!threadIDFile.getName().equals(PerformanceAnalyzerMetrics.sHttpPath)) {
+                    String threadID = threadIDFile.getName();
+
+                    for (File opFile: threadIDFile.listFiles()) {
+                        if (opFile.getName().equals(PerformanceAnalyzerMetrics.sOSPath)) {
+                            retVal = processOSMetrics(opFile, threadID, lastUpdateTimePerTid, startTime,
+                                    endTime, batchHandle, tidToDelete)
+                                    || retVal;
+                        }
+                    }
+                }
+            }
+        }
+        LOG.info("processOSMetricsForFile ret: {}", retVal);;
+    }
+
+    public void parseRequestMetrics(String rootLocation, long startTime,
+            long endTime, ShardRequestMetricsSnapshot rqMetricsSnap) throws Exception {
+
+        long startTimeThirtySecondBucket = getThirtySecondBucket(startTime);
+        File threadsFile = new File(rootLocation + File.separator
+                + startTimeThirtySecondBucket + File.separator
+                + PerformanceAnalyzerMetrics.sThreadsPath);
+
+        BatchBindStep handle = rqMetricsSnap.startBatchPut();
+        if (threadsFile.exists()) {
+            for (File threadIDFile: threadsFile.listFiles()) {
+                if (!threadIDFile.getName().equals(PerformanceAnalyzerMetrics.sHttpPath)) {
+                    String threadID = threadIDFile.getName();
+
+                    for (File opFile: threadIDFile.listFiles()) {
+                        if (opFile.getName().equals(PerformanceAnalyzerMetrics.sShardBulkPath)
+                                || opFile.getName().equals(PerformanceAnalyzerMetrics.sShardFetchPath)
+                                || opFile.getName().equals(PerformanceAnalyzerMetrics.sShardQueryPath)) {
+                            handleESMetrics(opFile, threadID, startTime, endTime, handle);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (handle.size() > 0) {
+            handle.execute();
+        }
+    }
+
+    public void parseHttpMetrics(String rootLocation, long startTime,
+            long endTime, HttpRequestMetricsSnapshot rqMetricsSnap) throws Exception {
+
+        long startTimeThirtySecondBucket = getThirtySecondBucket(startTime);
+        File httpFile = new File(rootLocation + File.separator
+                + startTimeThirtySecondBucket + File.separator
+                + PerformanceAnalyzerMetrics.sThreadsPath + File.separator + PerformanceAnalyzerMetrics.sHttpPath);
+
+        BatchBindStep handle = rqMetricsSnap.startBatchPut();
+
+        if (httpFile.exists()) {
+            for (File opFile: httpFile.listFiles()) {
+                String operation = opFile.getName();
+                for (File rFile: opFile.listFiles()) {
+                    String requestId = rFile.getName();
+                    for (File metricsFile: rFile.listFiles()) {
+                        long lastModified = FileHelper.getLastModified(metricsFile, startTime, endTime);
+                        if (lastModified < startTime || lastModified >= endTime) {
+                            continue;
+                        }
+                        try {
+                            if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.START_FILE_NAME)) {
+                                emitStartHttpMetric(metricsFile, requestId, operation, handle);
+                            } else  if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.FINISH_FILE_NAME)) {
+                                emitFinishHttpMetric(metricsFile, requestId, operation, handle);
+                            }
+                        } catch (Exception e) {
+                            LOG.error(e, e);
+                            LOG.error("Error parsing file - {}\n", metricsFile.getAbsolutePath());
+                            throw e;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (handle.size() > 0) {
+            handle.execute();
+        }
+    }
+
+    private void emitStartHttpMetric(File metricFile, String rid,
+            String operation, BatchBindStep handle) {
+
+        String startMetrics = PerformanceAnalyzerMetrics.getMetric(metricFile.getAbsolutePath());
+        String startTimeVal = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, HttpMetric.START_TIME.toString());
+        String itemCountVal = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, HttpMetric.HTTP_REQUEST_DOCS.toString());
+        try {
+            long st = Long.parseLong(startTimeVal);
+            String indices = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics, HttpDimension.INDICES.toString());
+            long itemCount = Long.parseLong(itemCountVal);
+            handle.bind(rid, operation, indices, null, null, itemCount, st, null);
+        } catch (NumberFormatException e) {
+            LOG.error("Unable to parse string. StartTime:{}, itemCount:{},\n startMetrics:{}",
+                    startTimeVal, itemCountVal, startMetrics);
+            throw e;
+        }
+    }
+
+    private void emitFinishHttpMetric(File metricFile, String rid,
+            String operation, BatchBindStep handle) {
+        String finishMetrics = PerformanceAnalyzerMetrics.getMetric(metricFile.getAbsolutePath());
+
+
+        String finishTimeVal = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, HttpMetric.FINISH_TIME.toString());
+        String status = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, HttpDimension.HTTP_RESP_CODE.toString());
+        String exception = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics, HttpDimension.EXCEPTION.toString());
+        try {
+        long ft = Long.parseLong(finishTimeVal);
+        handle.bind(rid, operation, null, status, exception, null, null, ft);
+        } catch (NumberFormatException e) {
+            LOG.error("Unable to parse string. FinishTime:{}\n finishMetrics:{}",
+                    finishTimeVal, finishMetrics);
+            throw e;
+        }
+    }
+
+    private boolean processOSMetrics(File opFile, String threadID,
+                                     Map<String, Long> lastUpdateTimePerTid,
+                                     long startTime, long endTime,
+                                     BatchBindStep batchHandle, List<String> tidToDelete) throws Exception {
+        Map<String, Double> osMetrics = new HashMap<>();
+        long opFileLastModified = FileHelper.getLastModified(opFile, startTime, endTime);
+        if (opFileLastModified > endTime) {
+            opFileLastModified = endTime;
+            LOG.info("File last modified time is greater than endTime - {}", opFile.getAbsolutePath());
+        }
+        //Discard os metrics if the file has not been updated in the 5 second window.
+        if (opFileLastModified < startTime) {
+            return false;
+        }
+        //Only put data when opFile.lastModified() is newer than the lastUpdateTime in database.
+        //If there is an update, We'll delete existing data and insert new data.
+        if (lastUpdateTimePerTid.containsKey(threadID)) {
+            if (lastUpdateTimePerTid.get(threadID) == opFileLastModified) {
+                return false;
+            }
+            tidToDelete.add(threadID);
+        }
+
+        String sOSMetrics = PerformanceAnalyzerMetrics.getMetric(opFile.getAbsolutePath());
+        OSMetrics[] metrics = OSMetrics.values();
+        for (OSMetrics metric : metrics) {
+            try {
+                String metricVal = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics, metric.toString());
+                if (metricVal != null) {
+                    Double val = Double.parseDouble(metricVal);
+                    osMetrics.put(metric.toString(), val);
+                }
+            } catch (Exception e) {
+                LOG.error(e, e);
+                LOG.error("Error parsing file - {},\n {}", opFile.getAbsolutePath(), sOSMetrics);
+                throw e;
+            }
+        }
+
+        String threadName = PerformanceAnalyzerMetrics.extractMetricValue(sOSMetrics,
+                OSMetricsCollector.MetaDataFields.threadName.toString());
+
+        int numMetrics = metrics.length + 3;
+        Object [] metricVals = new Object[numMetrics];
+        metricVals[0] = threadID;
+        metricVals[1] = threadName;
+        for (int i = 2; i < numMetrics - 1; i++) {
+            metricVals[i] = osMetrics.get(metrics[i - 2].toString());
+        }
+        metricVals[numMetrics - 1] =  opFileLastModified;
+
+        batchHandle.bind(metricVals);
+        return true;
+    }
+
+    private void handleESMetrics(File esMetrics, String threadID,
+            long startTime, long endTime, BatchBindStep handle) {
+        String operation = esMetrics.getName(); //- shardBulk, shardSearch etc..
+        for (File idFile : esMetrics.listFiles()) {
+            try {
+                handleidFile(idFile, threadID, startTime, endTime, operation, handle);
+            } catch (Exception e) {
+                LOG.error("Failed to parse ES Metrics", e);
+            }
+        }
+    }
+
+    private String getPrimary(String primary) {
+        return primary == null ? "NA" : (primary.equals("true") ? "primary" : "replica");
+    }
+
+    private void emitStartMetric(String startMetrics, String rid, String threadId,
+            String operation, BatchBindStep handle) {
+        long st = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkMetric.START_TIME.toString()));
+        String indexName = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkDimension.INDEX_NAME.toString());
+        String shardId = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkDimension.SHARD_ID.toString());
+        String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkDimension.PRIMARY.toString()));
+        String docCountString = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                ShardBulkMetric.ITEM_COUNT.toString());
+        long docCount = 0;
+        if (docCountString != null) {
+            docCount = Long.parseLong(docCountString);
+        }
+        handle.bind(shardId, indexName, rid, threadId, operation, primary, st, null, docCount);
+    }
+
+    private void emitFinishMetric(String finishMetrics, String rid, String threadId,
+            String operation, BatchBindStep handle) {
+        long ft = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkMetric.FINISH_TIME.toString()));
+        String indexName = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkDimension.INDEX_NAME.toString());
+        String shardId = PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkDimension.SHARD_ID.toString());
+        String primary = getPrimary(PerformanceAnalyzerMetrics.extractMetricValue(finishMetrics,
+                ShardBulkDimension.PRIMARY.toString()));
+        handle.bind(shardId, indexName, rid, threadId, operation, primary, null, ft, null);
+    }
+
+    private void handleidFile(File idFile, String threadID, long startTime,
+            long endTime, String operation, BatchBindStep handle) {
+        String rid = idFile.getName();
+        long lastModified = FileHelper.getLastModified(idFile, startTime, endTime);
+        if (lastModified < startTime || lastModified >= endTime) {
+            return;
+        }
+        for (File metricsFile: idFile.listFiles()) {
+            String metrics = PerformanceAnalyzerMetrics.getMetric(metricsFile.getAbsolutePath());
+            try {
+                if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.START_FILE_NAME)) {
+                    emitStartMetric(metrics, rid, threadID, operation, handle);
+                } else  if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.FINISH_FILE_NAME)) {
+                    emitFinishMetric(metrics, rid, threadID, operation, handle);
+                }
+            } catch (Exception e) {
+                LOG.error(e, e);
+                LOG.error("Error parsing file - {},\n {}", metricsFile.getAbsolutePath(), metrics);
+            }
+        }
+    }
+}
+
+
