@@ -33,7 +33,7 @@ public class PerformanceAnalyzerApp {
     private static final String WEBSERVICE_PORT_CONF_NAME = "webservice-listener-port";
     //Use system default for max backlog.
     private static final int INCOMING_QUEUE_LENGTH = 1;
-    public static final String QUERY_URL = "/_performanceanalyzer/metrics";
+    public static final String QUERY_URL = "/_opendistro/_performanceanalyzer/metrics";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerApp.class);
 
     public static void main(String[] args) throws Exception {
