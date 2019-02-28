@@ -31,6 +31,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.OSMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardBulkDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CommonMetric;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.Master_Metric_Dimensions;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.FileHelper;
 
@@ -157,6 +159,101 @@ public class MetricsParser {
         if (handle.size() > 0) {
             handle.execute();
         }
+    }
+
+    public void parseMasterEventMetrics(String rootLocation,
+                                        long startTime,
+                                        long endTime,
+                                        MasterEventMetricsSnapshot masterEventMetricsSnapshot) {
+
+        long startTimeThirtySecondBucket = getThirtySecondBucket(startTime);
+        File threadsFile = new File(rootLocation + File.separator
+                + startTimeThirtySecondBucket + File.separator
+                + PerformanceAnalyzerMetrics.sThreadsPath);
+
+        BatchBindStep handle = masterEventMetricsSnapshot.startBatchPut();
+        if (threadsFile.exists()) {
+            for (File threadIDFile: threadsFile.listFiles()) {
+                if (!threadIDFile.getName().equals(PerformanceAnalyzerMetrics.sHttpPath)) {
+                    String threadID = threadIDFile.getName();
+
+                    // Open MasterTask files
+                    for (File opFile: threadIDFile.listFiles()) {
+                        if (opFile.getName().equals(PerformanceAnalyzerMetrics.sMasterTaskPath)) {
+
+                            // Open InsertOrder files
+                            for (File insertOrderFile : opFile.listFiles()) {
+                                try {
+
+                                    String insertOder = insertOrderFile.getName();
+
+                                    // Open start and finish files
+                                    for (File metricsFile: insertOrderFile.listFiles()) {
+
+                                        long lastModified = FileHelper.getLastModified(metricsFile, startTime, endTime);
+                                        if (lastModified < startTime || lastModified >= endTime) {
+                                            continue;
+                                        }
+
+                                        String metrics = PerformanceAnalyzerMetrics.getMetric(metricsFile.getAbsolutePath());
+                                        try {
+                                            if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.START_FILE_NAME)) {
+                                                emitStartMasterEventMetric(metrics, insertOder, threadID, handle);
+                                            } else  if (metricsFile.getName().equals(PerformanceAnalyzerMetrics.FINISH_FILE_NAME)) {
+                                                emitEndMasterEventMetric(metrics, insertOder, threadID, handle);
+                                            }
+                                        } catch (Exception e) {
+                                            LOG.error(e, e);
+                                            LOG.error("Error parsing file - {},\n {}", metricsFile.getAbsolutePath(), metrics);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    LOG.error("Failed to parse ES Metrics", e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (handle.size() > 0) {
+            handle.execute();
+        }
+    }
+
+    private void emitStartMasterEventMetric(String startMetrics,
+                                            String insertOrder,
+                                            String threadId,
+                                            BatchBindStep handle) {
+
+        String priority = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString());
+
+        long st = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                CommonMetric.START_TIME.toString()));
+
+        String taskType = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                Master_Metric_Dimensions.MASTER_TASK_TYPE.toString());
+
+        String taskMetadata = PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                Master_Metric_Dimensions.MASTER_TASK_METADATA.toString());
+
+        long queueTime = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()));
+
+        handle.bind(threadId, insertOrder, priority, taskType, taskMetadata, queueTime, st, null);
+    }
+
+    private void emitEndMasterEventMetric(String startMetrics,
+                                          String insertOrder,
+                                          String threadId,
+                                          BatchBindStep handle) {
+
+        long finishTime = Long.parseLong(PerformanceAnalyzerMetrics.extractMetricValue(startMetrics,
+                CommonMetric.FINISH_TIME.toString()));
+
+        handle.bind(threadId, insertOrder, null, null, null, null, null, finishTime);
     }
 
     private void emitStartHttpMetric(File metricFile, String rid,

@@ -116,7 +116,7 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
                             firstSpaceIndex == -1 ? task.source() : task.source().substring(0, firstSpaceIndex));
                     PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_METADATA.toString(),
                             firstSpaceIndex == -1 ? "" : task.source().substring(firstSpaceIndex));
-                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_AGE.toString(),
+                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(),
                             task.getAgeInMillis());
 
                     saveMetricValues(value.toString(), startTime, String.valueOf(getMasterThreadId()),
