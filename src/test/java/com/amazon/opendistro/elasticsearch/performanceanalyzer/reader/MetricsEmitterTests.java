@@ -242,6 +242,17 @@ public class MetricsEmitterTests extends AbstractReaderTests {
     }
 
     @Test
+    public void testWorkloadMetricsEmitterDoNothing() throws Exception {
+        Connection conn = DriverManager.getConnection(DB_URL);
+        ShardRequestMetricsSnapshot rqMetricsSnap = new ShardRequestMetricsSnapshot(conn, 1535065195000L);
+        DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
+        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsEmitter.emitWorkloadMetrics(create, db, rqMetricsSnap);
+        System.out.println(rqMetricsSnap.fetchAll());
+        assertEquals(0, rqMetricsSnap.fetchAll().size());
+    }
+
+    @Test
     public void testExtractor() {
         String check = "abc: 2\nbbc:\ncbc:21\n";
         assertEquals(" 2", PerformanceAnalyzerMetrics.extractMetricValue(check, "abc"));
