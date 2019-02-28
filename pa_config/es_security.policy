@@ -1,10 +1,12 @@
-grant {
-  permission com.sun.tools.attach.AttachPermission "attachVirtualMachine";
-  permission com.sun.tools.attach.AttachPermission "createAttachProvider";
-  permission java.lang.RuntimePermission "manageProcess";
-  permission java.lang.RuntimePermission "loadLibrary.attach";
-  permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
-  permission java.lang.RuntimePermission "accessClassInPackage.sun.tools.attach";
-  permission java.io.FilePermission "/-","read,write,delete,execute";
+grant codebase "file:${java.home}/../lib/tools.jar" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.attach" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.internal.jvmstat" {
+    permission java.security.AllPermission;
 };
 
