@@ -4,7 +4,7 @@ Performance Analyzer exposes a REST API that allows you to query numerous perfor
 ## Performance Analyzer API
 Performance Analyzer uses a single HTTP method and URI for all requests:
 
-GET `<endpoint>/_performanceanalyzer/metrics`
+GET `<endpoint>/_opendistro/_performanceanalyzer/metrics`
 
 Then you provide parameters for metrics, aggregations, dimensions, and nodes (optional):
 
@@ -18,7 +18,7 @@ Then you provide parameters for metrics, aggregations, dimensions, and nodes (op
 * nodes - If the string all is passed, metrics from all nodes in the cluster are returned. For any other value, metrics from only the local node is returned.
 
 ### SAMPLE REQUEST
-GET `_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all`
+GET `_opendistro/_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all`
 ### SAMPLE RESPONSE
 ```
 {
