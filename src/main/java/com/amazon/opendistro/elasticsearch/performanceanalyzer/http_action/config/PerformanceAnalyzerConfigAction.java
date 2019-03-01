@@ -63,8 +63,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     @Inject
     public PerformanceAnalyzerConfigAction(Settings settings, RestController controller) {
         super(settings);
-        controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, "/_performanceanalyzer/config", this);
-        controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.POST, "/_performanceanalyzer/config", this);
+        controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config", this);
+        controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config", this);
         this.featureEnabled = getFeatureEnabledFromConf();
         LOG.info("PerformanceAnalyzer Enabled: {}", this.featureEnabled);
     }
