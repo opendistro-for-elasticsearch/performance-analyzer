@@ -134,6 +134,7 @@ public class MasterEventMetricsSnapshot implements Removable {
      * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|       {null}|
      * |111  |1          |      {null}|  {null}|   {null}|  {null}|       {null}|1535065340725|
      *
+     * @return aggregated master task
      */
     public Result<Record> fetchAll() {
 
@@ -156,6 +157,7 @@ public class MasterEventMetricsSnapshot implements Removable {
      * |InsertOrder|Priority|Type|Metadata|SUM_QueueTime|AVG_QueueTime|MIN_QueueTime|MAX_QueueTime|
      *        SUM_RUNTIME|AVG_RUNTIME|MIN_RUNTIME|MAX_RUNTIME|
      *
+     * @return aggregated master task
      */
     public Result<Record> fetchQueueAndRunTime() {
 
@@ -230,7 +232,7 @@ public class MasterEventMetricsSnapshot implements Removable {
      * |111  |1          |create-index|urgent  |3        |{string}|1535065340625|1535065340725|
      * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|1535065341025|
      *
-     * @return aggregated latency rows for each shard request
+     * @return aggregated master task
      */
     public SelectHavingStep<Record> groupByInsertOrderWithoutNull() {
 
