@@ -660,10 +660,6 @@ public class AllMetrics {
         }
     }
 
-//    public enum SearchReducer_Metrics {
-//        startTime, hasSuggest, hasProfileResults, finishTime, hasAggs, indexNames
-//    }
-
     public enum ShardBulkDimension implements MetricDimension {
         INDEX_NAME(Constants.INDEXNAME_VALUE),
         SHARD_ID(Constants.SHARDID_VALUE),

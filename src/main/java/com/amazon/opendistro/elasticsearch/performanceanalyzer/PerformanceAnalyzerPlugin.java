@@ -71,7 +71,6 @@ import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.script.ScriptService;
-//import org.elasticsearch.search.SearchReduceListener;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
@@ -83,7 +82,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeSt
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-//import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchReduceListener;
 
 
 public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
@@ -176,11 +174,6 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
         return singletonList(performanceanalyzerConfigAction);
     }
-
-//    @Override
-//    public List<SearchReduceListener> getSearchReduceListeners() {
-//        return singletonList(new PerformanceAnalyzerSearchReduceListener());
-//    }
 
     @Override
     @SuppressWarnings("checkstyle:parameternumber")
