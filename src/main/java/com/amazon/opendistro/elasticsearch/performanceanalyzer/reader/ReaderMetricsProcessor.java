@@ -368,7 +368,6 @@ public class ReaderMetricsProcessor implements Runnable {
         //reader cycle. The OSMetricsSnapshot expects windowEndTime in the constructor.
         OSMetricsSnapshot alignedOSSnapHolder = new OSMetricsSnapshot(this.conn, "os_aligned_",
                 currWindowStartTime);
-
         OSMetricsSnapshot osAlignedSnap = alignOSMetrics(prevWindowStartTime,
                 prevWindowStartTime + MetricsConfiguration.SAMPLING_INTERVAL, alignedOSSnapHolder);
 
@@ -376,13 +375,7 @@ public class ReaderMetricsProcessor implements Runnable {
         LOG.info("Total time taken for aligning OS Metrics: {}", mFinalT - mCurrT);
 
         mCurrT = System.currentTimeMillis();
-
         MetricsDB metricsDB = createMetricsDB(prevWindowStartTime);
-        // emit http
-        if (httpRqMetricsMap.containsKey(prevWindowStartTime)) {
-            HttpRequestMetricsSnapshot prevHttpRqSnap = httpRqMetricsMap.get(prevWindowStartTime);
-            MetricsEmitter.emitHttpMetrics(create, metricsDB, prevHttpRqSnap);
-        }
 
         // emit master
         if (masterEventMetricsMap.containsKey(prevWindowStartTime)) {
@@ -393,6 +386,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         // emit shard
         if (shardRqMetricsMap.containsKey(prevWindowStartTime)) {
+
             ShardRequestMetricsSnapshot preShardRequestMetricsSnapshot = shardRqMetricsMap.get(prevWindowStartTime);
             MetricsEmitter.emitWorkloadMetrics(create, metricsDB, preShardRequestMetricsSnapshot); // calculate latency
             if (osAlignedSnap != null) {
@@ -402,6 +396,13 @@ public class ReaderMetricsProcessor implements Runnable {
             alignedOSSnapHolder.remove();
         }else {
             LOG.info("Request snapshot for the previous window does not exist. Not emitting metrics.");
+        }
+
+        // emit http
+        if (httpRqMetricsMap.containsKey(prevWindowStartTime)) {
+
+            HttpRequestMetricsSnapshot prevHttpRqSnap = httpRqMetricsMap.get(prevWindowStartTime);
+            MetricsEmitter.emitHttpMetrics(create, metricsDB, prevHttpRqSnap);
         }
 
         emitNodeMetrics(currWindowStartTime, metricsDB);
@@ -424,7 +425,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
             metricsParser.parseMasterEventMetrics(rootLocation, currWindowStartTime,
                     currWindowEndTime, masterEventMetricsSnapshot);
-            LOG.error(() -> masterEventMetricsSnapshot.fetchAll());
+            LOG.debug(() -> masterEventMetricsSnapshot.fetchAll());
             masterEventMetricsMap.put(currWindowStartTime, masterEventMetricsSnapshot);
             LOG.info("Adding new Master Event snapshot- currTimestamp {}", currWindowStartTime);
         }

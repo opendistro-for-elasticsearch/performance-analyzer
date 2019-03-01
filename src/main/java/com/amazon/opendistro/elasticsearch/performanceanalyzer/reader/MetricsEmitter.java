@@ -61,6 +61,16 @@ public class MetricsEmitter {
     private static final Pattern TRANS_SERVER_PATTERN = Pattern.compile(".*elasticsearch.*\\[transport_server_worker.*");
     private static final Pattern TRANS_CLIENT_PATTERN = Pattern.compile(".*elasticsearch.*\\[transport_client_boss\\].*");
 
+    private static final List<String> LATENCY_TABLE_DIMENSIONS = new ArrayList<String>() { {
+        this.add(ShardRequestMetricsSnapshot.Fields.OPERATION.toString());
+        this.add(HttpRequestMetricsSnapshot.Fields.EXCEPTION.toString());
+        this.add(HttpRequestMetricsSnapshot.Fields.INDICES.toString());
+        this.add(HttpRequestMetricsSnapshot.Fields.HTTP_RESP_CODE.toString());
+        this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString());
+        this.add(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString());
+        this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ROLE.toString());
+    } };
+
 
     public static void emitAggregatedOSMetrics(final DSLContext create,
         final MetricsDB db, final OSMetricsSnapshot osMetricsSnap,
@@ -195,20 +205,11 @@ public class MetricsEmitter {
             final ShardRequestMetricsSnapshot rqMetricsSnap) throws Exception {
         long mCurrT = System.currentTimeMillis();
         Result<Record> res = rqMetricsSnap.fetchLatencyByOp();
-        List<String> dims = new ArrayList<String>() { {
-            this.add(ShardRequestMetricsSnapshot.Fields.OPERATION.toString());
-            this.add(HttpRequestMetricsSnapshot.Fields.EXCEPTION.toString());
-            this.add(HttpRequestMetricsSnapshot.Fields.INDICES.toString());
-            this.add(HttpRequestMetricsSnapshot.Fields.HTTP_RESP_CODE.toString());
-            this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString());
-            this.add(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString());
-            this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ROLE.toString());
-            } };
 
         db.createMetric(new Metric<Double>(CommonMetric.LATENCY.toString(), 0d),
-                        dims);
+                LATENCY_TABLE_DIMENSIONS);
         BatchBindStep handle = db.startBatchPut(new Metric<Double>(
-                CommonMetric.LATENCY.toString(), 0d), dims);
+                CommonMetric.LATENCY.toString(), 0d), LATENCY_TABLE_DIMENSIONS);
 
         //Dims need to be changed.
         List<String> shardDims = new ArrayList<String>() { {
@@ -375,8 +376,10 @@ public class MetricsEmitter {
             this.add(HttpRequestMetricsSnapshot.Fields.INDICES.toString());
             this.add(HttpRequestMetricsSnapshot.Fields.HTTP_RESP_CODE.toString());
             } };
+
         db.createMetric(new Metric<Double>(AllMetrics.CommonMetric.LATENCY.toString(), 0d),
-                       dims);
+                LATENCY_TABLE_DIMENSIONS);
+
         db.createMetric(new Metric<Double>(AllMetrics.HttpMetric.HTTP_TOTAL_REQUESTS.toString(), 0d),
                         dims);
         db.createMetric(new Metric<Double>(AllMetrics.HttpMetric.HTTP_REQUEST_DOCS.toString(), 0d),

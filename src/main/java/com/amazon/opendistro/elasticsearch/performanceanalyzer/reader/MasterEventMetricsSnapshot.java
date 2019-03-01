@@ -84,8 +84,6 @@ public class MasterEventMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
         } };
 
-        System.out.println(this.windowStartTime);
-
         create.createTable(this.tableName)
                 .columns(columns)
                 .execute();
@@ -102,8 +100,8 @@ public class MasterEventMetricsSnapshot implements Removable {
         //Fetch all entries that have not ended and write to current table.
         create.insertInto(DSL.table(this.tableName)).select(prevSnap.fetchInflightRequests()).execute();
 
-        LOG.error("Inflight shard requests");
-        LOG.error(() -> fetchAll());
+        LOG.debug("Inflight shard requests");
+        LOG.debug(() -> fetchAll());
     }
 
     private SelectHavingStep<Record> fetchInflightRequests() {
@@ -119,16 +117,26 @@ public class MasterEventMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
         } };
 
-        System.out.println(this.windowStartTime);
-        System.out.println(this.windowStartTime - EXPIRE_AFTER);
-
         return create.select(fields).from(groupByInsertOrder())
                 .where(DSL.field(Fields.ST.toString()).isNotNull()
                         .and(DSL.field(Fields.ET.toString()).isNull())
                         .and(DSL.field(Fields.ST.toString()).gt(this.windowStartTime - EXPIRE_AFTER)));
     }
 
+
+    /**
+     * Return all master task event in the current window.
+     *
+     * Actual Table
+     * |tid  |insertOrder|taskType    |priority|queueTime|metadata|           st|           et|
+     * +-----+-----------+------------+--------+---------+--------+-------------+-------------+
+     * |111  |1          |create-index|urgent  |3        |{string}|1535065340625|       {null}|
+     * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|       {null}|
+     * |111  |1          |      {null}|  {null}|   {null}|  {null}|       {null}|1535065340725|
+     *
+     */
     public Result<Record> fetchAll() {
+
         return create.select().from(DSL.table(this.tableName)).fetch();
     }
 
@@ -142,6 +150,13 @@ public class MasterEventMetricsSnapshot implements Removable {
     }
 
 
+    /**
+     * Return one row per master task event. Group by the InsertOrder.
+     * It has 12 columns
+     * |InsertOrder|Priority|Type|Metadata|SUM_QueueTime|AVG_QueueTime|MIN_QueueTime|MAX_QueueTime|
+     *        SUM_RUNTIME|AVG_RUNTIME|MIN_RUNTIME|MAX_RUNTIME|
+     *
+     */
     public Result<Record> fetchQueueAndRunTime() {
 
         List<SelectField<?>> fields = new ArrayList<SelectField<?>>() { {
@@ -149,7 +164,6 @@ public class MasterEventMetricsSnapshot implements Removable {
             this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()), String.class));
             this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()), String.class));
             this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
 
             this.add(DSL.sum(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
                     .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.SUM)));
@@ -196,6 +210,28 @@ public class MasterEventMetricsSnapshot implements Removable {
                         DSL.field(Fields.ST.toString()).isNotNull()));
     }
 
+
+    /**
+     * Return one row per master task event. Group by the InsertOrder.
+     * For a master task without a finish event, we will use the current window end time
+     *
+     * CurrentWindowEndTime: 1535065341025
+     * Actual Table
+     * |tid  |insertOrder|taskType    |priority|queueTime|metadata|           st|           et|
+     * +-----+-----------+------------+--------+---------+--------+-------------+-------------+
+     * |111  |1          |create-index|urgent  |3        |{string}|1535065340625|       {null}|
+     * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|       {null}|
+     * |111  |1          |      {null}|  {null}|   {null}|  {null}|       {null}|1535065340725|
+     *
+     * Returned:
+     *
+     * |tid  |insertOrder|taskType    |priority|queueTime|metadata|           st|           et|
+     * +-----+-----------+------------+--------+---------+--------+-------------+-------------+
+     * |111  |1          |create-index|urgent  |3        |{string}|1535065340625|1535065340725|
+     * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|1535065341025|
+     *
+     * @return aggregated latency rows for each shard request
+     */
     public SelectHavingStep<Record> groupByInsertOrderWithoutNull() {
 
         Long endTime = windowStartTime + MetricsConfiguration.SAMPLING_INTERVAL;
@@ -212,6 +248,25 @@ public class MasterEventMetricsSnapshot implements Removable {
                 .groupBy(groupByInsertOrder);
     }
 
+    /**
+     * Return one row per master task event. Group by the InsertOrder, with possible et remains as null
+     *
+     * Actual Table
+     * |tid  |insertOrder|taskType    |priority|queueTime|metadata|           st|           et|
+     * +-----+-----------+------------+--------+---------+--------+-------------+-------------+
+     * |111  |1          |create-index|urgent  |3        |{string}|1535065340625|       {null}|
+     * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|       {null}|
+     * |111  |1          |      {null}|  {null}|   {null}|  {null}|       {null}|1535065340725|
+     *
+     * Returned:
+     *
+     * |tid  |insertOrder|taskType    |priority|queueTime|metadata|           st|           et|
+     * +-----+-----------+------------+--------+---------+--------+-------------+-------------+
+     * |111  |1          |create-index|urgent  |3        |{string}|1535065340625|1535065340725|
+     * |111  |2          |create-index|urgent  |12       |{string}|1535065340825|       {null}|
+     *
+     * @return aggregated latency rows for each shard request
+     */
     public SelectHavingStep<Record> groupByInsertOrder() {
 
         ArrayList<SelectField<?>> fields = getGroupByInsertOrderSelectFields();
