@@ -24,8 +24,18 @@ Then you provide parameters for metrics, aggregations, dimensions, and nodes (op
 ### SAMPLE REQUEST
 GET `_opendistro/_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all`
 
-For more information, see the [documentation](https://opendistro.github.io/for-elasticsearch-docs).
+
+## Documentation
+
+Please refer to the [technical documentation](https://opendistro.github.io/for-elasticsearch-docs) for detailed information on installing and configuring opendistro-elasticsearch-security plugin.
 
 ## License
 
-This library is licensed under the Apache 2.0 License.
+This code is licensed under the Apache 2.0 License. 
+
+## Copyright
+
+Copyright 2019- Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+
+
