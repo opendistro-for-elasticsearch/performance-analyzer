@@ -21,6 +21,7 @@ import java.util.Map;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkE2ECollector;
@@ -72,6 +73,7 @@ public class MetricsConfiguration {
         CONFIG_MAP.put(OSGlobals.class, cdefault);
         CONFIG_MAP.put(PerformanceAnalyzerMetrics.class, new MetricConfig(0, ROTATION_INTERVAL, 0));
         CONFIG_MAP.put(MetricsPurgeActivity.class, new MetricConfig(ROTATION_INTERVAL, 0, DELETION_INTERVAL));
+        CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricConfig(1000, 0, 0));
         CONFIG_MAP.put(MasterServiceMetrics.class, cdefault);
         CONFIG_MAP.put(DisksCollector.class, cdefault);
         CONFIG_MAP.put(CircuitBreakerCollector.class, cdefault);

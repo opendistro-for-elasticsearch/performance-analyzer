@@ -39,7 +39,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.ThreadIDU
 
 @SuppressWarnings("unchecked")
 public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
-    public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(MasterServiceMetrics.class).samplingInterval;
+    public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
+            MasterServiceEventMetrics.class).samplingInterval;
     private static final Logger LOG = LogManager.getLogger(MasterServiceEventMetrics.class);
     private long lastTaskInsertionOrder;
     private static final int KEYS_PATH_LENGTH = 3;
@@ -127,6 +128,7 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
             } else {
                 generateFinishMetrics(startTime);
             }
+            LOG.info("Successfully collected Master Event Metrics.");
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting Master Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
         }
