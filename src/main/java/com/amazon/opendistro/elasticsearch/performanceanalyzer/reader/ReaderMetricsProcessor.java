@@ -148,9 +148,18 @@ public class ReaderMetricsProcessor implements Runnable {
     }
 
     public void shutdown() throws Exception {
-        conn.close();
+        try {
+            conn.close();
+        } catch (Exception e) {
+            LOG.error("Unable to close inmemory database connection.");
+        }
+
         for (MetricsDB db: metricsDBMap.values()) {
-            db.close();
+            try {
+                db.close();
+            } catch (Exception e) {
+                LOG.error("Unable to close database - {}", db.getDBFilePath());
+            }
         }
     }
 
