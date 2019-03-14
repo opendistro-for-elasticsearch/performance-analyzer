@@ -118,6 +118,12 @@ public class PerformanceAnalyzerTransportChannel implements TransportChannel, Me
         saveMetricValues(value.toString(), currTime, threadID, id, PerformanceAnalyzerMetrics.FINISH_FILE_NAME);
     }
 
+    //This function is called from the security plugin using reflection. Do not
+    //remove this function without changing the security plugin.
+    public TransportChannel getInnerChannel() {
+        return this.original;
+    }
+
     @Override
     public String getMetricsPath(long startTime, String... keysPath) {
         // throw exception if keys.length is not equal to 3 (Keys should be threadID, ShardBulkId, start/finish)
