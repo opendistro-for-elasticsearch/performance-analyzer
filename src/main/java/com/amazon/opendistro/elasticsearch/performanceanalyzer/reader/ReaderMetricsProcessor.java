@@ -139,11 +139,18 @@ public class ReaderMetricsProcessor implements Runnable {
             throw new RuntimeException("READER ERROR");
         } finally {
             try {
-                conn.close();
+                shutdown();
+                LOG.error("Connection to the database was closed.");
             } catch (Exception e) {
-                LOG.error("Unable to close database connection.");
+                LOG.error("Unable to close all database connections and shutdown cleanly.");
             }
-            LOG.error("Connection to the database was closed.");
+        }
+    }
+
+    public void shutdown() throws Exception {
+        conn.close();
+        for (MetricsDB db: metricsDBMap.values()) {
+            db.close();
         }
     }
 
