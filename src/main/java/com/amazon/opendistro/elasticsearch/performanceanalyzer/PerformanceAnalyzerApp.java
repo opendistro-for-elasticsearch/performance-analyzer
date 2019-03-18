@@ -61,15 +61,15 @@ public class PerformanceAnalyzerApp {
         readerThread.start();
 
         int readerPort= getPortNumber();
-        String bindHost = getBindHost();
         try {
+            String bindHost = getBindHost();
             HttpServer server = null;
             if (bindHost != null && !bindHost.trim().isEmpty()) {
-                LOG.error("Binding to Interface: {}", bindHost);
+                LOG.info("Binding to Interface: {}", bindHost);
                 server = HttpServer.create(new InetSocketAddress(InetAddress.getByName(bindHost.trim()), readerPort),
                                            INCOMING_QUEUE_LENGTH);
             } else {
-                LOG.error("Binding to all Interfaces");
+                LOG.info("Value Not Configured for: {} Using default value: binding to all interfaces", WEBSERVICE_BIND_HOST_NAME);
                 server = HttpServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
             }
             server.createContext(QUERY_URL, new QueryMetricsRequestHandler());
@@ -104,19 +104,7 @@ public class PerformanceAnalyzerApp {
     }
 
     private static String getBindHost() {
-        String bindHostValue = null;
-        try {
-            bindHostValue = PluginSettings.instance().getSettingValue(WEBSERVICE_BIND_HOST_NAME);
-
-            if(bindHostValue == null) {
-                LOG.info("{} not configured; using default value: binding to all interfaces", WEBSERVICE_BIND_HOST_NAME);
-            }
-
-        } catch (Exception ex) {
-            LOG.error("Invalid Configured: {} with Error: {} Using default value: binding to all interfaces",
-                    WEBSERVICE_BIND_HOST_NAME, ex.toString());
-        }
-        return bindHostValue;
+        return PluginSettings.instance().getSettingValue(WEBSERVICE_BIND_HOST_NAME);
     }
 }
 
