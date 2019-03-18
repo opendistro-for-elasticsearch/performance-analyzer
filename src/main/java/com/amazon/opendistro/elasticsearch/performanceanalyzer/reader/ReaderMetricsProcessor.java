@@ -133,17 +133,32 @@ public class ReaderMetricsProcessor implements Runnable {
                     Thread.sleep(MetricsConfiguration.SAMPLING_INTERVAL - duration);
                 }
             } catch (Exception ex) {
-                LOG.debug("Exception in sleep: {}", () -> ex);
-                //- nothing to do
+                LOG.error("Exception in sleep: {}", () -> ex);
             }
             throw new RuntimeException("READER ERROR");
         } finally {
             try {
-                conn.close();
+                shutdown();
+                LOG.error("Connection to the database was closed.");
             } catch (Exception e) {
-                LOG.error("Unable to close database connection.");
+                LOG.error("Unable to close all database connections and shutdown cleanly.");
             }
-            LOG.error("Connection to the database was closed.");
+        }
+    }
+
+    public void shutdown() {
+        try {
+            conn.close();
+        } catch (Exception e) {
+            LOG.error("Unable to close inmemory database connection.");
+        }
+
+        for (MetricsDB db: metricsDBMap.values()) {
+            try {
+                db.close();
+            } catch (Exception e) {
+                LOG.error("Unable to close database - {}", db.getDBFilePath());
+            }
         }
     }
 
