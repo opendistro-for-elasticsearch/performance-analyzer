@@ -133,8 +133,7 @@ public class ReaderMetricsProcessor implements Runnable {
                     Thread.sleep(MetricsConfiguration.SAMPLING_INTERVAL - duration);
                 }
             } catch (Exception ex) {
-                LOG.debug("Exception in sleep: {}", () -> ex);
-                //- nothing to do
+                LOG.error("Exception in sleep: {}", () -> ex);
             }
             throw new RuntimeException("READER ERROR");
         } finally {
@@ -147,7 +146,7 @@ public class ReaderMetricsProcessor implements Runnable {
         }
     }
 
-    public void shutdown() throws Exception {
+    public void shutdown() {
         try {
             conn.close();
         } catch (Exception e) {
