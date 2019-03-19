@@ -16,7 +16,6 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.jvm;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
@@ -135,9 +134,14 @@ public class ThreadList {
 
         try (InputStream in = ((HotSpotVirtualMachine) vm).remoteDataDump((Object[]) args);) {
             createMap(in);
-            vm.detach();
         } catch (Exception ex) {
             LOGGER.debug("Cannot list threads with exception: {}", () -> ex.toString());
+        }
+
+        try {
+            vm.detach();
+        } catch (Exception ex) {
+            LOGGER.debug("Failed in VM Detach with exception: {}", () -> ex.toString());
         }
     }
 
@@ -237,16 +241,13 @@ public class ThreadList {
         nameMap.put(t.threadName, t); //XXX: we assume no collisions
     }
 
-    private static void createMap(InputStream in) {
-        try (BufferedReader br = new BufferedReader(new InputStreamReader(in));) {
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                if (line.contains("tid=")) {
-                    parseLine(line);
-                }
+    private static void createMap(InputStream in) throws Exception {
+        BufferedReader br = new BufferedReader(new InputStreamReader(in));
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            if (line.contains("tid=")) {
+                parseLine(line);
             }
-        } catch (IOException ioe) {
-            LOGGER.debug("Exception while reading input with Exception: {}", () -> ioe.toString());
         }
     }
 
