@@ -135,7 +135,7 @@ public class NetworkE2E {
                 ln++;
             }
         } catch (Exception e) {
-            LOG.error(e.toString(), e);
+            LOG.debug("Error in mapTCPMetrics: {}", () -> e);
         }
     }
 

@@ -42,7 +42,7 @@ public class FileHelper {
                 Thread.sleep(2);
             }
         } catch (Exception ex) {
-            log.error("Having issue to create tmp file. Using default value.", ex);
+            log.error("Having issue creating tmp file. Using default value.", ex);
         }
         log.info("jvmSupportMillisecondFileModityTime: {}", jvmSupportMillisecondFileModityTime);
     }
