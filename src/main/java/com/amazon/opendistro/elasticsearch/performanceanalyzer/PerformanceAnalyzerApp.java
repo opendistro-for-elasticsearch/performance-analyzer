@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import java.io.File;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
@@ -31,6 +32,7 @@ import com.sun.net.httpserver.HttpServer;
 public class PerformanceAnalyzerApp {
     private static final int WEBSERVICE_DEFAULT_PORT = 9600;
     private static final String WEBSERVICE_PORT_CONF_NAME = "webservice-listener-port";
+    private static final String WEBSERVICE_BIND_HOST_NAME = "webservice-bind-host";
     //Use system default for max backlog.
     private static final int INCOMING_QUEUE_LENGTH = 1;
     public static final String QUERY_URL = "/_opendistro/_performanceanalyzer/metrics";
@@ -60,13 +62,25 @@ public class PerformanceAnalyzerApp {
 
         int readerPort= getPortNumber();
         try {
-            HttpServer server = HttpServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
+            String bindHost = getBindHost();
+            HttpServer server = null;
+            if (bindHost != null && !bindHost.trim().isEmpty()) {
+                LOG.info("Binding to Interface: {}", bindHost);
+                server = HttpServer.create(new InetSocketAddress(InetAddress.getByName(bindHost.trim()), readerPort),
+                                           INCOMING_QUEUE_LENGTH);
+            } else {
+                LOG.info("Value Not Configured for: {} Using default value: binding to all interfaces", WEBSERVICE_BIND_HOST_NAME);
+                server = HttpServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
+            }
             server.createContext(QUERY_URL, new QueryMetricsRequestHandler());
 
             server.setExecutor(Executors.newCachedThreadPool());
             server.start();
         } catch(java.net.BindException ex) {
             LOG.error("Port  {} is already in use...exiting", readerPort);
+            Runtime.getRuntime().halt(1);
+        } catch(Exception ex) {
+            LOG.error("Exception in starting Reader Process: " + ex.toString());
             Runtime.getRuntime().halt(1);
         }
     }
@@ -87,6 +101,10 @@ public class PerformanceAnalyzerApp {
                     WEBSERVICE_PORT_CONF_NAME, WEBSERVICE_DEFAULT_PORT, ex.toString());
             return WEBSERVICE_DEFAULT_PORT;
         }
+    }
+
+    private static String getBindHost() {
+        return PluginSettings.instance().getSettingValue(WEBSERVICE_BIND_HOST_NAME);
     }
 }
 
