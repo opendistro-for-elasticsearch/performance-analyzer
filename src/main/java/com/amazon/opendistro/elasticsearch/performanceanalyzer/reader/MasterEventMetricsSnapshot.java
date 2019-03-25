@@ -75,11 +75,11 @@ public class MasterEventMetricsSnapshot implements Removable {
 
         this.columns = new ArrayList<Field<?>>() { {
             this.add(DSL.field(DSL.name(Fields.TID.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
         } };
@@ -108,11 +108,11 @@ public class MasterEventMetricsSnapshot implements Removable {
 
         ArrayList<SelectField<?>> fields = new ArrayList<SelectField<?>>() { {
             this.add(DSL.field(DSL.name(Fields.TID.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
             this.add(DSL.field(DSL.name(Fields.ST.toString()), Long.class));
             this.add(DSL.field(DSL.name(Fields.ET.toString()), Long.class));
         } };
@@ -162,32 +162,32 @@ public class MasterEventMetricsSnapshot implements Removable {
     public Result<Record> fetchQueueAndRunTime() {
 
         List<SelectField<?>> fields = new ArrayList<SelectField<?>>() { {
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()), String.class));
 
-            this.add(DSL.sum(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.SUM)));
-            this.add(DSL.avg(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.AVG)));
-            this.add(DSL.min(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MIN)));
-            this.add(DSL.max(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MAX)));
+            this.add(DSL.sum(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.SUM)));
+            this.add(DSL.avg(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.AVG)));
+            this.add(DSL.min(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MIN)));
+            this.add(DSL.max(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MAX)));
 
-            this.add(DSL.sum(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.SUM)));
-            this.add(DSL.avg(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.AVG)));
-            this.add(DSL.min(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MIN)));
-            this.add(DSL.max(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
-                    .as(DBUtils.getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MAX)));
+            this.add(DSL.sum(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.SUM)));
+            this.add(DSL.avg(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.AVG)));
+            this.add(DSL.min(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MIN)));
+            this.add(DSL.max(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()), Double.class))
+                    .as(DBUtils.getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MAX)));
         } };
 
         ArrayList<Field<?>> groupByFields = new ArrayList<Field<?>>() { {
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
         } };
 
         return create.select(fields).from(fetchRunTimeHelper())
@@ -195,19 +195,19 @@ public class MasterEventMetricsSnapshot implements Removable {
                 .fetch();
     }
 
-    public SelectHavingStep<Record> fetchRunTimeHelper() {
+    private SelectHavingStep<Record> fetchRunTimeHelper() {
 
         List<SelectField<?>> fields = new ArrayList<SelectField<?>>() { {
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()), String.class));
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()), String.class));
             this.add(DSL.field(Fields.ET.toString()).minus(DSL.field(Fields.ST.toString())).
-                    as(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString())));
+                    as(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString())));
         } };
 
-        return create.select(fields).from(groupByInsertOrderWithoutNull())
+        return create.select(fields).from(groupByInsertOrderAndAutoFillEndTime())
                 .where(DSL.field(Fields.ET.toString()).isNotNull().and(
                         DSL.field(Fields.ST.toString()).isNotNull()));
     }
@@ -234,7 +234,7 @@ public class MasterEventMetricsSnapshot implements Removable {
      *
      * @return aggregated master task
      */
-    public SelectHavingStep<Record> groupByInsertOrderWithoutNull() {
+    private SelectHavingStep<Record> groupByInsertOrderAndAutoFillEndTime() {
 
         Long endTime = windowStartTime + MetricsConfiguration.SAMPLING_INTERVAL;
         List<SelectField<?>> fields = getGroupByInsertOrderSelectFields();
@@ -242,7 +242,7 @@ public class MasterEventMetricsSnapshot implements Removable {
                 .as(DSL.name(Fields.ET.toString())));
 
         ArrayList<Field<?>> groupByInsertOrder = new ArrayList<Field<?>>() { {
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
         } };
 
         return create.select(fields)
@@ -269,7 +269,7 @@ public class MasterEventMetricsSnapshot implements Removable {
      *
      * @return aggregated latency rows for each shard request
      */
-    public SelectHavingStep<Record> groupByInsertOrder() {
+    private SelectHavingStep<Record> groupByInsertOrder() {
 
         ArrayList<SelectField<?>> fields = getGroupByInsertOrderSelectFields();
 
@@ -277,7 +277,7 @@ public class MasterEventMetricsSnapshot implements Removable {
         fields.add(DSL.field(DSL.name(Fields.TID.toString()), String.class));
 
         ArrayList<Field<?>> groupByInsertOrder = new ArrayList<Field<?>>() { {
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
         } };
 
         return create.select(fields)
@@ -288,19 +288,19 @@ public class MasterEventMetricsSnapshot implements Removable {
     private ArrayList<SelectField<?>> getGroupByInsertOrderSelectFields() {
 
         ArrayList<SelectField<?>> fields = new ArrayList<SelectField<?>>() { {
-            this.add(DSL.field(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
+            this.add(DSL.field(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()), String.class));
 
-            this.add(DSL.max(DSL.field(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()))
-                    .as(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString())));
+            this.add(DSL.max(DSL.field(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()))
+                    .as(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString())));
 
-            this.add(DSL.max(DSL.field(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()))
-                    .as(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString())));
+            this.add(DSL.max(DSL.field(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()))
+                    .as(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString())));
 
-            this.add(DSL.max(DSL.field(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()))
-                    .as(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString())));
+            this.add(DSL.max(DSL.field(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()))
+                    .as(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString())));
 
-            this.add(DSL.max(DSL.field(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()))
-                    .as(DSL.name(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString())));
+            this.add(DSL.max(DSL.field(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()))
+                    .as(DSL.name(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString())));
 
             this.add(DSL.max(DSL.field(Fields.ST.toString(), Long.class)).as(DSL.name(Fields.ST.toString())));
 

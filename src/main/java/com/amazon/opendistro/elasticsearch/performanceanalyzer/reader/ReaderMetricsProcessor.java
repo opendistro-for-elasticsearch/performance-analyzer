@@ -377,14 +377,33 @@ public class ReaderMetricsProcessor implements Runnable {
         mCurrT = System.currentTimeMillis();
         MetricsDB metricsDB = createMetricsDB(prevWindowStartTime);
 
-        // emit master
-        if (masterEventMetricsMap.containsKey(prevWindowStartTime)) {
+        emitMasterMetrics(prevWindowStartTime, metricsDB);
+        emitShardRequestMetrics(prevWindowStartTime, alignedOSSnapHolder, osAlignedSnap, metricsDB);
+        emitHttpRequestMetrics(prevWindowStartTime, metricsDB);
+        emitNodeMetrics(currWindowStartTime, metricsDB);
 
-            MasterEventMetricsSnapshot preMasterEventSnapshot = masterEventMetricsMap.get(prevWindowStartTime);
-            MetricsEmitter.emitMasterEventMetrics(metricsDB, preMasterEventSnapshot);
+        metricsDB.commit();
+        metricsDBMap.put(prevWindowStartTime, metricsDB);
+        mFinalT = System.currentTimeMillis();
+        LOG.info("Total time taken for emitting Metrics: {}", mFinalT - mCurrT);
+    }
+
+    private void emitHttpRequestMetrics(long prevWindowStartTime, MetricsDB metricsDB) throws Exception {
+
+        if (httpRqMetricsMap.containsKey(prevWindowStartTime)) {
+
+            HttpRequestMetricsSnapshot prevHttpRqSnap = httpRqMetricsMap.get(prevWindowStartTime);
+            MetricsEmitter.emitHttpMetrics(create, metricsDB, prevHttpRqSnap);
+        }else {
+            LOG.info("Http request snapshot for the previous window does not exist. Not emitting metrics.");
         }
+    }
 
-        // emit shard
+    private void emitShardRequestMetrics(long prevWindowStartTime,
+                                         OSMetricsSnapshot alignedOSSnapHolder,
+                                         OSMetricsSnapshot osAlignedSnap,
+                                         MetricsDB metricsDB) throws Exception {
+
         if (shardRqMetricsMap.containsKey(prevWindowStartTime)) {
 
             ShardRequestMetricsSnapshot preShardRequestMetricsSnapshot = shardRqMetricsMap.get(prevWindowStartTime);
@@ -395,21 +414,19 @@ public class ReaderMetricsProcessor implements Runnable {
             }
             alignedOSSnapHolder.remove();
         }else {
-            LOG.info("Request snapshot for the previous window does not exist. Not emitting metrics.");
+            LOG.info("Shard request snapshot for the previous window does not exist. Not emitting metrics.");
         }
+    }
 
-        // emit http
-        if (httpRqMetricsMap.containsKey(prevWindowStartTime)) {
+    private void emitMasterMetrics(long prevWindowStartTime, MetricsDB metricsDB) {
 
-            HttpRequestMetricsSnapshot prevHttpRqSnap = httpRqMetricsMap.get(prevWindowStartTime);
-            MetricsEmitter.emitHttpMetrics(create, metricsDB, prevHttpRqSnap);
+        if (masterEventMetricsMap.containsKey(prevWindowStartTime)) {
+
+            MasterEventMetricsSnapshot preMasterEventSnapshot = masterEventMetricsMap.get(prevWindowStartTime);
+            MetricsEmitter.emitMasterEventMetrics(metricsDB, preMasterEventSnapshot);
+        }else {
+            LOG.info("Master snapshot for the previous window does not exist. Not emitting metrics.");
         }
-
-        emitNodeMetrics(currWindowStartTime, metricsDB);
-        metricsDB.commit();
-        metricsDBMap.put(prevWindowStartTime, metricsDB);
-        mFinalT = System.currentTimeMillis();
-        LOG.info("Total time taken for emitting Metrics: {}", mFinalT - mCurrT);
     }
 
     private void parseMasterEventMetrics(String rootLocation, long currWindowStartTime, long currWindowEndTime) {

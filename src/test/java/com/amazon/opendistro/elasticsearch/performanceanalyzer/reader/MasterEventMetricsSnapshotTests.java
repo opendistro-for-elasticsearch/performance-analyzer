@@ -52,15 +52,15 @@ public class MasterEventMetricsSnapshotTests {
 
         assertEquals(1, rt.size());
         assertEquals(4999L,
-                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
         assertEquals("urgent",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
         assertEquals("create-index",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()));
         assertEquals("metadata",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()));
         assertEquals(12L,
-                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
     }
 
     @Test
@@ -75,15 +75,15 @@ public class MasterEventMetricsSnapshotTests {
 
         assertEquals(1, rt.size());
         assertEquals(4L,
-                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
         assertEquals("urgent",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
         assertEquals("create-index",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()));
         assertEquals("metadata",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()));
         assertEquals(12L,
-                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
     }
 
     @Test
@@ -100,26 +100,26 @@ public class MasterEventMetricsSnapshotTests {
 
         assertEquals(2, rt.size());
         assertEquals(4L,
-                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
         assertEquals("urgent",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
         assertEquals("create-index",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()));
         assertEquals("metadata",
-                rt.get(0).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()));
+                rt.get(0).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()));
         assertEquals(12L,
-                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(0).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
 
         assertEquals(4993L,
-                ((BigDecimal)(rt.get(1).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(1).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString()))).longValue());
         assertEquals("high",
-                rt.get(1).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()));
+                rt.get(1).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
         assertEquals("remapping",
-                rt.get(1).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()));
+                rt.get(1).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()));
         assertEquals("metadata2",
-                rt.get(1).get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()));
+                rt.get(1).get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()));
         assertEquals(2L,
-                ((BigDecimal)(rt.get(1).get("sum_" + AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
+                ((BigDecimal)(rt.get(1).get("sum_" + AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()))).longValue());
 
     }
 

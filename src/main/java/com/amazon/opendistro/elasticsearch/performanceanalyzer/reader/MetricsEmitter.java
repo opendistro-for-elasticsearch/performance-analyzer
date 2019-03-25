@@ -443,96 +443,95 @@ public class MetricsEmitter {
         Result<Record> queueAndRunTimeResult = masterEventMetricsSnapshot.fetchQueueAndRunTime();
 
         List<String> dims = new ArrayList<String>() { {
-            this.add(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString());
-            this.add(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString());
-            this.add(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString());
-            this.add(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString());
         } };
 
-        createQueueTimeTable(metricsDB, queueAndRunTimeResult, dims);
-        createRunTimeTable(metricsDB, queueAndRunTimeResult, dims);
+        emitQueueTimeMetric(metricsDB, queueAndRunTimeResult, dims);
+        emitRuntimeMetric(metricsDB, queueAndRunTimeResult, dims);
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for writing master event queue metrics metricsdb: {}", mFinalT - mCurrT);
     }
 
-    private static void createRunTimeTable(MetricsDB metricsDB, Result<Record> res, List<String> dims) {
+    private static void emitRuntimeMetric(MetricsDB metricsDB, Result<Record> res, List<String> dims) {
 
-        Dimensions dimensions = new Dimensions();
         metricsDB.createMetric(
-                new Metric<Double>(AllMetrics.Master_Metric_Values.MASTER_TASK_RUN_TIME.toString(), 0d), dims);
+                new Metric<Double>(AllMetrics.MasterMetricValues.MASTER_TASK_RUN_TIME.toString(), 0d), dims);
+
+        BatchBindStep handle = metricsDB.startBatchPut(new Metric<Double>(
+                AllMetrics.MasterMetricValues.MASTER_TASK_RUN_TIME.toString(), 0d), dims);
 
         for (Record r: res) {
 
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()).toString());
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()).toString());
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()).toString());
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()).toString());
-
             Double sumQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.SUM))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.SUM))
                     .toString());
 
             Double avgQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.AVG))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.AVG))
                     .toString());
 
             Double minQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MIN))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MIN))
                     .toString());
 
             Double maxQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MAX))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MAX))
                     .toString());
 
-            metricsDB.putMetric(new Metric<Double>(AllMetrics.Master_Metric_Values.MASTER_TASK_RUN_TIME.toString(), sumQueueTime,
-                            avgQueueTime, minQueueTime, maxQueueTime),
-                    dimensions, 0);
+            handle.bind(r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()).toString(),
+                    sumQueueTime,
+                    avgQueueTime,
+                    minQueueTime,
+                    maxQueueTime);
         }
+
+        handle.execute();
     }
 
-    private static void createQueueTimeTable(MetricsDB metricsDB, Result<Record> res, List<String> dims) {
+    private static void emitQueueTimeMetric(MetricsDB metricsDB, Result<Record> res, List<String> dims) {
 
-        Dimensions dimensions = new Dimensions();
         metricsDB.createMetric(
-                new Metric<Double>(AllMetrics.Master_Metric_Values.MASTER_TASK_QUEUE_TIME.toString(), 0d), dims);
+                new Metric<Double>(AllMetrics.MasterMetricValues.MASTER_TASK_QUEUE_TIME.toString(), 0d), dims);
+
+        BatchBindStep handle = metricsDB.startBatchPut(new Metric<Double>(
+                AllMetrics.MasterMetricValues.MASTER_TASK_QUEUE_TIME.toString(), 0d), dims);
 
         for (Record r: res) {
 
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_INSERT_ORDER.toString()).toString());
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString()).toString());
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_TYPE.toString()).toString());
-            dimensions.put(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString(),
-                    r.get(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_METADATA.toString()).toString());
-
             Double sumQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.SUM))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.SUM))
                     .toString());
 
             Double avgQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.AVG))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.AVG))
                     .toString());
 
             Double minQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MIN))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MIN))
                     .toString());
 
             Double maxQueueTime = Double.parseDouble(r.get(DBUtils.
-                    getAggFieldName(AllMetrics.Master_Metric_Dimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MAX))
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MAX))
                     .toString());
 
-
-            metricsDB.putMetric(new Metric<Double>(AllMetrics.Master_Metric_Values.MASTER_TASK_QUEUE_TIME.toString(), sumQueueTime,
-                            avgQueueTime, minQueueTime, maxQueueTime),
-                    dimensions, 0);
+            handle.bind(r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()).toString(),
+                    sumQueueTime,
+                    avgQueueTime,
+                    minQueueTime,
+                    maxQueueTime);
         }
+
+        handle.execute();
     }
 
     /**

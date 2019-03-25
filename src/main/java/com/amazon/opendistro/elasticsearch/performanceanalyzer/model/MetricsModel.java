@@ -229,10 +229,10 @@ public class MetricsModel {
         ALL_METRICS.put(MasterPendingValue.MASTER_PENDING_QUEUE_SIZE.toString(),
                 new MetricAttributes(MetricUnits.COUNT.toString(), EmptyDimension.values()));
 
-        ALL_METRICS.put(AllMetrics.Master_Metric_Values.MASTER_TASK_QUEUE_TIME.toString(),
-                new MetricAttributes(MetricUnits.MILLISECOND.toString(), AllMetrics.Master_Metric_Dimensions.values()));
+        ALL_METRICS.put(AllMetrics.MasterMetricValues.MASTER_TASK_QUEUE_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), AllMetrics.MasterMetricDimensions.values()));
 
-        ALL_METRICS.put(AllMetrics.Master_Metric_Values.MASTER_TASK_RUN_TIME.toString(),
-                new MetricAttributes(MetricUnits.MILLISECOND.toString(), AllMetrics.Master_Metric_Dimensions.values()));
+        ALL_METRICS.put(AllMetrics.MasterMetricValues.MASTER_TASK_RUN_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), AllMetrics.MasterMetricDimensions.values()));
     }
 }

@@ -576,7 +576,7 @@ public class AllMetrics {
         }
     }
 
-    public enum Master_Metric_Dimensions implements MetricDimension {
+    public enum MasterMetricDimensions implements MetricDimension {
         MASTER_TASK_PRIORITY("MasterTaskPriority"),
         MASTER_TASK_TYPE("MasterTaskType"),
         MASTER_TASK_METADATA("MasterTaskMetadata"),
@@ -586,7 +586,7 @@ public class AllMetrics {
 
         private final String value;
 
-        Master_Metric_Dimensions(String value) {
+        MasterMetricDimensions(String value) {
             this.value = value;
         }
 
@@ -596,7 +596,7 @@ public class AllMetrics {
         }
     }
 
-    public enum Master_Metric_Values implements MetricValue {
+    public enum MasterMetricValues implements MetricValue {
         //-todo : Migrate to CommonMetric.Constants
         MASTER_TASK_QUEUE_TIME("Master_Task_Queue_Time"),
         MASTER_TASK_RUN_TIME("Master_Task_Run_Time"),
@@ -605,7 +605,7 @@ public class AllMetrics {
 
         private final String value;
 
-        Master_Metric_Values(String value) {
+        MasterMetricValues(String value) {
             this.value = value;
         }
 
