@@ -34,7 +34,8 @@ public class NodeStatsMetricsCollectorTests {
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
                 PerformanceAnalyzerMetrics.sDevShmLocation
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("89123.23", fetchedValue);
 
         try {

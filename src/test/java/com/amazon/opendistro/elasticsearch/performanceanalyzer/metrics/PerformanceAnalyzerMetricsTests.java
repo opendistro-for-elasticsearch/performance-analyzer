@@ -30,6 +30,6 @@ public class PerformanceAnalyzerMetricsTests {
 
         assertEquals("", PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test2"));
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1");
     }
 }

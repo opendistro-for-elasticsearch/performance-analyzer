@@ -29,7 +29,8 @@ public class CircuitBreakerCollectorTests {
         circuitBreakerCollector.saveMetricValues("werjbdsiviewur", startTimeInMills);
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation
                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/circuit_breaker/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("werjbdsiviewur", fetchedValue);
 
         try {

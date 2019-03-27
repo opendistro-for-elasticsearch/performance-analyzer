@@ -29,7 +29,8 @@ public class PerformanceAnalyzerTransportChannelTests {
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
                 PerformanceAnalyzerMetrics.sDevShmLocation +
                         PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/BulkThread/shardbulk/ShardBulkId/start");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("ABCDEF", fetchedValue);
     }
 }

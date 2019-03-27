@@ -52,6 +52,7 @@ public class PerformanceAnalyzerActionListenerTests {
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId2/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation 
+                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
     }
 }

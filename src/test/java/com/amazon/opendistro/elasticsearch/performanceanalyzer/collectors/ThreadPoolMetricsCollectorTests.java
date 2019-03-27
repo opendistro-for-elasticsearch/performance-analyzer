@@ -32,7 +32,8 @@ public class ThreadPoolMetricsCollectorTests {
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
                 PerformanceAnalyzerMetrics.sDevShmLocation + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/thread_pool/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("12321.5464", fetchedValue);
 
         try {
