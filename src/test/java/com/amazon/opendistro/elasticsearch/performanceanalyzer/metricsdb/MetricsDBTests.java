@@ -38,7 +38,7 @@ public class MetricsDBTests {
     @Before
     public void setUp() throws Exception {
         System.setProperty("java.io.tmpdir", "/tmp");
-        this.db = new MetricsDB(System.currentTimeMillis());
+        this.db = new MetricsDB(1553713380);
     }
 
     public MetricsDBTests() throws ClassNotFoundException {
