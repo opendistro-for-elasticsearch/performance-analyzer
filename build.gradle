@@ -53,8 +53,9 @@ ext {
 }
 test {
     enabled = true
-    //parallelism = 1
+    maxParallelForks = 1
 }
+
 licenseHeaders.enabled = false
 
 esplugin {
