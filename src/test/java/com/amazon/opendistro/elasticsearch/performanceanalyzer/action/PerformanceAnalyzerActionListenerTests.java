@@ -24,7 +24,7 @@ public class PerformanceAnalyzerActionListenerTests {
     @Test
     public void testHttpMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = System.currentTimeMillis() + 2 * 6000000;
+        long startTimeInMills = 1553725339;
         PerformanceAnalyzerActionListener performanceanalyzerActionListener = new PerformanceAnalyzerActionListener();
         performanceanalyzerActionListener.saveMetricValues("XYZADFAS", startTimeInMills, "bulk", "bulkId", "start");
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(

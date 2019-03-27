@@ -25,7 +25,7 @@ public class NodeStatsMetricsCollectorTests {
     @Test
     public void testNodeStatsMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = System.currentTimeMillis() + 3 * 6000000;
+        long startTimeInMills = 1253722339;
 
         NodeStatsMetricsCollector nodeStatsMetricsCollector = new NodeStatsMetricsCollector();
         nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");

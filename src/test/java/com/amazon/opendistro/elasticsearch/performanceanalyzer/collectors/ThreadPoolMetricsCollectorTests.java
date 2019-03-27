@@ -24,7 +24,7 @@ public class ThreadPoolMetricsCollectorTests {
     @Test
     public void testThreadPoolMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = System.currentTimeMillis() + 4 * 6000000;
+        long startTimeInMills = 1453724339;
 
         ThreadPoolMetricsCollector threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
         threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
