@@ -128,7 +128,7 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
             } else {
                 generateFinishMetrics(startTime);
             }
-            LOG.info("Successfully collected Master Event Metrics.");
+            LOG.debug(() -> "Successfully collected Master Event Metrics.");
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting Master Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
         }

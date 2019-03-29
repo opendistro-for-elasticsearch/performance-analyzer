@@ -111,7 +111,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         osMetricsSnap.putMetric(metrics, osDim, 1L);
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713402);
         MetricsEmitter.emitAggregatedOSMetrics(create, db, osMetricsSnap, rqMetricsSnap);
         res = db.queryMetric(Arrays.asList(OSMetrics.PAGING_RSS.toString(), OSMetrics.CPU_UTILIZATION.toString()),
                 Arrays.asList("sum", "sum"),
@@ -120,6 +120,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
                         ShardRequestMetricsSnapshot.Fields.OPERATION.toString()));
 
         Double cpu = Double.parseDouble(res.get(0).get(OSMetrics.CPU_UTILIZATION.toString()).toString());
+        db.remove();
         assertEquals(0.164465243055556d, cpu.doubleValue(), 0);
     }
 
@@ -173,13 +174,14 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         osMetricsSnap.putMetric(metrics, osDim, 1L);
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713410);
         MetricsEmitter.emitAggregatedOSMetrics(create, db, osMetricsSnap, rqMetricsSnap);
         res = db.queryMetric(Arrays.asList(OSMetrics.PAGING_RSS.toString(), OSMetrics.CPU_UTILIZATION.toString()),
                 Arrays.asList("sum", "sum"),
                 Arrays.asList(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString(),
                         ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString(),
                         ShardRequestMetricsSnapshot.Fields.OPERATION.toString()));
+        db.remove();
     }
 
     @Test
@@ -202,7 +204,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         rqMetricsSnap.putEndMetric(30000L, dimensions);
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713438);
         MetricsEmitter.emitHttpMetrics(create, db, rqMetricsSnap);
         Result<Record> res = db.queryMetric(Arrays.asList(CommonMetric.LATENCY.toString(),
                 HttpMetric.HTTP_TOTAL_REQUESTS.toString()),
@@ -210,6 +212,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
                 Arrays.asList(HttpRequestMetricsSnapshot.Fields.OPERATION.toString()));
 
         Float latency = Float.parseFloat(res.get(0).get(CommonMetric.LATENCY.toString()).toString());
+        db.remove();
         assertEquals(20490.0f, latency.floatValue(), 0);
     }
 
@@ -228,7 +231,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         System.out.println(rqMetricsSnap.fetchLatencyByOp());
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713445);
         MetricsEmitter.emitWorkloadMetrics(create, db, rqMetricsSnap);
         Result<Record> res = db.queryMetric(Arrays.asList(ShardBulkMetric.DOC_COUNT.toString(),
                     ShardOperationMetric.SHARD_OP_COUNT.toString()),
@@ -237,6 +240,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
 
         Double bulkDocs = Double.parseDouble(res.get(0).get(ShardBulkMetric.DOC_COUNT.toString()).toString());
         Double shardOps = Double.parseDouble(res.get(0).get(ShardOperationMetric.SHARD_OP_COUNT.toString()).toString());
+        db.remove();
         assertEquals(20.0d, bulkDocs.doubleValue(), 0);
         assertEquals(2d, shardOps.doubleValue(), 0);
     }
@@ -246,9 +250,10 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         Connection conn = DriverManager.getConnection(DB_URL);
         ShardRequestMetricsSnapshot rqMetricsSnap = new ShardRequestMetricsSnapshot(conn, 1535065195000L);
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713492);
         MetricsEmitter.emitWorkloadMetrics(create, db, rqMetricsSnap);
         System.out.println(rqMetricsSnap.fetchAll());
+        db.remove();
         assertEquals(0, rqMetricsSnap.fetchAll().size());
     }
 
@@ -295,7 +300,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
         tcpSnap.insertMultiRows(values);
 
         DSLContext create = DSL.using(conn, SQLDialect.SQLITE);
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713499);
         MetricsEmitter.emitNodeMetrics(create, db, tcpSnap);
         Result<Record> res = db.queryMetric(
                 Arrays.asList(TCPValue.Net_TCP_NUM_FLOWS.toString(),
@@ -320,6 +325,7 @@ public class MetricsEmitterTests extends AbstractReaderTests {
                     closeTo(-1, 0.001), closeTo(5, 0.001), closeTo(0, 0.001)));
 
         }
+        db.remove();
 
     }
 }

@@ -37,13 +37,14 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 
 public class ParseNodeMetricsTests extends AbstractReaderTests {
+    long currentTimeMills = System.currentTimeMillis();
     public ParseNodeMetricsTests() throws SQLException, ClassNotFoundException {
         super();
     }
 
     @Test
     public void testParseMasterPendingMetrics() throws Exception {
-        long currTimestamp = System.currentTimeMillis() + 4000;
+        long currTimestamp = System.currentTimeMillis() + 94000;
 
         long currTimeBucket = PerformanceAnalyzerMetrics.getTimeInterval(currTimestamp);
         String currentTimeBucketStr = String.valueOf(currTimeBucket);
@@ -101,7 +102,7 @@ public class ParseNodeMetricsTests extends AbstractReaderTests {
 
     @Test
     public void testParseDiskMetrics() throws Exception {
-        long currTimestamp = System.currentTimeMillis() + 4000;
+        long currTimestamp = System.currentTimeMillis() + 94000;
 
         long currTimeBucket = PerformanceAnalyzerMetrics.getTimeInterval(currTimestamp);
         String currentTimeBucketStr = String.valueOf(currTimeBucket);
@@ -148,7 +149,7 @@ public class ParseNodeMetricsTests extends AbstractReaderTests {
                 createDiskMetrics(diskXvda, util1, wait1, srate1),
                 createDiskMetrics(diskNvme0n1, util2, wait2, srate2));
 
-        currTimestamp = System.currentTimeMillis() + 4000;
+        currTimestamp = System.currentTimeMillis() + 94000;
         mp.parseNodeMetrics(currTimestamp);
 
         verifyDiskMetrics(mp.getNodeMetricsMap(), lastUpdatedTime, diskXvda,

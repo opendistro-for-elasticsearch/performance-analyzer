@@ -24,12 +24,13 @@ public class CircuitBreakerCollectorTests {
     @Test
     public void testCircuitBreakerMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = System.currentTimeMillis() + 7000000;
+        long startTimeInMills = 1153721339;
         CircuitBreakerCollector circuitBreakerCollector = new CircuitBreakerCollector();
         circuitBreakerCollector.saveMetricValues("werjbdsiviewur", startTimeInMills);
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation
                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/circuit_breaker/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("werjbdsiviewur", fetchedValue);
 
         try {
