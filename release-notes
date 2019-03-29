@@ -1,4 +1,5 @@
-## 2019-01-31, Version 1.0.0 (Current)
+## 2019-03-28, Version 0.8.0 (Version compatible with elasticsearch 6.6.2)
+## 2019-01-31, Version 0.7.0 (Version compatible with elasticsearch 6.5.4)
 
 ### New Features
 
@@ -9,5 +10,4 @@ Performance Analyzer Plugin: Collects metrics across the stack and writes them t
 Performance Analyzer Agent: A Java process that takes periodic snapshots of metrics collected by Plugin, and indexes them to provide a REST interface. The interface supports aggregations on metrics grouped by dimensions for a given time interval. More details of supported metrics, aggregations and dimensions can be found in the documentation.
 
 ### Commits
-WIP - Will be squashing to one commit in future
-
+https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/22 : Changes required for elasticsearch 6.6.2 version
