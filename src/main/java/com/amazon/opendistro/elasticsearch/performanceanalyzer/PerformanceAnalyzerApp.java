@@ -20,6 +20,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLContext;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.TroubleshootingConfig;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
@@ -27,7 +29,11 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.rest.QueryMetrics
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
 import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpsServer;
+import com.sun.net.httpserver.HttpsConfigurator;
 
 public class PerformanceAnalyzerApp {
     private static final int WEBSERVICE_DEFAULT_PORT = 9600;
@@ -63,15 +69,18 @@ public class PerformanceAnalyzerApp {
         int readerPort= getPortNumber();
         try {
             String bindHost = getBindHost();
-            HttpServer server = null;
+            HttpsServer server = null;
             if (bindHost != null && !bindHost.trim().isEmpty()) {
                 LOG.info("Binding to Interface: {}", bindHost);
-                server = HttpServer.create(new InetSocketAddress(InetAddress.getByName(bindHost.trim()), readerPort),
-                                           INCOMING_QUEUE_LENGTH);
+                server = HttpsServer.create(new InetSocketAddress(InetAddress.getByName(bindHost.trim()), readerPort),
+                                            INCOMING_QUEUE_LENGTH);
             } else {
                 LOG.info("Value Not Configured for: {} Using default value: binding to all interfaces", WEBSERVICE_BIND_HOST_NAME);
-                server = HttpServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
+                server = HttpsServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
             }
+            SSLContext sslContext = SSLContext.getInstance ( "TLSv1.2" );
+            sslContext.init(null, null, null);
+            server.setHttpsConfigurator(new HttpsConfigurator(sslContext));
             server.createContext(QUERY_URL, new QueryMetricsRequestHandler());
 
             server.setExecutor(Executors.newCachedThreadPool());
