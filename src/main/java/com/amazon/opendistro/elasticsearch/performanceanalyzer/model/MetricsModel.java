@@ -18,6 +18,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.model;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.AggregatedOSDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerValue;
@@ -227,5 +228,11 @@ public class MetricsModel {
         // Master Metrics
         ALL_METRICS.put(MasterPendingValue.MASTER_PENDING_QUEUE_SIZE.toString(),
                 new MetricAttributes(MetricUnits.COUNT.toString(), EmptyDimension.values()));
+
+        ALL_METRICS.put(AllMetrics.MasterMetricValues.MASTER_TASK_QUEUE_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), AllMetrics.MasterMetricDimensions.values()));
+
+        ALL_METRICS.put(AllMetrics.MasterMetricValues.MASTER_TASK_RUN_TIME.toString(),
+                new MetricAttributes(MetricUnits.MILLISECOND.toString(), AllMetrics.MasterMetricDimensions.values()));
     }
 }

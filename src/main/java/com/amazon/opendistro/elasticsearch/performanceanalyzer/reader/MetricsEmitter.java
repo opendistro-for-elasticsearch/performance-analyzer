@@ -61,6 +61,16 @@ public class MetricsEmitter {
     private static final Pattern TRANS_SERVER_PATTERN = Pattern.compile(".*elasticsearch.*\\[transport_server_worker.*");
     private static final Pattern TRANS_CLIENT_PATTERN = Pattern.compile(".*elasticsearch.*\\[transport_client_boss\\].*");
 
+    private static final List<String> LATENCY_TABLE_DIMENSIONS = new ArrayList<String>() { {
+        this.add(ShardRequestMetricsSnapshot.Fields.OPERATION.toString());
+        this.add(HttpRequestMetricsSnapshot.Fields.EXCEPTION.toString());
+        this.add(HttpRequestMetricsSnapshot.Fields.INDICES.toString());
+        this.add(HttpRequestMetricsSnapshot.Fields.HTTP_RESP_CODE.toString());
+        this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString());
+        this.add(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString());
+        this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ROLE.toString());
+    } };
+
 
     public static void emitAggregatedOSMetrics(final DSLContext create,
         final MetricsDB db, final OSMetricsSnapshot osMetricsSnap,
@@ -195,20 +205,11 @@ public class MetricsEmitter {
             final ShardRequestMetricsSnapshot rqMetricsSnap) throws Exception {
         long mCurrT = System.currentTimeMillis();
         Result<Record> res = rqMetricsSnap.fetchLatencyByOp();
-        List<String> dims = new ArrayList<String>() { {
-            this.add(ShardRequestMetricsSnapshot.Fields.OPERATION.toString());
-            this.add(HttpRequestMetricsSnapshot.Fields.EXCEPTION.toString());
-            this.add(HttpRequestMetricsSnapshot.Fields.INDICES.toString());
-            this.add(HttpRequestMetricsSnapshot.Fields.HTTP_RESP_CODE.toString());
-            this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ID.toString());
-            this.add(ShardRequestMetricsSnapshot.Fields.INDEX_NAME.toString());
-            this.add(ShardRequestMetricsSnapshot.Fields.SHARD_ROLE.toString());
-            } };
 
         db.createMetric(new Metric<Double>(CommonMetric.LATENCY.toString(), 0d),
-                        dims);
+                LATENCY_TABLE_DIMENSIONS);
         BatchBindStep handle = db.startBatchPut(new Metric<Double>(
-                CommonMetric.LATENCY.toString(), 0d), dims);
+                CommonMetric.LATENCY.toString(), 0d), LATENCY_TABLE_DIMENSIONS);
 
         //Dims need to be changed.
         List<String> shardDims = new ArrayList<String>() { {
@@ -381,8 +382,10 @@ public class MetricsEmitter {
             this.add(HttpRequestMetricsSnapshot.Fields.INDICES.toString());
             this.add(HttpRequestMetricsSnapshot.Fields.HTTP_RESP_CODE.toString());
             } };
+
         db.createMetric(new Metric<Double>(AllMetrics.CommonMetric.LATENCY.toString(), 0d),
-                       dims);
+                LATENCY_TABLE_DIMENSIONS);
+
         db.createMetric(new Metric<Double>(AllMetrics.HttpMetric.HTTP_TOTAL_REQUESTS.toString(), 0d),
                         dims);
         db.createMetric(new Metric<Double>(AllMetrics.HttpMetric.HTTP_REQUEST_DOCS.toString(), 0d),
@@ -438,6 +441,103 @@ public class MetricsEmitter {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for writing http metrics metricsdb: {}", mFinalT - mCurrT);
+    }
+
+    public static void emitMasterEventMetrics(MetricsDB metricsDB, MasterEventMetricsSnapshot masterEventMetricsSnapshot) {
+
+        long mCurrT = System.currentTimeMillis();
+        Result<Record> queueAndRunTimeResult = masterEventMetricsSnapshot.fetchQueueAndRunTime();
+
+        List<String> dims = new ArrayList<String>() { {
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString());
+            this.add(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString());
+        } };
+
+        emitQueueTimeMetric(metricsDB, queueAndRunTimeResult, dims);
+        emitRuntimeMetric(metricsDB, queueAndRunTimeResult, dims);
+
+        long mFinalT = System.currentTimeMillis();
+        LOG.info("Total time taken for writing master event queue metrics metricsdb: {}", mFinalT - mCurrT);
+    }
+
+    private static void emitRuntimeMetric(MetricsDB metricsDB, Result<Record> res, List<String> dims) {
+
+        metricsDB.createMetric(
+                new Metric<Double>(AllMetrics.MasterMetricValues.MASTER_TASK_RUN_TIME.toString(), 0d), dims);
+
+        BatchBindStep handle = metricsDB.startBatchPut(new Metric<Double>(
+                AllMetrics.MasterMetricValues.MASTER_TASK_RUN_TIME.toString(), 0d), dims);
+
+        for (Record r: res) {
+
+            Double sumQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.SUM))
+                    .toString());
+
+            Double avgQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.AVG))
+                    .toString());
+
+            Double minQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MIN))
+                    .toString());
+
+            Double maxQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_RUN_TIME.toString(), MetricsDB.MAX))
+                    .toString());
+
+            handle.bind(r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()).toString(),
+                    sumQueueTime,
+                    avgQueueTime,
+                    minQueueTime,
+                    maxQueueTime);
+        }
+
+        handle.execute();
+    }
+
+    private static void emitQueueTimeMetric(MetricsDB metricsDB, Result<Record> res, List<String> dims) {
+
+        metricsDB.createMetric(
+                new Metric<Double>(AllMetrics.MasterMetricValues.MASTER_TASK_QUEUE_TIME.toString(), 0d), dims);
+
+        BatchBindStep handle = metricsDB.startBatchPut(new Metric<Double>(
+                AllMetrics.MasterMetricValues.MASTER_TASK_QUEUE_TIME.toString(), 0d), dims);
+
+        for (Record r: res) {
+
+            Double sumQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.SUM))
+                    .toString());
+
+            Double avgQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.AVG))
+                    .toString());
+
+            Double minQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MIN))
+                    .toString());
+
+            Double maxQueueTime = Double.parseDouble(r.get(DBUtils.
+                    getAggFieldName(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(), MetricsDB.MAX))
+                    .toString());
+
+            handle.bind(r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_INSERT_ORDER.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()).toString(),
+                    r.get(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()).toString(),
+                    sumQueueTime,
+                    avgQueueTime,
+                    minQueueTime,
+                    maxQueueTime);
+        }
+
+        handle.execute();
     }
 
     /**
