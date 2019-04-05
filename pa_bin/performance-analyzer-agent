@@ -5,30 +5,41 @@ if [ "$START_PERF_ANALYZER" = "false" ]; then
     exit 0
 fi
 
-if [ $# -eq 0 ]; then
-    echo "No ES_HOME provided, not starting performance-analyzer-agent"
+if [ -z "$ES_HOME" ]; then
+    ES_HOME=$1
+    if [ -z "$1" ]; then
+        echo "ES_HOME needs to be set or passed in as the first parameter."
+        exit 1
+    fi
+fi
+
+if [ -z "$JAVA_HOME" ]; then
+    JAVA_HOME=$2
+    if [ -z "$2" ]; then
+        echo "JAVA_HOME needs to be set or passed in as the second parameter."
+        exit 1
+    fi
+fi
+
+if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' > /dev/null; then
+    $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+    -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
+    -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
+    -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp
 else
+    echo 'Starting deamon'
+    $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+        -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
+        -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
+        -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp &
 
-    if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' > /dev/null; then
-        java -Des.path.home=$1 -Dlog4j.configurationFile=$1/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
-                -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
-                -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
-                -cp $1/lib/*:$1/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp
-    else
-        echo 'Starting deamon'
-        java -Des.path.home=$1 -Dlog4j.configurationFile=$1/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
-                -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
-                -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
-                -cp $1/lib/*:$1/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp &
+    pid=$!
+    PID_LOC=/tmp/performance-analyzer-agent
+    if [ -n "$3" ]; then
+        PID_LOC=$3
+    fi
 
-        pid=$!
-        PID_LOC=/tmp/performance-analyzer-agent
-        if [ -n "$3" ]; then
-            PID_LOC=$3
-        fi
-
-        if ! ps -p $pid > $PID_LOC ; then
-            exit 1
-        fi
+    if ! ps -p $pid > $PID_LOC ; then
+        exit 1
     fi
 fi
