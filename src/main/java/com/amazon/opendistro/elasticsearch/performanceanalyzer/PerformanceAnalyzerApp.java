@@ -16,11 +16,16 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import java.io.File;
+import java.io.FileReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.KeyStore;
 import java.util.concurrent.Executors;
 
+
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.security.cert.X509Certificate;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.TroubleshootingConfig;
@@ -29,7 +34,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.rest.QueryMetrics
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+//import org.bouncycastle.jce.provider.BouncyCastleProvider;
+//import org.bouncycastle.openssl.PEMParser;
+//import org.bouncycastle.cert.X509CertificateHolder;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
@@ -79,7 +86,11 @@ public class PerformanceAnalyzerApp {
                 server = HttpsServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
             }
             SSLContext sslContext = SSLContext.getInstance ( "TLSv1.2" );
-            sslContext.init(null, null, null);
+
+            KeyStore ks = CertificateUtils.createSelfSigned("CN=AC");
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
+            kmf.init(ks, CertificateUtils.IN_MEMORY_PWD.toCharArray());
+            sslContext.init(kmf.getKeyManagers(), null, null);
             server.setHttpsConfigurator(new HttpsConfigurator(sslContext));
             server.createContext(QUERY_URL, new QueryMetricsRequestHandler());
 
