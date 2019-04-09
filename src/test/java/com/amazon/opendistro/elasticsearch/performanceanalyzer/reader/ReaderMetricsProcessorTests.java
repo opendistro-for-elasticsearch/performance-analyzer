@@ -217,7 +217,7 @@ public class ReaderMetricsProcessorTests extends AbstractReaderTests {
 
         spyMp.putNodeMetricsMap(MetricName.MASTER_PENDING, metricMap);
 
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713512);
         spyMp.emitNodeMetrics(
                 PerformanceAnalyzerMetrics.getTimeInterval(readerTime2,
                 MetricsConfiguration.SAMPLING_INTERVAL), db);
@@ -234,6 +234,7 @@ public class ReaderMetricsProcessorTests extends AbstractReaderTests {
             assertEquals(2.2d, pending, 0.001);
 
         }
+        db.remove();
     }
 
     /**
@@ -262,7 +263,7 @@ public class ReaderMetricsProcessorTests extends AbstractReaderTests {
 
         spyMp.putNodeMetricsMap(MetricName.MASTER_PENDING, metricMap);
 
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713518);
         spyMp.emitNodeMetrics(
                 PerformanceAnalyzerMetrics.getTimeInterval(readerTime2,
                 MetricsConfiguration.SAMPLING_INTERVAL), db);
@@ -284,6 +285,7 @@ public class ReaderMetricsProcessorTests extends AbstractReaderTests {
         for (MemoryDBSnapshot value : metricMap.values()) {
             assertTrue(value.dbTableExists());
         }
+        db.remove();
     }
 
     /**
@@ -310,12 +312,13 @@ public class ReaderMetricsProcessorTests extends AbstractReaderTests {
 
         spyMp.putNodeMetricsMap(MetricName.MASTER_PENDING, metricMap);
 
-        MetricsDB db = new MetricsDB(System.currentTimeMillis());
+        MetricsDB db = new MetricsDB(1553713524);
         spyMp.emitNodeMetrics(PerformanceAnalyzerMetrics.getTimeInterval(readerTime2,
                 MetricsConfiguration.SAMPLING_INTERVAL), db);
 
         assertTrue(!db.metricExists(
                 MasterPendingValue.MASTER_PENDING_QUEUE_SIZE.toString()));
+        db.remove();
     }
 }
 

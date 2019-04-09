@@ -31,8 +31,8 @@ import org.elasticsearch.cluster.service.SourcePrioritizedRunnable;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.Master_Metric_Dimensions;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.Master_Metric_Values;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.MasterMetricDimensions;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.MasterMetricValues;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.ThreadIDUtil;
@@ -107,17 +107,17 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
                     lastTaskInsertionOrder = firstPending.insertionOrder;
                     int firstSpaceIndex = task.source().indexOf(" ");
                     value.append(PerformanceAnalyzerMetrics.getCurrentTimeMetric());
-                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_PRIORITY.toString(),
+                    PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricDimensions.MASTER_TASK_PRIORITY.toString(),
                             firstPending.priority.toString());
                     //- as it is sampling, we won't exactly know the start time of the current task, we will be
                     //- capturing start time as midpoint of previous time bucket
-                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Values.START_TIME.toString(),
+                    PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricValues.START_TIME.toString(),
                             startTime - SAMPLING_TIME_INTERVAL / 2);
-                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_TYPE.toString(),
+                    PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricDimensions.MASTER_TASK_TYPE.toString(),
                             firstSpaceIndex == -1 ? task.source() : task.source().substring(0, firstSpaceIndex));
-                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_METADATA.toString(),
+                    PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricDimensions.MASTER_TASK_METADATA.toString(),
                             firstSpaceIndex == -1 ? "" : task.source().substring(firstSpaceIndex));
-                    PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Dimensions.MASTER_TASK_AGE.toString(),
+                    PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString(),
                             task.getAgeInMillis());
 
                     saveMetricValues(value.toString(), startTime, String.valueOf(getMasterThreadId()),
@@ -128,7 +128,7 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
             } else {
                 generateFinishMetrics(startTime);
             }
-            LOG.info("Successfully collected Master Event Metrics.");
+            LOG.debug(() -> "Successfully collected Master Event Metrics.");
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting Master Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
         }
@@ -137,7 +137,7 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
     private void generateFinishMetrics(long startTime) {
         if (lastTaskInsertionOrder != -1) {
             value.append(PerformanceAnalyzerMetrics.getCurrentTimeMetric());
-            PerformanceAnalyzerMetrics.addMetricEntry(value, Master_Metric_Values.FINISH_TIME.toString(),
+            PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricValues.FINISH_TIME.toString(),
                     startTime - SAMPLING_TIME_INTERVAL / 2);
             saveMetricValues(value.toString(), startTime, String.valueOf(currentThreadId),
                     String.valueOf(lastTaskInsertionOrder), PerformanceAnalyzerMetrics.FINISH_FILE_NAME);

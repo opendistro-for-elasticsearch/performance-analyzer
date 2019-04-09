@@ -22,7 +22,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.transport.TransportChannel;
 import org.elasticsearch.transport.TransportResponse;
-import org.elasticsearch.transport.TransportResponseOptions;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardBulkDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardBulkMetric;
@@ -80,12 +79,6 @@ public class PerformanceAnalyzerTransportChannel implements TransportChannel, Me
     public void sendResponse(TransportResponse response) throws IOException {
         emitMetricsFinish(null);
         original.sendResponse(response);
-    }
-
-    @Override
-    public void sendResponse(TransportResponse response, TransportResponseOptions responseOptions) throws IOException {
-        emitMetricsFinish(null);
-        original.sendResponse(response, responseOptions);
     }
 
     @Override

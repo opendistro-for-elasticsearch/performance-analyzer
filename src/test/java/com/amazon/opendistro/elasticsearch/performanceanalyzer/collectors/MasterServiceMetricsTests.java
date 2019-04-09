@@ -25,7 +25,7 @@ public class MasterServiceMetricsTests {
     @Test
     public void testMasterServiceMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = System.currentTimeMillis() + 4 * 6000000;
+        long startTimeInMills = 1353723339;
 
         MasterServiceMetrics masterServiceMetrics = new MasterServiceMetrics();
         masterServiceMetrics.saveMetricValues("master_metrics_value", startTimeInMills, "current", "start");
@@ -33,7 +33,8 @@ public class MasterServiceMetricsTests {
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/pending_tasks/current/start/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("master_metrics_value", fetchedValue);
 
         try {

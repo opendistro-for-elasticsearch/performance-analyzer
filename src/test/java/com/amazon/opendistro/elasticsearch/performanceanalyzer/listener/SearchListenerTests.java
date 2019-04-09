@@ -23,7 +23,7 @@ public class SearchListenerTests {
     @Test
     public void testShardSearchMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = System.currentTimeMillis();
+        long startTimeInMills = 1053720339;
         PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener();
         performanceanalyzerSearchListener.saveMetricValues("dewrjcve", startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID", "start");
@@ -51,6 +51,7 @@ public class SearchListenerTests {
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID2/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation);
+        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
     }
 }
