@@ -38,6 +38,7 @@ public class MasterEventMetricsSnapshotTests {
     @Before
     public void setup() throws Exception {
 
+        System.setProperty("java.io.tmpdir", "/tmp");
         conn = DriverManager.getConnection(DB_URL);
     }
 
