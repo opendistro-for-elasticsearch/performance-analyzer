@@ -12,7 +12,6 @@ import java.security.Provider;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;

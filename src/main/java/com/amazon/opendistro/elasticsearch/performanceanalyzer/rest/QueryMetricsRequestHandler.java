@@ -236,8 +236,8 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                         );
                 nodeResponses.put(node.getId(), remoteNodeStats);
                 } catch (Exception e) {
-                    LOG.error("Unable to collect stats for node, addr:{}",
-                            node.getHostAddress());
+                    LOG.error("Unable to collect stats for node, addr:{}, exception: {}",
+                            node.getHostAddress(), e);
                 }
             }
             String response = nodeJsonBuilder(nodeResponses);

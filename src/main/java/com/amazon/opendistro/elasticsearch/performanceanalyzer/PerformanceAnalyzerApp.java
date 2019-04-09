@@ -25,8 +25,13 @@ import java.util.concurrent.Executors;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.security.cert.X509Certificate;
+import javax.net.ssl.TrustManager;
+import java.security.cert.X509Certificate;
 import java.security.Security;
+import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.TroubleshootingConfig;
@@ -82,17 +87,45 @@ public class PerformanceAnalyzerApp {
             if (bindHost != null && !bindHost.trim().isEmpty()) {
                 LOG.info("Binding to Interface: {}", bindHost);
                 server = HttpsServer.create(new InetSocketAddress(InetAddress.getByName(bindHost.trim()), readerPort),
-                                            INCOMING_QUEUE_LENGTH);
+                        INCOMING_QUEUE_LENGTH);
             } else {
                 LOG.info("Value Not Configured for: {} Using default value: binding to all interfaces", WEBSERVICE_BIND_HOST_NAME);
                 server = HttpsServer.create(new InetSocketAddress(readerPort), INCOMING_QUEUE_LENGTH);
             }
+
+            TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                    public void checkClientTrusted(X509Certificate[] certs, String authType) {
+
+                    }
+                    public void checkServerTrusted(X509Certificate[] certs, String authType) {
+
+                    }
+                }
+            };
+
+            HostnameVerifier allHostsValid = new HostnameVerifier() {
+                public boolean verify(String hostname, SSLSession session) {
+                    return true;
+                }
+            };
+
+            // Install the all-trusting trust manager
+
             SSLContext sslContext = SSLContext.getInstance ( "TLSv1.2" );
 
             KeyStore ks = CertificateUtils.createSelfSigned("CN=AC");
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
             kmf.init(ks, CertificateUtils.IN_MEMORY_PWD.toCharArray());
-            sslContext.init(kmf.getKeyManagers(), null, null);
+            sslContext.init(kmf.getKeyManagers(), trustAllCerts, null);
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
+
+            HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+
             server.setHttpsConfigurator(new HttpsConfigurator(sslContext));
             server.createContext(QUERY_URL, new QueryMetricsRequestHandler());
 
