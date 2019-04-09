@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.security.cert.X509Certificate;
+import java.security.Security;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.TroubleshootingConfig;
@@ -34,7 +35,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.rest.QueryMetrics
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-//import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 //import org.bouncycastle.openssl.PEMParser;
 //import org.bouncycastle.cert.X509CertificateHolder;
 
@@ -76,6 +77,7 @@ public class PerformanceAnalyzerApp {
         int readerPort= getPortNumber();
         try {
             String bindHost = getBindHost();
+            Security.addProvider(new BouncyCastleProvider());
             HttpsServer server = null;
             if (bindHost != null && !bindHost.trim().isEmpty()) {
                 LOG.info("Binding to Interface: {}", bindHost);

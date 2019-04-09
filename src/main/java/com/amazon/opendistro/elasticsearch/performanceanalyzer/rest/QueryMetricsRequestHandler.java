@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.HttpsURLConnection;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -273,10 +275,10 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     }
 
     protected String collectRemoteStats(String nodeIP, String uri, String queryString) throws Exception {
-        String urlString = String.format("http://%s:9600%s?%s", nodeIP, uri, queryString);
+        String urlString = String.format("https://%s:9600%s?%s", nodeIP, uri, queryString);
         LOG.debug("Remote URL - {}", urlString);
         URL url = new URL(urlString);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
         conn.setConnectTimeout(HTTP_CLIENT_CONNECTION_TIMEOUT);
         int responseCode = conn.getResponseCode();
