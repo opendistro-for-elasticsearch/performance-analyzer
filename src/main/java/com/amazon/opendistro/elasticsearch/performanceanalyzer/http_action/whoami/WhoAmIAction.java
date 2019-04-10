@@ -16,9 +16,8 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami;
 
 import org.elasticsearch.action.Action;
-import org.elasticsearch.client.ElasticsearchClient;
 
-public class WhoAmIAction extends Action<WhoAmIRequest, WhoAmIResponse, WhoAmIRequestBuilder> {
+public class WhoAmIAction extends Action<WhoAmIResponse> {
 
     public static final WhoAmIAction INSTANCE = new WhoAmIAction();
     public static final String NAME = "cluster:admin/performanceanalyzer/whoami";
@@ -28,13 +27,7 @@ public class WhoAmIAction extends Action<WhoAmIRequest, WhoAmIResponse, WhoAmIRe
     }
 
     @Override
-    public WhoAmIRequestBuilder newRequestBuilder(final ElasticsearchClient client) {
-        return new WhoAmIRequestBuilder(client, this);
-    }
-
-    @Override
     public WhoAmIResponse newResponse() {
         return new WhoAmIResponse();
     }
-
 }

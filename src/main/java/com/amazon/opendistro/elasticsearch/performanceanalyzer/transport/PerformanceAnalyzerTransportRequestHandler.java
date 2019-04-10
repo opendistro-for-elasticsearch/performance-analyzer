@@ -79,9 +79,4 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
         return performanceanalyzerChannel;
     }
-
-    @Override
-    public void messageReceived(T request, TransportChannel channel) throws Exception {
-        messageReceived(request, channel, null);
-    }
 }

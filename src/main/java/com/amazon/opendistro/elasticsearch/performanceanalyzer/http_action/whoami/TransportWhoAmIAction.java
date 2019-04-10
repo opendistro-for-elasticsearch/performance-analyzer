@@ -20,25 +20,23 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
-import org.elasticsearch.cluster.metadata.IndexNameExpressionResolver;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.tasks.Task;
 
 public class TransportWhoAmIAction extends HandledTransportAction<WhoAmIRequest, WhoAmIResponse> {
 
     @Inject
-    public TransportWhoAmIAction(final Settings settings, final ThreadPool threadPool,
-                                 final TransportService transportService, final ActionFilters actionFilters,
-                                 final IndexNameExpressionResolver indexNameExpressionResolver, final IndicesService indicesService) {
-        super(settings, WhoAmIAction.NAME, threadPool, transportService, actionFilters, indexNameExpressionResolver, WhoAmIRequest::new);
+    public TransportWhoAmIAction(final TransportService transportService,
+                                 final ActionFilters actionFilters,
+                                 final IndicesService indicesService) {
+        super(WhoAmIAction.NAME, transportService, actionFilters, WhoAmIRequest::new);
         ESResources.INSTANCE.setIndicesService(indicesService);
     }
 
     @Override
-    protected void doExecute(WhoAmIRequest request, ActionListener<WhoAmIResponse> listener) {
+    protected void doExecute(Task task, WhoAmIRequest request, ActionListener<WhoAmIResponse> listener) {
         listener.onResponse(new WhoAmIResponse());
     }
 }
