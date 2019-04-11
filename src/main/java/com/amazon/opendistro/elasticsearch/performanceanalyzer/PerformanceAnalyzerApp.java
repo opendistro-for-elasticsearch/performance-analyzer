@@ -16,7 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import java.io.File;
-import java.io.FileReader;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
@@ -41,10 +41,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-//import org.bouncycastle.openssl.PEMParser;
-//import org.bouncycastle.cert.X509CertificateHolder;
 
-import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 
@@ -58,12 +55,12 @@ public class PerformanceAnalyzerApp {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerApp.class);
 
     public static void main(String[] args) throws Exception {
-        ESResources.INSTANCE.setPluginFileLocation(System.getProperty("es.path.home") +
-                File.separator + "plugins" + File.separator + PerformanceAnalyzerPlugin.PLUGIN_NAME + File.separator);
+        ESResources.INSTANCE.setPluginFileLocation(System.getProperty("es.path.home")
+                + File.separator + "plugins" + File.separator + PerformanceAnalyzerPlugin.PLUGIN_NAME + File.separator);
 
-        Thread readerThread = new Thread( new Runnable() {
+        Thread readerThread = new Thread(new Runnable() {
             public void run() {
-                while(true) {
+                while (true) {
                     try {
                         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(PluginSettings.instance().getMetricsLocation());
                         ReaderMetricsProcessor.current = mp;
@@ -79,7 +76,7 @@ public class PerformanceAnalyzerApp {
         });
         readerThread.start();
 
-        int readerPort= getPortNumber();
+        int readerPort = getPortNumber();
         try {
             String bindHost = getBindHost();
             Security.addProvider(new BouncyCastleProvider());
@@ -116,9 +113,9 @@ public class PerformanceAnalyzerApp {
 
             // Install the all-trusting trust manager
 
-            SSLContext sslContext = SSLContext.getInstance ( "TLSv1.2" );
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 
-            KeyStore ks = CertificateUtils.createSelfSigned("CN=AC");
+            KeyStore ks = CertificateUtils.createKeyStore();
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
             kmf.init(ks, CertificateUtils.IN_MEMORY_PWD.toCharArray());
             sslContext.init(kmf.getKeyManagers(), trustAllCerts, null);
@@ -131,10 +128,10 @@ public class PerformanceAnalyzerApp {
 
             server.setExecutor(Executors.newCachedThreadPool());
             server.start();
-        } catch(java.net.BindException ex) {
+        } catch (java.net.BindException ex) {
             LOG.error("Port  {} is already in use...exiting", readerPort);
             Runtime.getRuntime().halt(1);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             LOG.error("Exception in starting Reader Process: " + ex.toString());
             Runtime.getRuntime().halt(1);
         }
@@ -145,7 +142,7 @@ public class PerformanceAnalyzerApp {
         try {
             readerPortValue = PluginSettings.instance().getSettingValue(WEBSERVICE_PORT_CONF_NAME);
 
-            if(readerPortValue == null) {
+            if (readerPortValue == null) {
                 LOG.info("{} not configured; using default value: {}", WEBSERVICE_PORT_CONF_NAME, WEBSERVICE_DEFAULT_PORT);
                 return WEBSERVICE_DEFAULT_PORT;
             }
