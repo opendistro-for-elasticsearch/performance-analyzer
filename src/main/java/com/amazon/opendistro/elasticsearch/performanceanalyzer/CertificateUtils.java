@@ -9,20 +9,22 @@ import java.security.cert.Certificate;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
-
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 
 public class CertificateUtils {
 
     public static final String ALIAS_PRIVATE = "private";
     public static final String ALIAS_CERT = "cert";
-    public static final String IN_MEMORY_PWD = "notReallyImportant"; // this would only ever be relevant if/when persisted.
+    //The password is not used to encrypt keys on disk.
+    public static final String IN_MEMORY_PWD = "opendistro";
+    private static final String CERTIFICATE_FILE_PATH = "certificate-file-path";
+    private static final String PRIVATE_KEY_FILE_PATH = "private-key-file-path";
     private static final Logger LOGGER = LogManager.getLogger(CertificateUtils.class);
 
     public static Certificate getCertificate(final FileReader certReader) throws Exception {
@@ -43,9 +45,11 @@ public class CertificateUtils {
     }
 
     public static KeyStore createKeyStore() throws Exception {
-        PrivateKey pk = getPrivateKey(new FileReader("/tmp/key"));
+        String certFilePath = PluginSettings.instance().getSettingValue(CERTIFICATE_FILE_PATH);
+        String keyFilePath = PluginSettings.instance().getSettingValue(PRIVATE_KEY_FILE_PATH);
+        PrivateKey pk = getPrivateKey(new FileReader(keyFilePath));
         KeyStore ks = emptyStore();
-        Certificate certificate = getCertificate(new FileReader("/tmp/cert"));
+        Certificate certificate = getCertificate(new FileReader(certFilePath));
         ks.setCertificateEntry(ALIAS_CERT, certificate);
         ks.setKeyEntry(ALIAS_PRIVATE, pk, IN_MEMORY_PWD.toCharArray(), new Certificate[]{certificate});
         return ks;
@@ -57,3 +61,4 @@ public class CertificateUtils {
         return ks;
     }
 }
+
