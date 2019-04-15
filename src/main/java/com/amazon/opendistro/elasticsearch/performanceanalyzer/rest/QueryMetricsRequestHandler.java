@@ -278,10 +278,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     }
 
     protected String collectRemoteStats(String nodeIP, String uri, String queryString) throws Exception {
-        String urlString = String.format("https://%s:9600%s?%s", nodeIP, uri, queryString);
-        LOG.debug("Remote URL - {}", urlString);
-        URL url = new URL(urlString);
-        HttpURLConnection conn = getUrlConnection(url);
+        HttpURLConnection conn = getUrlConnection(nodeIP, uri, queryString);
 
         conn.setConnectTimeout(HTTP_CLIENT_CONNECTION_TIMEOUT);
         int responseCode = conn.getResponseCode();
@@ -304,8 +301,17 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
         return response.toString();
     }
 
-    private HttpURLConnection getUrlConnection(URL url) throws IOException {
-        if (PluginSettings.instance().getHttpsEnabled()) {
+    private HttpURLConnection getUrlConnection(String nodeIP, String uri, String queryString) throws IOException {
+        boolean httpsEnabled = PluginSettings.instance().getHttpsEnabled();
+        String protocol = "http";
+        if (httpsEnabled) {
+            protocol = "https";
+        }
+        String urlString = String.format("%s://%s:9600%s?%s", protocol, nodeIP, uri, queryString);
+        LOG.debug("Remote URL - {}", urlString);
+        URL url = new URL(urlString);
+
+        if (httpsEnabled) {
             return (HttpsURLConnection) url.openConnection();
         } else {
             return (HttpURLConnection) url.openConnection();
