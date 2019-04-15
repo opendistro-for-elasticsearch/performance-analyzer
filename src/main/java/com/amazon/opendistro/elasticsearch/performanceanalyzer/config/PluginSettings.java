@@ -28,7 +28,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 
 public class PluginSettings {
-    private static final Logger log = LogManager.getLogger(PluginSettings.class);
+    private static final Logger LOG = LogManager.getLogger(PluginSettings.class);
 
     private static PluginSettings instance = null;
     private static final String CONFIG_FILE_PATH = "pa_config/performance-analyzer.properties";
@@ -38,8 +38,10 @@ public class PluginSettings {
     private static final int DELETION_INTERVAL_DEFAULT = 1;
     private static final int DELETION_INTERVAL_MIN = 1;
     private static final int DELETION_INTERVAL_MAX = 60;
+    private static final String HTTPS_ENABLED = "https-enabled";
     private String metricsLocation;
     private int metricsDeletionInterval;
+    private boolean httpsEnabled;
     private static Properties settings = new Properties();
 
     public String getMetricsLocation() {
@@ -58,6 +60,22 @@ public class PluginSettings {
         return settings.getProperty(settingName, defaultValue);
     }
 
+    private static void loadHttpsEnabled(PluginSettings instance, Properties settings) throws Exception {
+        String httpsEnabledString = settings.getProperty(HTTPS_ENABLED, "False");
+        if ( httpsEnabledString == null ) {
+            instance.httpsEnabled = false;
+        }
+        try {
+            instance.httpsEnabled = Boolean.parseBoolean(httpsEnabledString);
+        } catch (Exception ex) {
+            LOG.error("Unable to parse httpsEnabled property with value {}", httpsEnabledString);
+            throw ex;
+        }
+    }
+
+    public boolean getHttpsEnabled() {
+        return this.httpsEnabled;
+    }
 
     private PluginSettings() {
         metricsLocation = METRICS_LOCATION_DEFAULT;
@@ -75,22 +93,23 @@ public class PluginSettings {
 
     private static void createInstance() {
         instance = new PluginSettings();
-        log.info("loading config ...");
+        LOG.info("loading config ...");
         try {
             settings = getSettingsFromFile();
 
             loadMetricsDeletionIntervalFromConfig(instance, settings);
             loadMetricsLocationFromConfig(instance, settings);
+            loadHttpsEnabled(instance, settings);
         } catch (ConfigFileException e) {
-            log.error("Loading config file from {} failed with error: {}. Using default values.", CONFIG_FILE_PATH, e.toString());
+            LOG.error("Loading config file from {} failed with error: {}. Using default values.", CONFIG_FILE_PATH, e.toString());
         } catch (ConfigFatalException e) {
-            log.error("Having issue to load all config items. Disabling plugin.", e);
+            LOG.error("Having issue to load all config items. Disabling plugin.", e);
             ConfigStatus.INSTANCE.setConfigurationInvalid();
         } catch (Exception e) {
-            log.error("Unexpected exception while initializing config. Disabling plugin.", e);
+            LOG.error("Unexpected exception while initializing config. Disabling plugin.", e);
             ConfigStatus.INSTANCE.setConfigurationInvalid();
         }
-        log.info("Config: metricsLocation: {}, metricsDeletionInterval: {}",
+        LOG.info("Config: metricsLocation: {}, metricsDeletionInterval: {}",
                 instance.metricsLocation, instance.metricsDeletionInterval);
     }
 
@@ -105,7 +124,7 @@ public class PluginSettings {
     private static void loadMetricsLocationFromConfig(PluginSettings instance, Properties settings)
             throws ConfigFatalException{
         if (!settings.containsKey(METRICS_LOCATION_KEY)) {
-            log.info("Cannot find metrics-location, using default value. {}", METRICS_LOCATION_DEFAULT);
+            LOG.info("Cannot find metrics-location, using default value. {}", METRICS_LOCATION_DEFAULT);
         }
 
         instance.metricsLocation = settings.getProperty(METRICS_LOCATION_KEY, METRICS_LOCATION_DEFAULT);
@@ -118,12 +137,12 @@ public class PluginSettings {
         boolean dictCreated = true;
         if (!dict.exists()) {
             dictCreated = dict.mkdir();
-            log.info("Trying to create directory {}.", path);
+            LOG.info("Trying to create directory {}.", path);
         }
 
         boolean valid = dictCreated && dict.isDirectory() && dict.canWrite();
         if (!valid) {
-            log.error("Invalid metrics location {}." +
+            LOG.error("Invalid metrics location {}." +
                             " Created: {} (Expect True), Directory: {} (Expect True)," +
                             " CanWrite: {} (Expect True)",
                     path, dict.exists(), dict.isDirectory(), dict.canWrite());
@@ -139,13 +158,13 @@ public class PluginSettings {
         try {
             int interval = Integer.parseInt(settings.getProperty(DELETION_INTERVAL_KEY));
             if (interval < DELETION_INTERVAL_MIN || interval > DELETION_INTERVAL_MAX) {
-                log.error("metrics-deletion-interval out of range. Value should in ({}-{}). Using default value {}.",
+                LOG.error("metrics-deletion-interval out of range. Value should in ({}-{}). Using default value {}.",
                         DELETION_INTERVAL_MIN, DELETION_INTERVAL_MAX, instance.metricsDeletionInterval);
                 return;
             }
             instance.metricsDeletionInterval = interval;
         } catch (NumberFormatException e) {
-            log.error(
+            LOG.error(
                     (Supplier<?>) () -> new ParameterizedMessage(
                             "Invalid metrics-deletion-interval. Using default value {}.",
                             instance.metricsDeletionInterval),

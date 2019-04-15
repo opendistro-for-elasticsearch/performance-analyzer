@@ -50,7 +50,6 @@ public class PerformanceAnalyzerApp {
     private static final int WEBSERVICE_DEFAULT_PORT = 9600;
     private static final String WEBSERVICE_PORT_CONF_NAME = "webservice-listener-port";
     private static final String WEBSERVICE_BIND_HOST_NAME = "webservice-bind-host";
-    private static final String HTTPS_ENABLED = "https-enabled";
     //Use system default for max backlog.
     private static final int INCOMING_QUEUE_LENGTH = 1;
     public static final String QUERY_URL = "/_opendistro/_performanceanalyzer/metrics";
@@ -82,7 +81,7 @@ public class PerformanceAnalyzerApp {
         try {
             Security.addProvider(new BouncyCastleProvider());
             HttpServer server = null;
-            if(getHTTPSEnabled()) {
+            if(PluginSettings.instance().getHttpsEnabled()) {
                 server = createHttpsServer(readerPort);
             }
             else {
@@ -182,19 +181,6 @@ public class PerformanceAnalyzerApp {
 
     private static String getBindHost() {
         return PluginSettings.instance().getSettingValue(WEBSERVICE_BIND_HOST_NAME);
-    }
-
-    private static boolean getHTTPSEnabled() {
-        String httpsEnabledString = PluginSettings.instance().getSettingValue(HTTPS_ENABLED);
-        if ( httpsEnabledString == null ) {
-            return false;
-        }
-        try {
-            return Boolean.parseBoolean(httpsEnabledString);
-        } catch (Exception ex) {
-            LOG.error("Unable to parse httpsEnabled property with value {}", httpsEnabledString);
-            throw ex;
-        }
     }
 }
 
