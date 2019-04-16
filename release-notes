@@ -1,6 +1,4 @@
-## Version 0.8.0 (Version compatible with elasticsearch 6.6.2)
-## New Features
-This is the release of the Open Distro Performance Analyzer that will work with elasticsearch 6.6.2
+Backporting fixes from master
 
 ## Improvements
 Better measurement granularity for Master Metrics 
