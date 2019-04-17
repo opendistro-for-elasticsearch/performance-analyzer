@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "6.6.2")
+        es_version = System.getProperty("es.version", "6.7.1")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -34,7 +34,7 @@ plugins {
 }
 
 ext {
-    opendistroVersion = '0.8.0'
+    opendistroVersion = '0.9.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -169,8 +169,7 @@ bundlePlugin {
 
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
-                                             "thirdPartyAudit",
-                                             "namingConventions"]
+                                             "thirdPartyAudit", "testingConventions"]
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {

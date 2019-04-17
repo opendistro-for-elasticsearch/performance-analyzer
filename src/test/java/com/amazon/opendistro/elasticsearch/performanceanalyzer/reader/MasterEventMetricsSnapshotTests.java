@@ -37,7 +37,8 @@ public class MasterEventMetricsSnapshotTests {
 
     @Before
     public void setup() throws Exception {
-
+        Class.forName("org.sqlite.JDBC");
+        System.setProperty("java.io.tmpdir", "/tmp");
         conn = DriverManager.getConnection(DB_URL);
     }
 
