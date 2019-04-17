@@ -62,7 +62,7 @@ public class PluginSettings {
 
     private static void loadHttpsEnabled(PluginSettings instance, Properties settings) throws Exception {
         String httpsEnabledString = settings.getProperty(HTTPS_ENABLED, "False");
-        if ( httpsEnabledString == null ) {
+        if (httpsEnabledString == null) {
             instance.httpsEnabled = false;
         }
         try {

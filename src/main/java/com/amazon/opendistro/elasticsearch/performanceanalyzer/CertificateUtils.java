@@ -48,14 +48,14 @@ public class CertificateUtils {
         String certFilePath = PluginSettings.instance().getSettingValue(CERTIFICATE_FILE_PATH);
         String keyFilePath = PluginSettings.instance().getSettingValue(PRIVATE_KEY_FILE_PATH);
         PrivateKey pk = getPrivateKey(new FileReader(keyFilePath));
-        KeyStore ks = emptyStore();
+        KeyStore ks = createEmptyStore();
         Certificate certificate = getCertificate(new FileReader(certFilePath));
         ks.setCertificateEntry(ALIAS_CERT, certificate);
         ks.setKeyEntry(ALIAS_PRIVATE, pk, IN_MEMORY_PWD.toCharArray(), new Certificate[]{certificate});
         return ks;
     }
 
-    public static KeyStore emptyStore() throws Exception {
+    public static KeyStore createEmptyStore() throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(null, IN_MEMORY_PWD.toCharArray());
         return ks;

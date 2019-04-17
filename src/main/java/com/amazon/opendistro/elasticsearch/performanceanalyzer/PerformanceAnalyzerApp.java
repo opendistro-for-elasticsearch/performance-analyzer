@@ -81,7 +81,7 @@ public class PerformanceAnalyzerApp {
         try {
             Security.addProvider(new BouncyCastleProvider());
             HttpServer server = null;
-            if(PluginSettings.instance().getHttpsEnabled()) {
+            if (PluginSettings.instance().getHttpsEnabled()) {
                 server = createHttpsServer(readerPort);
             }
             else {
