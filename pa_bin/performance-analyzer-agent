@@ -23,20 +23,22 @@ fi
 
 if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' > /dev/null; then
     $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+    -DconfigFilePath=$3 \
     -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
     -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
     -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp
 else
     echo 'Starting deamon'
     $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+        -DconfigFilePath=$3 \
         -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
         -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
         -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp &
 
     pid=$!
     PID_LOC=/tmp/performance-analyzer-agent
-    if [ -n "$3" ]; then
-        PID_LOC=$3
+    if [ -n "$4" ]; then
+        PID_LOC=$4
     fi
 
     if ! ps -p $pid > $PID_LOC ; then
