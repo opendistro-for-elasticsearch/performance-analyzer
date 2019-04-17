@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
@@ -95,6 +96,8 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             // unprivileged code such as scripts do not have SpecialPermission
             sm.checkPermission(new SpecialPermission());
         }
+
+        PluginSettings settings = PluginSettings.instance();
     }
 
     public static void invokePrivileged(Runnable runner) {
@@ -102,7 +105,19 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             try {
                 runner.run();
             } catch(Exception ex) {
-                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("{}",
+                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
+                        ex.toString()), ex);
+            }
+            return null;
+        } );
+    }
+
+    public static void invokePrivilegedAndLogError(Runnable runner) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                runner.run();
+            } catch(Exception ex) {
+                LOG.error((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
                         ex.toString()), ex);
             }
             return null;
