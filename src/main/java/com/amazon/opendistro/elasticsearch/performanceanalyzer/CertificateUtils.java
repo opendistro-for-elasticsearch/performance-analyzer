@@ -2,8 +2,6 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import java.io.FileReader;
 import java.security.KeyStore;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 
