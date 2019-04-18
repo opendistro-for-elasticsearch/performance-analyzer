@@ -29,22 +29,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.net.ssl.HttpsURLConnection;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
 
+import org.jooq.Record;
+import org.jooq.Result;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricAttributes;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricsModel;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ClusterLevelMetricsReader;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import org.jooq.Record;
-import org.jooq.Result;
 
 /**
  * Request handler that supports querying MetricsDB on every EC2 instance.
@@ -234,8 +239,8 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                         );
                 nodeResponses.put(node.getId(), remoteNodeStats);
                 } catch (Exception e) {
-                    LOG.error("Unable to collect stats for node, addr:{}",
-                            node.getHostAddress());
+                    LOG.error("Unable to collect stats for node, addr:{}, exception: {}",
+                            node.getHostAddress(), e);
                 }
             }
             String response = nodeJsonBuilder(nodeResponses);
@@ -273,10 +278,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     }
 
     protected String collectRemoteStats(String nodeIP, String uri, String queryString) throws Exception {
-        String urlString = String.format("http://%s:9600%s?%s", nodeIP, uri, queryString);
-        LOG.debug("Remote URL - {}", urlString);
-        URL url = new URL(urlString);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        HttpURLConnection conn = getUrlConnection(nodeIP, uri, queryString);
 
         conn.setConnectTimeout(HTTP_CLIENT_CONNECTION_TIMEOUT);
         int responseCode = conn.getResponseCode();
@@ -297,6 +299,23 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
         }
 
         return response.toString();
+    }
+
+    private HttpURLConnection getUrlConnection(String nodeIP, String uri, String queryString) throws IOException {
+        boolean httpsEnabled = PluginSettings.instance().getHttpsEnabled();
+        String protocol = "http";
+        if (httpsEnabled) {
+            protocol = "https";
+        }
+        String urlString = String.format("%s://%s:9600%s?%s", protocol, nodeIP, uri, queryString);
+        LOG.debug("Remote URL - {}", urlString);
+        URL url = new URL(urlString);
+
+        if (httpsEnabled) {
+            return (HttpsURLConnection) url.openConnection();
+        } else {
+            return (HttpURLConnection) url.openConnection();
+        }
     }
 }
 
