@@ -30,8 +30,9 @@ import org.apache.logging.log4j.Logger;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 
-public class StatsCollector {
+public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     private static final String LOG_ENTRY_INIT = "------------------------------------------------------------------------";
     private static final String LOG_ENTRY_END = "EOE";
     private static final String LOG_LINE_BREAK = "\n";
@@ -41,23 +42,16 @@ public class StatsCollector {
 
     private static final Logger STATS_LOGGER = LogManager.getLogger("stats_log");
     private static final Logger GENERAL_LOG = LogManager.getLogger(StatsCollector.class);
-    private static final Map<String, StatsCollector> statsCollectors = new LinkedHashMap<>();
+    private static StatsCollector statsCollector = null;
+    public static String STATS_TYPE = "plugin-stats-metadata";
 
     private final Map<String, String> metadata;
     private final Map<String, Integer> counters = new LinkedHashMap<>();
     private Date objectCreationTime = new Date();
 
-    public static StatsCollector instance(String type) {
-        StatsCollector statsCollector = statsCollectors.get(type);
+    public static StatsCollector instance() {
         if(statsCollector == null) {
-            synchronized(statsCollectors) {
-                statsCollector = statsCollectors.get(type);
-                if(statsCollector == null) {
-                    String metadataLocation = PluginSettings.instance().getSettingValue(type);
-                    statsCollector = new StatsCollector(loadMetadata(metadataLocation));
-                    statsCollectors.put(type, statsCollector);
-                }
-            }
+            statsCollector = new StatsCollector(loadMetadata(PluginSettings.instance().getSettingValue(STATS_TYPE)));
         }
 
         return statsCollector;
@@ -84,6 +78,8 @@ public class StatsCollector {
     }
 
     private StatsCollector(Map<String, String> metadata) {
+        super(MetricsConfiguration.CONFIG_MAP.get(StatsCollector.class).samplingInterval,
+            "StatsCollector");
         this.metadata = metadata;
     }
 
@@ -106,7 +102,8 @@ public class StatsCollector {
     /**
      * Write everything that has been logged to the stats log.
      */
-    public void write() {
+    @Override
+    public void collectMetrics(long startTime) {
         writeStats(metadata, counters, null, objectCreationTime.getTime(), new Date().getTime());
         objectCreationTime = new Date();
     }

@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.sun.net.httpserver.HttpServer;
 
-
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 
 public class PerformanceAnalyzerApp {
@@ -40,6 +40,7 @@ public class PerformanceAnalyzerApp {
     private static final int INCOMING_QUEUE_LENGTH = 1;
     public static final String QUERY_URL = "/_opendistro/_performanceanalyzer/metrics";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerApp.class);
+    private static final ScheduledMetricCollectorsExecutor METRIC_COLLECTOR_EXECUTOR = new ScheduledMetricCollectorsExecutor(1, false);
 
     public static void main(String[] args) throws Exception {
         ESResources.INSTANCE.setPluginFileLocation(System.getProperty("es.path.home") +
@@ -63,9 +64,9 @@ public class PerformanceAnalyzerApp {
         });
         readerThread.start();
 
-        //- todo - remove; added for testing
-        StatsCollector.instance("agent-stats-metadata").write();
-        StatsCollector.instance("agent-stats-metadata").write();
+        StatsCollector.STATS_TYPE = "agent-stats-metadata";
+        METRIC_COLLECTOR_EXECUTOR.addScheduledMetricCollector(StatsCollector.instance());
+        METRIC_COLLECTOR_EXECUTOR.start();
 
         int readerPort= getPortNumber();
         try {
