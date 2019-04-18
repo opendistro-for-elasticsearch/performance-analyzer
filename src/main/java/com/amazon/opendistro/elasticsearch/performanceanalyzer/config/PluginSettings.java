@@ -75,7 +75,7 @@ public class PluginSettings {
             httpsEnabled = Boolean.parseBoolean(httpsEnabledString);
         } catch (Exception ex) {
             LOG.error("Unable to parse httpsEnabled property with value {}", httpsEnabledString);
-            instance.httpsEnabled = false;
+            httpsEnabled = false;
         }
     }
 
