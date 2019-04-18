@@ -29,6 +29,9 @@ import org.apache.logging.log4j.Logger;
 
 import com.sun.net.httpserver.HttpServer;
 
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+
 public class PerformanceAnalyzerApp {
     private static final int WEBSERVICE_DEFAULT_PORT = 9600;
     private static final String WEBSERVICE_PORT_CONF_NAME = "webservice-listener-port";
@@ -59,6 +62,10 @@ public class PerformanceAnalyzerApp {
             }
         });
         readerThread.start();
+
+        //- todo - remove; added for testing
+        StatsCollector.instance("agent-stats-metadata").write();
+        StatsCollector.instance("agent-stats-metadata").write();
 
         int readerPort= getPortNumber();
         try {

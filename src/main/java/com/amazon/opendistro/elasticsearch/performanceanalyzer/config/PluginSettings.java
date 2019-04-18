@@ -31,6 +31,7 @@ public class PluginSettings {
     private static final Logger log = LogManager.getLogger(PluginSettings.class);
 
     private static PluginSettings instance = null;
+    public static final String CONFIG_FILES_PATH = "pa_config/";
     private static final String CONFIG_FILE_PATH = "pa_config/performance-analyzer.properties";
     private static final String METRICS_LOCATION_KEY = "metrics-location";
     private static final String METRICS_LOCATION_DEFAULT = "/dev/shm/performanceanalyzer/";
