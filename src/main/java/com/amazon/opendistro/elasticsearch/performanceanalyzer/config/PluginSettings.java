@@ -91,6 +91,8 @@ public class PluginSettings {
         } else {
             this.configFilePath = cfPath;
         }
+
+        settings = new Properties();
         try {
             settings = getSettingsFromFile(this.configFilePath);
             loadMetricsDeletionIntervalFromConfig();
