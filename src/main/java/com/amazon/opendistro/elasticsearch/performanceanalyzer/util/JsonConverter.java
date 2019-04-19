@@ -29,6 +29,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 
 public class JsonConverter {
@@ -65,7 +67,9 @@ public class JsonConverter {
                         new TypeReference<Map<String, Object>>() { });
             }
         } catch (IOException e) {
-            LOG.debug("IO error: {} for json {}", () -> e.toString(), () -> json);
+            LOG.debug("IO error: {} for json {} with ExceptionCode: {}",
+                      () -> e.toString(), () -> json, () -> StatExceptionCode.JSON_PARSER_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.JSON_PARSER_ERROR);
         }
         return Collections.emptyMap();
     }

@@ -18,11 +18,14 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.os;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.linux.LinuxDiskIOMetricsGenerator;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -95,8 +98,12 @@ public class ThreadDiskIO {
                 kvmap.put(key, val);
             }
             tidKVMap.put(tid, kvmap);
+        } catch (FileNotFoundException e) {
+            LOGGER.debug("FileNotFound in parse with exception: {}", () -> e.toString());
         } catch (Exception e) {
-            LOGGER.debug("Error In addSample Tid for: {}  with error: {}", () -> tid, () -> e.toString());
+            LOGGER.debug("Error In addSample Tid for: {}  with error: {} with ExceptionCode: {}",
+                         () -> tid, () -> e.toString(), () -> StatExceptionCode.THREAD_IO_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.THREAD_IO_ERROR);
         }
     }
 

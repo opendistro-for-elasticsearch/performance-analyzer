@@ -17,7 +17,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
@@ -46,7 +47,7 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     public static String STATS_TYPE = "plugin-stats-metadata";
 
     private final Map<String, String> metadata;
-    private final Map<String, Integer> counters = new LinkedHashMap<>();
+    private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private Date objectCreationTime = new Date();
 
     public static StatsCollector instance() {
@@ -57,8 +58,21 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         return statsCollector;
     }
 
+    public void logException() {
+        logException(StatExceptionCode.OTHER);
+    }
+
+    public void logException(StatExceptionCode statExceptionCode) {
+        incCounter(statExceptionCode.toString());
+    }
+
+    public void logStatsRecord(Map<String, String> statsdata, Map<String, AtomicInteger> counters,
+                               long startTimeMillis, long endTimeMillis) {
+        writeStats(metadata, counters, statsdata, startTimeMillis, endTimeMillis);
+    }
+
     private static Map<String, String> loadMetadata(String fileLocation) {
-        Map<String, String> retVal = new LinkedHashMap<>();
+        Map<String, String> retVal = new ConcurrentHashMap<>();
 
         if(fileLocation != null) {
             Properties props = new Properties();
@@ -83,32 +97,28 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         this.metadata = metadata;
     }
 
-    /**
-     * Increments one to the counter with the specified name
-     *
-     * @param counterName
-     *            The name of the counter
-     * @return The previous value of the counter. 0 if the counter didn't exist before
-     */
-    private int incCounter(String counterName) {
-        Integer currentValue = counters.get(counterName);
-        if (currentValue != null) {
-            return counters.put(counterName, currentValue + 1);
-        }
-        counters.put(counterName, 1);
-        return 0;
-    }
-
-    /**
-     * Write everything that has been logged to the stats log.
-     */
     @Override
     public void collectMetrics(long startTime) {
-        writeStats(metadata, counters, null, objectCreationTime.getTime(), new Date().getTime());
+        Map<String, AtomicInteger> currentCounters = counters;
+        counters = new ConcurrentHashMap<>();
+        currentCounters.putIfAbsent(StatExceptionCode.ERROR_COUNT.toString(), new AtomicInteger(0));
+        writeStats(metadata, currentCounters, null, objectCreationTime.getTime(), new Date().getTime());
         objectCreationTime = new Date();
     }
+    
+    private void incCounter(String counterName) {
+        AtomicInteger val = counters.putIfAbsent(counterName, new AtomicInteger(1));
+        if (val != null) {
+            val.getAndIncrement();
+        }
 
-    private static void writeStats(Map<String, String> metadata, Map<String, Integer> counters,
+        AtomicInteger all_val = counters.putIfAbsent(StatExceptionCode.ERROR_COUNT.toString(), new AtomicInteger(1));
+        if (all_val != null) {
+            all_val.getAndIncrement();
+        }
+    }
+
+    private static void writeStats(Map<String, String> metadata, Map<String, AtomicInteger> counters,
                                    Map<String, String> statsdata,
                                    long startTimeMillis, long endTimeMillis) {
         StringBuilder builder = new StringBuilder();
@@ -121,17 +131,13 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         STATS_LOGGER.info(builder.toString());
     }
 
-    /**
-     * Used to retrieve PMET expected counter syntax:
-     * counter_name1=counter_value1,counter_name2=counter_value2
-     */
-    private static String getCountersString(Map<String, Integer> counters) {
+    private static String getCountersString(Map<String, AtomicInteger> counters) {
         StringBuilder builder = new StringBuilder();
         if (counters == null || counters.isEmpty()) {
             return "";
         }
-        for (Map.Entry<String, Integer> counter : counters.entrySet()) {
-            builder.append(counter.getKey()).append("=").append(counter.getValue()).append(",");
+        for (Map.Entry<String, AtomicInteger> counter : counters.entrySet()) {
+            builder.append(counter.getKey()).append("=").append(counter.getValue().get()).append(",");
         }
         builder.delete(builder.length() - 1, builder.length());
         return builder.toString();
@@ -157,24 +163,11 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         sb.append(key).append('=').append(value).append(LOG_LINE_BREAK);
     } 
 
-    /**
-     * @param exception
-     *        The exception to be logged
-     */
-    public void logException(Exception exception) {
-        incCounter(exception.getClass().getName());
-    }
-
     private static String getTimingInfo(double latency) {
         String timerName = "total-time";
         StringBuilder builder = new StringBuilder();
         builder.append(timerName).append(":").append(latency).append("/1");
         return builder.toString();
-    }
-
-    public void logStatsRecord(Map<String, String> statsdata, Map<String, Integer> counters,
-                               long startTimeMillis, long endTimeMillis) {
-        writeStats(metadata, counters, statsdata, startTimeMillis, endTimeMillis);
     }
 }
 
