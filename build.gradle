@@ -229,4 +229,7 @@ afterEvaluate {
         dependsOn 'assemble'
     }
     
+    task buildPackages(type: GradleBuild) {
+         tasks = ['build', 'buildRpm', 'buildDeb']
+    }
 }
