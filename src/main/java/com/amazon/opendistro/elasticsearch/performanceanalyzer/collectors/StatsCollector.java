@@ -20,6 +20,8 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Properties;
 
 import java.io.InputStream;
@@ -38,8 +40,6 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     private static final String LOG_ENTRY_END = "EOE";
     private static final String LOG_LINE_BREAK = "\n";
     private static final double MILLISECONDS_TO_SECONDS_DIVISOR = 1000D;
-    // Date Example: Wed, 20 Mar 2013 15:07:51 GMT
-    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ROOT);
 
     private static final Logger STATS_LOGGER = LogManager.getLogger("stats_log");
     private static final Logger GENERAL_LOG = LogManager.getLogger(StatsCollector.class);
@@ -49,6 +49,8 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     private final Map<String, String> metadata;
     private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private Date objectCreationTime = new Date();
+
+    private List<StatExceptionCode> defaultExceptionCodes = new ArrayList<>();
 
     public static StatsCollector instance() {
         if(statsCollector == null) {
@@ -66,9 +68,9 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         incCounter(statExceptionCode.toString());
     }
 
-    public void logStatsRecord(Map<String, String> statsdata, Map<String, AtomicInteger> counters,
-                               long startTimeMillis, long endTimeMillis) {
-        writeStats(metadata, counters, statsdata, startTimeMillis, endTimeMillis);
+    public void logStatsRecord(Map<String, AtomicInteger> counters, Map<String, String> statsdata, 
+                               Map<String, Double> latencies, long startTimeMillis, long endTimeMillis) {
+        writeStats(metadata, counters, statsdata, latencies, startTimeMillis, endTimeMillis);
     }
 
     private static Map<String, String> loadMetadata(String fileLocation) {
@@ -95,14 +97,25 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         super(MetricsConfiguration.CONFIG_MAP.get(StatsCollector.class).samplingInterval,
             "StatsCollector");
         this.metadata = metadata;
+        defaultExceptionCodes.add(StatExceptionCode.TOTAL_ERROR);
+    }
+
+    public void addDefaultExceptionCode(StatExceptionCode statExceptionCode) {
+        defaultExceptionCodes.add(statExceptionCode);
     }
 
     @Override
     public void collectMetrics(long startTime) {
         Map<String, AtomicInteger> currentCounters = counters;
         counters = new ConcurrentHashMap<>();
-        currentCounters.putIfAbsent(StatExceptionCode.ERROR_COUNT.toString(), new AtomicInteger(0));
-        writeStats(metadata, currentCounters, null, objectCreationTime.getTime(), new Date().getTime());
+
+        //currentCounters.putIfAbsent(StatExceptionCode.TOTAL_ERROR.toString(), new AtomicInteger(0));
+
+        for(StatExceptionCode statExceptionCode : defaultExceptionCodes) {
+            currentCounters.putIfAbsent(statExceptionCode.toString(), new AtomicInteger(0));
+        }
+
+        writeStats(metadata, currentCounters, null, null, objectCreationTime.getTime(), new Date().getTime());
         objectCreationTime = new Date();
     }
     
@@ -112,20 +125,28 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
             val.getAndIncrement();
         }
 
-        AtomicInteger all_val = counters.putIfAbsent(StatExceptionCode.ERROR_COUNT.toString(), new AtomicInteger(1));
+        AtomicInteger all_val = counters.putIfAbsent(StatExceptionCode.TOTAL_ERROR.toString(), new AtomicInteger(1));
         if (all_val != null) {
             all_val.getAndIncrement();
         }
     }
 
     private static void writeStats(Map<String, String> metadata, Map<String, AtomicInteger> counters,
-                                   Map<String, String> statsdata,
+                                   Map<String, String> statsdata, Map<String, Double> latencies,
                                    long startTimeMillis, long endTimeMillis) {
         StringBuilder builder = new StringBuilder();
         builder.append(LOG_ENTRY_INIT + LOG_LINE_BREAK);
         logValues(metadata, builder);
         logValues(statsdata, builder);
         logTimeMetrics(startTimeMillis, endTimeMillis, builder);
+
+        if(latencies == null) {
+            latencies = new ConcurrentHashMap<>();
+        }
+        latencies.put("total-time", (double)endTimeMillis-startTimeMillis);
+
+        addEntry("Timing", getLatencyMetrics(latencies), builder);
+
         addEntry("Counters", getCountersString(counters), builder);
         builder.append(LOG_ENTRY_END);// + LOG_LINE_BREAK);
         STATS_LOGGER.info(builder.toString());
@@ -144,10 +165,11 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     }
 
     private static void logTimeMetrics(long startTimeMillis, long endTimeMillis, StringBuilder builder) {
+        // Date Example: Wed, 20 Mar 2013 15:07:51 GMT
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ROOT);
         addEntry("StartTime", String.format(Locale.ROOT, "%.3f", startTimeMillis / MILLISECONDS_TO_SECONDS_DIVISOR), builder);
         addEntry("EndTime", dateFormat.format(new Date(endTimeMillis)), builder);
         addEntry("Time", (endTimeMillis - startTimeMillis) + " msecs", builder);
-        addEntry("Timing", getTimingInfo(endTimeMillis - startTimeMillis), builder);
     }
 
     private static void logValues(Map<String, String> values, StringBuilder sb) {
@@ -163,11 +185,24 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         sb.append(key).append('=').append(value).append(LOG_LINE_BREAK);
     } 
 
-    private static String getTimingInfo(double latency) {
-        String timerName = "total-time";
+    private static String getLatencyMetrics(Map<String, Double> values) {
         StringBuilder builder = new StringBuilder();
-        builder.append(timerName).append(":").append(latency).append("/1");
+        if (values == null || values.isEmpty()) {
+            return "";
+        }
+        for (Map.Entry<String, Double> value : values.entrySet()) {
+            builder.append(value.getKey()).append(":").append(value.getValue()).append(",");
+        }
+        builder.delete(builder.length() - 1, builder.length());
         return builder.toString();
+    }
+
+    private static void getTimingInfo(String timerName, double latency, StringBuilder builder) {
+        getTimingInfo(timerName, latency, builder, 1);
+    }
+
+    private static void getTimingInfo(String timerName, double latency, StringBuilder builder, int attempts) {
+        builder.append(timerName).append(":").append(latency).append("/").append(attempts);
     }
 }
 

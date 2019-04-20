@@ -48,6 +48,7 @@ import com.sun.net.httpserver.HttpsConfigurator;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public class PerformanceAnalyzerApp {
     private static final int WEBSERVICE_DEFAULT_PORT = 9600;
@@ -66,6 +67,11 @@ public class PerformanceAnalyzerApp {
         //Initialize settings before creating threads.
         PluginSettings settings = PluginSettings.instance();
 
+        StatsCollector.STATS_TYPE = "agent-stats-metadata";
+        METRIC_COLLECTOR_EXECUTOR.addScheduledMetricCollector(StatsCollector.instance());
+        StatsCollector.instance().addDefaultExceptionCode(StatExceptionCode.READER_RESTART_PROCESSING);
+        METRIC_COLLECTOR_EXECUTOR.start();
+
         Thread readerThread = new Thread(new Runnable() {
             public void run() {
                 while (true) {
@@ -77,16 +83,14 @@ public class PerformanceAnalyzerApp {
                         if (TroubleshootingConfig.getEnableDevAssert()) {
                             break;
                         }
-                        LOG.error("Error in ReaderMetricsProcessor...restarting");
+                        LOG.error("Error in ReaderMetricsProcessor...restarting, ExceptionCode: {}",
+                                  StatExceptionCode.READER_RESTART_PROCESSING.toString());
+                        StatsCollector.instance().logException(StatExceptionCode.READER_RESTART_PROCESSING);
                     }
                 }
             }
         });
         readerThread.start();
-
-        StatsCollector.STATS_TYPE = "agent-stats-metadata";
-        METRIC_COLLECTOR_EXECUTOR.addScheduledMetricCollector(StatsCollector.instance());
-        METRIC_COLLECTOR_EXECUTOR.start();
 
         int readerPort = getPortNumber();
         try {

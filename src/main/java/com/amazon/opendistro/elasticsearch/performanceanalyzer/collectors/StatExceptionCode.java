@@ -16,9 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 public enum StatExceptionCode {
-    ERROR_COUNT("ErrorCount"),
-    START_COUNT("StartCount"),
-    RESTART_COUNT("RestartCount"),
+    TOTAL_ERROR("TotalError"),
     METRICS_WRITE_ERROR("MetricsWriteError"),
     METRICS_REMOVE_ERROR("MetricsRemoveError"),
     JVM_ATTACH_ERROR("JvmAttachErrror"),
@@ -30,6 +28,10 @@ public enum StatExceptionCode {
     NETWORK_COLLECTION_ERROR("NetworkCollectionError"),
     NODESTATS_COLLECTION_ERROR("NodeStatsCollectionError"),
     OTHER_COLLECTION_ERROR("OtherCollectionError"),
+    REQUEST_ERROR("RequestError"),
+    REQUEST_REMOTE_ERROR("RequestRemoteError"),
+    READER_PARSER_ERROR("RequestParserError"),
+    READER_RESTART_PROCESSING("ReaderRestartProcessing"),
     OTHER("Other");
 
     private final String value;
