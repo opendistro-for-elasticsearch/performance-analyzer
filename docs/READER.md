@@ -12,7 +12,10 @@ The performance analyzer plugin captures important events in Elasticsearch and w
 
 # Performance Analyzer Application
 
-[Image: images/pa.png]
+![alt text][performance analyzer]
+
+[performance analyzer]: https://github.com/opendistro-for-elasticsearch/performance-analyzer/blob/master/docs/images/pa.png "Performance Analyzer Architecture diagram"
+
 The performance analyzer application is written in Java, and this allows us to share code with the writer easily.  Java libraries like jdbc and jooq made it very easy to generate sql programmatically.
 
 The reader consists of 3 main components - 
