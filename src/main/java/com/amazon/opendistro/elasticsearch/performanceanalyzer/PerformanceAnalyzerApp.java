@@ -59,11 +59,14 @@ public class PerformanceAnalyzerApp {
         ESResources.INSTANCE.setPluginFileLocation(System.getProperty("es.path.home")
                 + File.separator + "plugins" + File.separator + PerformanceAnalyzerPlugin.PLUGIN_NAME + File.separator);
 
+        //Initialize settings before creating threads.
+        PluginSettings settings = PluginSettings.instance();
+
         Thread readerThread = new Thread(new Runnable() {
             public void run() {
                 while (true) {
                     try {
-                        ReaderMetricsProcessor mp = new ReaderMetricsProcessor(PluginSettings.instance().getMetricsLocation());
+                        ReaderMetricsProcessor mp = new ReaderMetricsProcessor(settings.getMetricsLocation());
                         ReaderMetricsProcessor.current = mp;
                         mp.run();
                     } catch (Throwable e) {
@@ -81,7 +84,7 @@ public class PerformanceAnalyzerApp {
         try {
             Security.addProvider(new BouncyCastleProvider());
             HttpServer server = null;
-            if (PluginSettings.instance().getHttpsEnabled()) {
+            if (settings.getHttpsEnabled()) {
                 server = createHttpsServer(readerPort);
             }
             else {

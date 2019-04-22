@@ -5,38 +5,42 @@ if [ "$START_PERF_ANALYZER" = "false" ]; then
     exit 0
 fi
 
-if [ -z "$ES_HOME" ]; then
-    ES_HOME=$1
-    if [ -z "$1" ]; then
+if [ -z "$1" ]; then
+    if [ -z "$ES_HOME" ]; then
         echo "ES_HOME needs to be set or passed in as the first parameter."
         exit 1
     fi
+else
+    ES_HOME=$2
 fi
 
-if [ -z "$JAVA_HOME" ]; then
-    JAVA_HOME=$2
-    if [ -z "$2" ]; then
+if [ -z "$2" ]; then
+    if [ -z "$JAVA_HOME" ]; then
         echo "JAVA_HOME needs to be set or passed in as the second parameter."
         exit 1
     fi
+else
+    JAVA_HOME=$2
 fi
 
 if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' > /dev/null; then
-    $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+    exec $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+    -DconfigFilePath=$3 \
     -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
     -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
     -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp
 else
     echo 'Starting deamon'
-    $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+    exec $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
+        -DconfigFilePath=$3 \
         -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
         -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
         -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp &
 
     pid=$!
     PID_LOC=/tmp/performance-analyzer-agent
-    if [ -n "$3" ]; then
-        PID_LOC=$3
+    if [ -n "$4" ]; then
+        PID_LOC=$4
     fi
 
     if ! ps -p $pid > $PID_LOC ; then
