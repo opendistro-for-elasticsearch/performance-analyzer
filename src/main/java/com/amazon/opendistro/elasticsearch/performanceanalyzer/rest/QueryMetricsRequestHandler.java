@@ -68,7 +68,17 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
-        Map.Entry<Long, MetricsDB> dbEntry = ReaderMetricsProcessor.current.getMetricsDB();
+        ReaderMetricsProcessor mp = ReaderMetricsProcessor.getInstance();
+        if (mp == null) {
+            sendResponse(exchange,
+                    "{\"error\":\"Metrics Processor is not initialized. The reader has run into an issue or has just started.\"}",
+                    HttpURLConnection.HTTP_UNAVAILABLE);
+
+            LOG.warn("Metrics Processor is not initialized. The reader has run into an issue or has just started.");
+            return;
+        }
+
+        Map.Entry<Long, MetricsDB> dbEntry = mp.getMetricsDB();
         if (dbEntry == null) {
             sendResponse(exchange,
                     "{\"error\":\"There are no metrics databases. The reader has run into an issue or has just started.\"}",
