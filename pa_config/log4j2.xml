@@ -7,7 +7,7 @@
         <File name="PerformanceAnalyzerLog" fileName="/tmp/PerformanceAnalyzer.log" immediateFlush="true" append="true">
             <PatternLayout pattern="%d{yyy-MM-dd HH:mm:ss.SSS} [PA:Reader] [%t] %-5level %logger{36} - %msg%n"/>
         </File>
-        <File name="StatsLog" fileName="/tmp/PerformanceAnalyzerAgentStats.log" immediateFlush="true" append="true">
+        <File name="StatsLog" fileName="/tmp/performance_analyzer_agent_stats.log" immediateFlush="true" append="true">
         </File>
     </Appenders>
     <Loggers>
