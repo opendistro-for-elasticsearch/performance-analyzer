@@ -40,7 +40,7 @@ public class QueryMetricsRequestHandlerTests {
     public void testNodeJsonBuilder() throws Exception {
         String rootLocation = "test_files/dev/shm";
         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(rootLocation);
-        ReaderMetricsProcessor.current = mp;
+        ReaderMetricsProcessor.setCurrentInstance(mp);
         QueryMetricsRequestHandler qHandler = new QueryMetricsRequestHandler();
         HashMap<String, String> nodeResponses = new HashMap<String, String>() {{
             this.put("node1", "{'xyz':'abc'}");
@@ -55,7 +55,7 @@ public class QueryMetricsRequestHandlerTests {
     public void testQueryJson() throws Exception {
         String rootLocation = "build/private/test_resources/dev/shm";
         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(rootLocation);
-        ReaderMetricsProcessor.current = mp;
+        ReaderMetricsProcessor.setCurrentInstance(mp);
         mp.processMetrics(rootLocation, 1535065139000L);
         mp.processMetrics(rootLocation, 1535065169000L);
         mp.processMetrics(rootLocation, 1535065199000L);
@@ -87,7 +87,7 @@ public class QueryMetricsRequestHandlerTests {
     public void testParseArrayParameter() throws Exception {
         String rootLocation = "test_files/dev/shm";
         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(rootLocation);
-        ReaderMetricsProcessor.current = mp;
+        ReaderMetricsProcessor.setCurrentInstance(mp);
         QueryMetricsRequestHandler qHandler = new QueryMetricsRequestHandler();
 
         HashMap<String, String> params = new HashMap<String, String>();
@@ -111,7 +111,7 @@ public class QueryMetricsRequestHandlerTests {
     public void testParseArrayParameterOptional() throws Exception {
         String rootLocation = "test_files/dev/shm";
         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(rootLocation);
-        ReaderMetricsProcessor.current = mp;
+        ReaderMetricsProcessor.setCurrentInstance(mp);
         QueryMetricsRequestHandler qHandler = new QueryMetricsRequestHandler();
 
         HashMap<String, String> params = new HashMap<String, String>();
@@ -129,7 +129,7 @@ public class QueryMetricsRequestHandlerTests {
     public void testParseArrayParameterNoParam() throws Exception {
         String rootLocation = "test_files/dev/shm";
         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(rootLocation);
-        ReaderMetricsProcessor.current = mp;
+        ReaderMetricsProcessor.setCurrentInstance(mp);
         QueryMetricsRequestHandler qHandler = new QueryMetricsRequestHandler();
 
         HashMap<String, String> params = new HashMap<String, String>();
@@ -140,7 +140,7 @@ public class QueryMetricsRequestHandlerTests {
     public void testParseArrayParameterEmptyParam() throws Exception {
         String rootLocation = "test_files/dev/shm";
         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(rootLocation);
-        ReaderMetricsProcessor.current = mp;
+        ReaderMetricsProcessor.setCurrentInstance(mp);
         QueryMetricsRequestHandler qHandler = new QueryMetricsRequestHandler();
 
         HashMap<String, String> params = new HashMap<String, String>();

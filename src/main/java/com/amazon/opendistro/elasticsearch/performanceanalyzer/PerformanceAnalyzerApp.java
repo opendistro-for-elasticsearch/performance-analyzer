@@ -67,7 +67,7 @@ public class PerformanceAnalyzerApp {
                 while (true) {
                     try {
                         ReaderMetricsProcessor mp = new ReaderMetricsProcessor(settings.getMetricsLocation());
-                        ReaderMetricsProcessor.current = mp;
+                        ReaderMetricsProcessor.setCurrentInstance(mp);
                         mp.run();
                     } catch (Throwable e) {
                         if (TroubleshootingConfig.getEnableDevAssert()) {

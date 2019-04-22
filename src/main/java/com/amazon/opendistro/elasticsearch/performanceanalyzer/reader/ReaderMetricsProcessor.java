@@ -62,7 +62,15 @@ public class ReaderMetricsProcessor implements Runnable {
     private final MetricsParser metricsParser;
     private final String rootLocation;
 
-    public static ReaderMetricsProcessor current = null;
+    private static ReaderMetricsProcessor current = null;
+
+    public static void setCurrentInstance(ReaderMetricsProcessor currentInstance) {
+        current = currentInstance;
+    }
+
+    public static ReaderMetricsProcessor getInstance() {
+        return current;
+    }
 
     public ReaderMetricsProcessor(String rootLocation) throws Exception {
         conn = DriverManager.getConnection(DB_URL);
