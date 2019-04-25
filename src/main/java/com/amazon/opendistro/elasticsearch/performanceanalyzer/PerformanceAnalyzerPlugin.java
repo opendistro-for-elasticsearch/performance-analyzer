@@ -96,8 +96,6 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             // unprivileged code such as scripts do not have SpecialPermission
             sm.checkPermission(new SpecialPermission());
         }
-
-        PluginSettings settings = PluginSettings.instance();
     }
 
     public static void invokePrivileged(Runnable runner) {
@@ -133,6 +131,9 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setConfigPath(configPath);
         ESResources.INSTANCE.setPluginFileLocation(new Environment(settings, configPath).
                 pluginsFile().toAbsolutePath().toString() + File.separator + PLUGIN_NAME + File.separator);
+        //Initialize plugin settings. Accessing plugin settings before this
+        //point will break, as the plugin location will not be initialized.
+        PluginSettings.instance();
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector());
