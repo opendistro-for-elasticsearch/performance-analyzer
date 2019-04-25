@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.google.common.annotations.VisibleForTesting;
 
 public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     private static final String LOG_ENTRY_INIT = "------------------------------------------------------------------------";
@@ -60,6 +61,10 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         return statsCollector;
     }
 
+    @VisibleForTesting
+    Map<String, AtomicInteger> getCounters() {
+        return counters;
+    }
     public void logException() {
         logException(StatExceptionCode.OTHER);
     }
@@ -191,7 +196,7 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
             return "";
         }
         for (Map.Entry<String, Double> value : values.entrySet()) {
-            builder.append(value.getKey()).append(":").append(value.getValue()).append(",");
+            getTimingInfo(value.getKey(), value.getValue(), builder);
         }
         builder.delete(builder.length() - 1, builder.length());
         return builder.toString();
@@ -202,7 +207,7 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     }
 
     private static void getTimingInfo(String timerName, double latency, StringBuilder builder, int attempts) {
-        builder.append(timerName).append(":").append(latency).append("/").append(attempts);
+        builder.append(timerName).append(":").append(latency).append("/").append(attempts).append(",");
     }
 }
 
