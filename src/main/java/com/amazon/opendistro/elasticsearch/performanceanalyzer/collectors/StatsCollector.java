@@ -55,7 +55,7 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
 
     public static StatsCollector instance() {
         if(statsCollector == null) {
-            statsCollector = new StatsCollector(loadMetadata(PluginSettings.instance().getSettingValue(STATS_TYPE)));
+            statsCollector = new StatsCollector(loadMetadata(PluginSettings.instance().getSettingValue(STATS_TYPE, STATS_TYPE)));
         }
 
         return statsCollector;
