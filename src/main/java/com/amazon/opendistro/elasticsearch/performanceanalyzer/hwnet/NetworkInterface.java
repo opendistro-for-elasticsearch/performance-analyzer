@@ -28,6 +28,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetInt
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.linux.LinuxIPMetricsGenerator;
 import com.google.common.annotations.VisibleForTesting;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public class NetworkInterface {
     private static final Logger LOG = LogManager.getLogger(NetworkInterface.class);
@@ -221,7 +223,9 @@ public class NetworkInterface {
                 ln++;
             }
         } catch (Exception e) {
-            LOG.debug("Exception in calling addSample4 with details: {}", () -> e.toString());
+            LOG.debug("Exception in calling addSample4 with details: {} with ExceptionCode: {}",
+                      () -> e.toString(), () -> StatExceptionCode.NETWORK_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.NETWORK_COLLECTION_ERROR);
         }
     }
 
@@ -240,7 +244,9 @@ public class NetworkInterface {
                 }
             }
         } catch (Exception e) {
-            LOG.debug("Exception in calling addSample6 with details: {}", () -> e.toString());
+            LOG.debug("Exception in calling addSample6 with details: {} with ExceptionCode: {}",
+                      () -> e.toString(), () -> StatExceptionCode.NETWORK_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.NETWORK_COLLECTION_ERROR);
         }
     }
 
@@ -266,7 +272,9 @@ public class NetworkInterface {
             currentMetrics.PHYmetrics.put("outbytes", outtotbytes);
             currentMetrics.PHYmetrics.put("outpackets", outtotpackets);
         } catch (Exception e) {
-            LOG.debug("Exception in calling addDeviceStats with details: {}", () -> e.toString());
+            LOG.debug("Exception in calling addDeviceStats with details: {} with ExceptionCode: {}",
+                      () -> e.toString(), () -> StatExceptionCode.NETWORK_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.NETWORK_COLLECTION_ERROR);
         }
     }
 

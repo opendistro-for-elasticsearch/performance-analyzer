@@ -32,6 +32,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.OSGlobals;
 import com.google.common.annotations.VisibleForTesting;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public class NetworkE2E {
     /* Data sources:
@@ -135,7 +137,9 @@ public class NetworkE2E {
                 ln++;
             }
         } catch (Exception e) {
-            LOG.debug("Error in mapTCPMetrics: {}", () -> e);
+            LOG.debug("Error in mapTCPMetrics: {} with ExceptionCode: {}",
+                      () -> e, () -> StatExceptionCode.NETWORK_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.NETWORK_COLLECTION_ERROR);
         }
     }
 

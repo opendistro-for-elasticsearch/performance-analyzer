@@ -165,6 +165,10 @@ bundlePlugin {
         include "plugin-security.policy"
     }
     exclude ('tools.jar')
+    from ("config/opendistro_performance_analyzer") {
+        into "config"
+    }
+
 }
 
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",

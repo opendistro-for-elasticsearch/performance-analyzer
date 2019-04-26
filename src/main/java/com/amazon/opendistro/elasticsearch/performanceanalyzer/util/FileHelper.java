@@ -23,6 +23,8 @@ import java.io.FileReader;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public class FileHelper {
     private static final Logger log = LogManager.getLogger(FileHelper.class);
@@ -66,7 +68,9 @@ public class FileHelper {
                 }
             }
         } catch (Exception ex) {
-            log.debug("Having issue to read current time from the content of file. Using file metadata.", ex);
+            StatsCollector.instance().logException();
+            log.debug("Having issue to read current time from the content of file. Using file metadata; excpetion: {} ExceptionCode: {}",
+                      () -> ex, () -> StatExceptionCode.OTHER.toString());
         }
         return file.lastModified();
     }

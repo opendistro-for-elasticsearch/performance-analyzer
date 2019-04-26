@@ -29,6 +29,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Networ
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.jvm.GCMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.jvm.HeapMetrics;
@@ -41,6 +42,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.ThreadSched;
 public class MetricsConfiguration {
     public static final int SAMPLING_INTERVAL = 5000;
     public static final int ROTATION_INTERVAL = 30000;
+    public static final int STATS_ROTATION_INTERVAL = 60000;
     public static final int DELETION_INTERVAL = PluginSettings.instance().getMetricsDeletionInterval();
 
     public static class MetricConfig {
@@ -73,6 +75,7 @@ public class MetricsConfiguration {
         CONFIG_MAP.put(OSGlobals.class, cdefault);
         CONFIG_MAP.put(PerformanceAnalyzerMetrics.class, new MetricConfig(0, ROTATION_INTERVAL, 0));
         CONFIG_MAP.put(MetricsPurgeActivity.class, new MetricConfig(ROTATION_INTERVAL, 0, DELETION_INTERVAL));
+        CONFIG_MAP.put(StatsCollector.class, new MetricConfig(STATS_ROTATION_INTERVAL, 0, 0));
         CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricConfig(1000, 0, 0));
         CONFIG_MAP.put(MasterServiceMetrics.class, cdefault);
         CONFIG_MAP.put(DisksCollector.class, cdefault);

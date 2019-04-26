@@ -19,6 +19,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyz
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public abstract class PerformanceAnalyzerMetricsCollector implements Runnable {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerMetricsCollector.class);
@@ -58,7 +60,9 @@ public abstract class PerformanceAnalyzerMetricsCollector implements Runnable {
         } catch (Exception ex) {
             //- should not be any...but in case, absorbing here
             //- logging...we shouldn't be doing as it will slow down; as well as fill up the log. Need to find a way to catch these
-            LOG.debug("Error In Collect Metrics: {}", () -> ex.toString());
+            LOG.debug("Error In Collect Metrics: {} with ExceptionCode: {}",
+                      () -> ex.toString(), () -> StatExceptionCode.OTHER_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.OTHER_COLLECTION_ERROR);
         } finally {
             bInProgress.set(false);
         }

@@ -28,16 +28,24 @@ import org.apache.logging.log4j.Logger;
 
 public class ScheduledMetricCollectorsExecutor extends Thread {
     private static final Logger LOG = LogManager.getLogger(ScheduledMetricCollectorsExecutor.class);
-    private static final int COLLECTOR_THREAD_COUNT = 5;
+    private final int collectorThreadCount;
+    private static final int DEFAULT_COLLECTOR_THREAD_COUNT = 5;
     private static final int COLLECTOR_THREAD_KEEPALIVE_SECS = 1000;
+    private final boolean checkFeatureDisabledFlag;
 
     private int minTimeIntervalToSleep = Integer.MAX_VALUE;
     private Map<PerformanceAnalyzerMetricsCollector, Long> metricsCollectors;
     private ThreadPoolExecutor metricsCollectorsTP;
 
-    public ScheduledMetricCollectorsExecutor() {
+    public ScheduledMetricCollectorsExecutor(int collectorThreadCount, boolean checkFeatureDisabledFlag) {
         metricsCollectors = new HashMap<>();
         metricsCollectorsTP = null;
+        this.collectorThreadCount = collectorThreadCount;
+        this.checkFeatureDisabledFlag = checkFeatureDisabledFlag;
+    }
+
+    public ScheduledMetricCollectorsExecutor() {
+        this(DEFAULT_COLLECTOR_THREAD_COUNT, true);
     }
 
     public void addScheduledMetricCollector(PerformanceAnalyzerMetricsCollector task) {
@@ -49,9 +57,8 @@ public class ScheduledMetricCollectorsExecutor extends Thread {
 
     public void run() {
         if (metricsCollectorsTP == null) {
-            //- todo - threadpool sizing
-            metricsCollectorsTP = new ThreadPoolExecutor(COLLECTOR_THREAD_COUNT,
-                    COLLECTOR_THREAD_COUNT,
+            metricsCollectorsTP = new ThreadPoolExecutor(collectorThreadCount,
+                    collectorThreadCount,
                     COLLECTOR_THREAD_KEEPALIVE_SECS,
                     TimeUnit.SECONDS,
                     new ArrayBlockingQueue<>(metricsCollectors.size()));
@@ -71,7 +78,8 @@ public class ScheduledMetricCollectorsExecutor extends Thread {
 
             prevStartTimestamp = System.currentTimeMillis();
 
-            if (PerformanceAnalyzerConfigAction.getInstance() != null && PerformanceAnalyzerConfigAction.getInstance().isFeatureEnabled()) {
+            if (!checkFeatureDisabledFlag ||
+                PerformanceAnalyzerConfigAction.getInstance() != null && PerformanceAnalyzerConfigAction.getInstance().isFeatureEnabled()) {
                 long currentTime = System.currentTimeMillis();
 
                 for (Map.Entry<PerformanceAnalyzerMetricsCollector, Long> entry : metricsCollectors.entrySet()) {

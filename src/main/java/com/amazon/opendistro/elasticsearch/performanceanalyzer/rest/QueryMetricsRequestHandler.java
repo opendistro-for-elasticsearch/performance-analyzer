@@ -47,6 +47,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricsMode
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ClusterLevelMetricsReader;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -125,9 +127,10 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 LOG.error("DB file path : {}", db.getDBFilePath());
                 LOG.error(
                         (Supplier<?>) () -> new ParameterizedMessage(
-                                "QueryException {}.",
-                                e.toString()),
+                                "QueryException {} ExceptionCode: {}.",
+                                e.toString(), StatExceptionCode.REQUEST_ERROR.toString()),
                         e);
+                StatsCollector.instance().logException(StatExceptionCode.REQUEST_ERROR);
                 String response = "{\"error\":\"" + e.toString() + "\"}";
                 sendResponse(exchange, response, HttpURLConnection.HTTP_INTERNAL_ERROR);
             }
@@ -249,8 +252,9 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                         );
                 nodeResponses.put(node.getId(), remoteNodeStats);
                 } catch (Exception e) {
-                    LOG.error("Unable to collect stats for node, addr:{}, exception: {}",
-                            node.getHostAddress(), e);
+                    LOG.error("Unable to collect stats for node, addr:{}, exception: {} ExceptionCode: {}",
+                            node.getHostAddress(), e, StatExceptionCode.REQUEST_REMOTE_ERROR.toString());
+                    StatsCollector.instance().logException(StatExceptionCode.REQUEST_REMOTE_ERROR);
                 }
             }
             String response = nodeJsonBuilder(nodeResponses);
@@ -293,7 +297,9 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
         conn.setConnectTimeout(HTTP_CLIENT_CONNECTION_TIMEOUT);
         int responseCode = conn.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {
-            LOG.error("Did not receive 200 from remote node. NodeIP-{}", nodeIP);
+            LOG.error("Did not receive 200 from remote node. NodeIP-{} ExceptionCode: {}",
+                      nodeIP, StatExceptionCode.REQUEST_REMOTE_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.REQUEST_REMOTE_ERROR);
             throw new Exception("Did not receive a 200 response code from the remote node.");
         }
 
