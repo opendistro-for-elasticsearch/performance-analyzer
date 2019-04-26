@@ -63,10 +63,10 @@ public class ReaderMetricsProcessor implements Runnable {
     private static final int MASTER_EVENT_SNAPSHOTS = 4;
     private final MetricsParser metricsParser;
     private final String rootLocation;
-    private Map<String, Double> timingStats;
-    private static final Map<String, String> statsdata = new HashMap<>(); 
+    private static final Map<String, Double> TIMING_STATS = new HashMap<>();
+    private static final Map<String, String> STATS_DATA = new HashMap<>();
     static {
-        statsdata.put("MethodName", "ProcessMetrics");
+        STATS_DATA.put("MethodName", "ProcessMetrics");
     }
 
     public static ReaderMetricsProcessor current = null;
@@ -235,7 +235,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing OS Metrics: {}", mFinalT - mCurrT);
-        timingStats.put("parseOSMetrics", (double)(mFinalT - mCurrT));
+        TIMING_STATS.put("parseOSMetrics", (double)(mFinalT - mCurrT));
     }
 
     /**
@@ -329,7 +329,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing Request Metrics: {}", mFinalT - mCurrT);
-        timingStats.put("parseRequestMetrics", (double)(mFinalT - mCurrT));
+        TIMING_STATS.put("parseRequestMetrics", (double)(mFinalT - mCurrT));
     }
 
 
@@ -367,7 +367,7 @@ public class ReaderMetricsProcessor implements Runnable {
         }
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing HTTP Request Metrics: {}", mFinalT - mCurrT);
-        timingStats.put("parseHttpRequestMetrics", (double)(mFinalT - mCurrT));
+        TIMING_STATS.put("parseHttpRequestMetrics", (double)(mFinalT - mCurrT));
     }
 
     /**
@@ -412,7 +412,7 @@ public class ReaderMetricsProcessor implements Runnable {
         metricsDBMap.put(prevWindowStartTime, metricsDB);
         mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for emitting Metrics: {}", mFinalT - mCurrT);
-        timingStats.put("emitMetrics", (double)(mFinalT - mCurrT));
+        TIMING_STATS.put("emitMetrics", (double)(mFinalT - mCurrT));
     }
 
     private void emitHttpRequestMetrics(long prevWindowStartTime, MetricsDB metricsDB) throws Exception {
@@ -476,11 +476,11 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing Master Event Metrics: {}", mFinalT - mCurrT);
-        timingStats.put("parseMasterEventMetrics", (double)(mFinalT - mCurrT));
+        TIMING_STATS.put("parseMasterEventMetrics", (double)(mFinalT - mCurrT));
     }
 
     public void processMetrics(String rootLocation, long currTimestamp) throws Exception {
-        timingStats = new HashMap<>();
+        TIMING_STATS.clear();
         long start = System.currentTimeMillis();
         parseNodeMetrics(currTimestamp);
         long currWindowEndTime = PerformanceAnalyzerMetrics.getTimeInterval(currTimestamp, MetricsConfiguration.SAMPLING_INTERVAL);
@@ -490,7 +490,7 @@ public class ReaderMetricsProcessor implements Runnable {
         parseHttpRequestMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         parseMasterEventMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         emitMetrics(currWindowStartTime);
-        StatsCollector.instance().logStatsRecord(null, statsdata, timingStats, start, System.currentTimeMillis());
+        StatsCollector.instance().logStatsRecord(null, STATS_DATA, TIMING_STATS, start, System.currentTimeMillis());
     }
 
     /**

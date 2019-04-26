@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Vector;
 import java.util.Properties;
 
 import java.io.InputStream;
@@ -51,7 +51,7 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     private Map<String, AtomicInteger> counters = new ConcurrentHashMap<>();
     private Date objectCreationTime = new Date();
 
-    private List<StatExceptionCode> defaultExceptionCodes = new ArrayList<>();
+    private List<StatExceptionCode> defaultExceptionCodes = new Vector<>();
 
     public static StatsCollector instance() {
         if(statsCollector == null) {
@@ -149,12 +149,17 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         logValues(statsdata, builder);
         logTimeMetrics(startTimeMillis, endTimeMillis, builder);
 
-        if(latencies == null) {
-            latencies = new ConcurrentHashMap<>();
-        }
-        latencies.put("total-time", (double)endTimeMillis-startTimeMillis);
+        Map<String, Double> tmpLatencies;
 
-        addEntry("Timing", getLatencyMetrics(latencies), builder);
+        if(latencies == null) {
+            tmpLatencies = new ConcurrentHashMap<>();
+        } else {
+            tmpLatencies = new ConcurrentHashMap<>(latencies);
+        }
+
+        tmpLatencies.put("total-time", (double)endTimeMillis-startTimeMillis);
+        addEntry("Timing", getLatencyMetrics(tmpLatencies), builder);
+
 
         addEntry("Counters", getCountersString(counters), builder);
         builder.append(LOG_ENTRY_END);// + LOG_LINE_BREAK);

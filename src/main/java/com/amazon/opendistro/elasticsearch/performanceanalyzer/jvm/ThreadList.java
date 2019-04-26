@@ -131,7 +131,7 @@ public class ThreadList {
             vm = VirtualMachine.attach(pid);
         } catch (Exception ex) {
             LOGGER.debug("Error in Attaching to VM with exception: {} with ExceptionCode: {}",
-                         () -> ex.toString(),  () -> StatExceptionCode.MASTER_METRICS_ERROR.toString());
+                         () -> ex.toString(),  () -> StatExceptionCode.JVM_ATTACH_ERROR.toString());
             StatsCollector.instance().logException(StatExceptionCode.JVM_ATTACH_ERROR);
             return;
         }
@@ -140,7 +140,7 @@ public class ThreadList {
             createMap(in);
         } catch (Exception ex) {
             LOGGER.debug("Cannot list threads with exception: {} with ExceptionCode: {}",
-                         () -> ex.toString(),  () -> StatExceptionCode.MASTER_METRICS_ERROR.toString());
+                         () -> ex.toString(),  () -> StatExceptionCode.JVM_ATTACH_ERROR.toString());
             StatsCollector.instance().logException(StatExceptionCode.JVM_ATTACH_ERROR);
         }
 
@@ -148,7 +148,7 @@ public class ThreadList {
             vm.detach();
         } catch (Exception ex) {
             LOGGER.debug("Failed in VM Detach with exception: {} with ExceptionCode: {}",
-                         () -> ex.toString(),  () -> StatExceptionCode.MASTER_METRICS_ERROR.toString());
+                         () -> ex.toString(),  () -> StatExceptionCode.JVM_ATTACH_ERROR.toString());
             StatsCollector.instance().logException(StatExceptionCode.JVM_ATTACH_ERROR);
         }
     }

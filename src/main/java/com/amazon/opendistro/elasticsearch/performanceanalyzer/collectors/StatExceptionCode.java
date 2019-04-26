@@ -30,7 +30,7 @@ public enum StatExceptionCode {
     OTHER_COLLECTION_ERROR("OtherCollectionError"),
     REQUEST_ERROR("RequestError"),
     REQUEST_REMOTE_ERROR("RequestRemoteError"),
-    READER_PARSER_ERROR("RequestParserError"),
+    READER_PARSER_ERROR("ReaderParserError"),
     READER_RESTART_PROCESSING("ReaderRestartProcessing"),
     OTHER("Other");
 
