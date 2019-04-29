@@ -38,6 +38,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
 import com.google.common.annotations.VisibleForTesting;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public class ReaderMetricsProcessor implements Runnable {
     private static final Logger LOG = LogManager.getLogger(ReaderMetricsProcessor.class);
@@ -61,6 +63,11 @@ public class ReaderMetricsProcessor implements Runnable {
     private static final int MASTER_EVENT_SNAPSHOTS = 4;
     private final MetricsParser metricsParser;
     private final String rootLocation;
+    private static final Map<String, Double> TIMING_STATS = new HashMap<>();
+    private static final Map<String, String> STATS_DATA = new HashMap<>();
+    static {
+        STATS_DATA.put("MethodName", "ProcessMetrics");
+    }
 
     private static ReaderMetricsProcessor current = null;
 
@@ -134,9 +141,10 @@ public class ReaderMetricsProcessor implements Runnable {
         } catch (Throwable e) {
             LOG.error(
                     (Supplier<?>) () -> new ParameterizedMessage(
-                            "READER PROCESSOR ERROR. NEEDS DEBUGGING {}.",
-                            e.toString()),
+                            "READER PROCESSOR ERROR. NEEDS DEBUGGING {} ExceptionCode: {}.",
+                            StatExceptionCode.OTHER.toString(), e.toString()),
                     e);
+            StatsCollector.instance().logException();
 
             try {
                 long duration = System.currentTimeMillis() - startTime;
@@ -235,6 +243,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing OS Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseOSMetrics", (double)(mFinalT - mCurrT));
     }
 
     /**
@@ -328,6 +337,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing Request Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseRequestMetrics", (double)(mFinalT - mCurrT));
     }
 
 
@@ -365,6 +375,7 @@ public class ReaderMetricsProcessor implements Runnable {
         }
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing HTTP Request Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseHttpRequestMetrics", (double)(mFinalT - mCurrT));
     }
 
     /**
@@ -409,6 +420,7 @@ public class ReaderMetricsProcessor implements Runnable {
         metricsDBMap.put(prevWindowStartTime, metricsDB);
         mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for emitting Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("emitMetrics", (double)(mFinalT - mCurrT));
     }
 
     private void emitHttpRequestMetrics(long prevWindowStartTime, MetricsDB metricsDB) throws Exception {
@@ -472,9 +484,12 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing Master Event Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseMasterEventMetrics", (double)(mFinalT - mCurrT));
     }
 
     public void processMetrics(String rootLocation, long currTimestamp) throws Exception {
+        TIMING_STATS.clear();
+        long start = System.currentTimeMillis();
         parseNodeMetrics(currTimestamp);
         long currWindowEndTime = PerformanceAnalyzerMetrics.getTimeInterval(currTimestamp, MetricsConfiguration.SAMPLING_INTERVAL);
         long currWindowStartTime = currWindowEndTime - MetricsConfiguration.SAMPLING_INTERVAL;
@@ -483,6 +498,7 @@ public class ReaderMetricsProcessor implements Runnable {
         parseHttpRequestMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         parseMasterEventMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         emitMetrics(currWindowStartTime);
+        StatsCollector.instance().logStatsRecord(null, STATS_DATA, TIMING_STATS, start, System.currentTimeMillis());
     }
 
     /**

@@ -36,6 +36,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.ThreadIDUtil;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 @SuppressWarnings("unchecked")
 public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
@@ -130,7 +132,9 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
             }
             LOG.debug(() -> "Successfully collected Master Event Metrics.");
         } catch (Exception ex) {
-            LOG.debug("Exception in Collecting Master Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
+            StatsCollector.instance().logException(StatExceptionCode.MASTER_METRICS_ERROR);
+            LOG.debug("Exception in Collecting Master Metrics: {} for startTime {} with ExceptionCode: {}",
+                      () -> ex.toString(), () -> startTime, () -> StatExceptionCode.MASTER_METRICS_ERROR.toString());
         }
     }
 

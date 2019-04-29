@@ -46,6 +46,10 @@ import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsServer;
 import com.sun.net.httpserver.HttpsConfigurator;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+
 public class PerformanceAnalyzerApp {
     private static final int WEBSERVICE_DEFAULT_PORT = 9600;
     private static final String WEBSERVICE_PORT_CONF_NAME = "webservice-listener-port";
@@ -54,6 +58,7 @@ public class PerformanceAnalyzerApp {
     private static final int INCOMING_QUEUE_LENGTH = 1;
     public static final String QUERY_URL = "/_opendistro/_performanceanalyzer/metrics";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerApp.class);
+    private static final ScheduledMetricCollectorsExecutor METRIC_COLLECTOR_EXECUTOR = new ScheduledMetricCollectorsExecutor(1, false);
 
     public static void main(String[] args) throws Exception {
         ESResources.INSTANCE.setPluginFileLocation(System.getProperty("es.path.home")
@@ -61,6 +66,11 @@ public class PerformanceAnalyzerApp {
 
         //Initialize settings before creating threads.
         PluginSettings settings = PluginSettings.instance();
+
+        StatsCollector.STATS_TYPE = "agent-stats-metadata";
+        METRIC_COLLECTOR_EXECUTOR.addScheduledMetricCollector(StatsCollector.instance());
+        StatsCollector.instance().addDefaultExceptionCode(StatExceptionCode.READER_RESTART_PROCESSING);
+        METRIC_COLLECTOR_EXECUTOR.start();
 
         Thread readerThread = new Thread(new Runnable() {
             public void run() {
@@ -73,7 +83,9 @@ public class PerformanceAnalyzerApp {
                         if (TroubleshootingConfig.getEnableDevAssert()) {
                             break;
                         }
-                        LOG.error("Error in ReaderMetricsProcessor...restarting");
+                        LOG.error("Error in ReaderMetricsProcessor...restarting, ExceptionCode: {}",
+                                  StatExceptionCode.READER_RESTART_PROCESSING.toString());
+                        StatsCollector.instance().logException(StatExceptionCode.READER_RESTART_PROCESSING);
                     }
                 }
             }

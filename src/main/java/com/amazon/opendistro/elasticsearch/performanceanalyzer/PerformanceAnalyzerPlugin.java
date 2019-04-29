@@ -82,8 +82,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Metric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-
 
 public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
@@ -97,8 +97,6 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             // unprivileged code such as scripts do not have SpecialPermission
             sm.checkPermission(new SpecialPermission());
         }
-
-        PluginSettings settings = PluginSettings.instance();
     }
 
     public static void invokePrivileged(Runnable runner) {
@@ -134,6 +132,9 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setConfigPath(configPath);
         ESResources.INSTANCE.setPluginFileLocation(new Environment(settings, configPath).
                 pluginsFile().toAbsolutePath().toString() + File.separator + PLUGIN_NAME + File.separator);
+        //Initialize plugin settings. Accessing plugin settings before this
+        //point will break, as the plugin location will not be initialized.
+        PluginSettings.instance();
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector());
@@ -147,6 +148,7 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkE2ECollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
         scheduledMetricCollectorsExecutor.start();
     }
 

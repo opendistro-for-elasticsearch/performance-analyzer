@@ -24,6 +24,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 
 public class NetworkInterfaceCollector extends PerformanceAnalyzerMetricsCollector
@@ -82,7 +84,9 @@ implements MetricsProcessor {
             ret.append(inNetwork.serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
             ret.append(outNetwork.serialize()).append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         }catch (Exception e) {
-            LOG.debug("Exception in NetworkInterfaceCollector: {}", () -> e.toString());
+            LOG.debug("Exception in NetworkInterfaceCollector: {} with ExceptionCode: {}",
+                      () -> e.toString(), () -> StatExceptionCode.NETWORK_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.NETWORK_COLLECTION_ERROR);
         }
 
         return ret.toString();
