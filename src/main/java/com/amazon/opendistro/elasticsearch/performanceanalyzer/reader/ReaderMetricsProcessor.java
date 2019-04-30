@@ -37,6 +37,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.google.common.annotations.VisibleForTesting;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
@@ -186,7 +187,16 @@ public class ReaderMetricsProcessor implements Runnable {
         trimMap(shardRqMetricsMap, RQ_SNAPSHOTS);
         trimMap(httpRqMetricsMap, HTTP_RQ_SNAPSHOTS);
         trimMap(masterEventMetricsMap, MASTER_EVENT_SNAPSHOTS);
-        trimMap(metricsDBMap, MAX_DATABASES);
+
+        int max_metrics_db_in_memory_objects = PluginSettings.instance().getMaxMetricsDBFilesCount();
+        if (max_metrics_db_in_memory_objects == PluginSettings.DB_FILE_VALUE_FOR_NO_DELETION) {
+            // In case of metricsdb files, user can choose for the reader to not delete the on disk files.
+            // In that case, the maxSize provided will be -1. In this case, we keep the files on disk around
+            // but we want to free up the memeory and just keep only DB_FILE_MAX_COUNT_MIN objects around.
+            max_metrics_db_in_memory_objects = PluginSettings.DB_FILE_MAX_COUNT_MIN;
+        }
+        trimMap(metricsDBMap, max_metrics_db_in_memory_objects);
+
         for (NavigableMap<Long, MemoryDBSnapshot> snap : nodeMetricsMap
                 .values()) {
             // do the same thing as OS_SNAPSHOTS.  Eventually MemoryDBSnapshot
@@ -201,7 +211,7 @@ public class ReaderMetricsProcessor implements Runnable {
      */
     private void trimMap(NavigableMap<Long, ?> map, int maxSize) throws Exception {
         //Remove the oldest entries from the map
-        while (map.size() > maxSize) {
+        while (!map.isEmpty() && map.size() > maxSize) {
             Map.Entry<Long, ?> lowestEntry = map.firstEntry();
             if (lowestEntry != null) {
                 Removable value = (Removable) lowestEntry.getValue();
