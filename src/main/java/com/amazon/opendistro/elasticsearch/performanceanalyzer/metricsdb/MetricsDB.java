@@ -261,20 +261,18 @@ public class MetricsDB implements Removable {
         conn.commit();
     }
 
-    /**
-     * We delete the physical file on disk, only if the user has not set the DB_FILE_MAX_COUNT_CONF_NAME
-     * to -1. Otherwise we just close the connection and return.
-     **/
     @Override
     public void remove() throws Exception {
        conn.close();
-       if (PluginSettings.instance().getMaxMetricsDBFilesCount() != PluginSettings.DB_FILE_VALUE_FOR_NO_DELETION) {
-          File dbFile = new File(getDBFilePath());
-          if (!dbFile.delete()) {
-              LOG.error("Failed to delete File - {} with ExceptionCode: {}", getDBFilePath(), StatExceptionCode.OTHER.toString());
-              StatsCollector.instance().logException();
-          }
-       }
+    }
+
+    public void deleteOnDiskFile() {
+        File dbFile = new File(getDBFilePath());
+        if (!dbFile.delete()) {
+            LOG.error("Failed to delete File - {} with ExceptionCode: {}",
+                    getDBFilePath(), StatExceptionCode.OTHER.toString());
+            StatsCollector.instance().logException();
+        }
     }
 
     public Result<Record> queryMetric(String metric) {

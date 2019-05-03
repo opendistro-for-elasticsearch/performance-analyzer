@@ -57,7 +57,7 @@ public class ReaderMetricsProcessor implements Runnable {
     private NavigableMap<Long, HttpRequestMetricsSnapshot> httpRqMetricsMap;
     private NavigableMap<Long, MasterEventMetricsSnapshot> masterEventMetricsMap;
     private Map<AllMetrics.MetricName, NavigableMap<Long, MemoryDBSnapshot>> nodeMetricsMap;
-    private static final int MAX_DATABASES = 4;
+    private static final int MAX_DATABASES = 2;
     private static final int OS_SNAPSHOTS = 4;
     private static final int RQ_SNAPSHOTS = 4;
     private static final int HTTP_RQ_SNAPSHOTS = 4;
@@ -187,15 +187,7 @@ public class ReaderMetricsProcessor implements Runnable {
         trimMap(shardRqMetricsMap, RQ_SNAPSHOTS);
         trimMap(httpRqMetricsMap, HTTP_RQ_SNAPSHOTS);
         trimMap(masterEventMetricsMap, MASTER_EVENT_SNAPSHOTS);
-
-        int max_metrics_db_in_memory_objects = PluginSettings.instance().getMaxMetricsDBFilesCount();
-        if (max_metrics_db_in_memory_objects == PluginSettings.DB_FILE_VALUE_FOR_NO_DELETION) {
-            // In case of metricsdb files, user can choose for the reader to not delete the on disk files.
-            // In that case, the maxSize provided will be -1. In this case, we keep the files on disk around
-            // but we want to free up the memeory and just keep only DB_FILE_MAX_COUNT_MIN objects around.
-            max_metrics_db_in_memory_objects = PluginSettings.DB_FILE_MAX_COUNT_MIN;
-        }
-        trimMap(metricsDBMap, max_metrics_db_in_memory_objects);
+        trimDatabases(metricsDBMap, MAX_DATABASES);
 
         for (NavigableMap<Long, MemoryDBSnapshot> snap : nodeMetricsMap
                 .values()) {
@@ -211,11 +203,31 @@ public class ReaderMetricsProcessor implements Runnable {
      */
     private void trimMap(NavigableMap<Long, ?> map, int maxSize) throws Exception {
         //Remove the oldest entries from the map
-        while (!map.isEmpty() && map.size() > maxSize) {
+        while (map.size() > maxSize) {
             Map.Entry<Long, ?> lowestEntry = map.firstEntry();
             if (lowestEntry != null) {
                 Removable value = (Removable) lowestEntry.getValue();
                 value.remove();
+                map.remove(lowestEntry.getKey());
+            }
+        }
+    }
+
+    /**
+     * Deletes the MetricsDB entries in the map till the size of the map is equal to maxSize. The actual on-disk
+     * files is deleted ony if the config is not set or set to true.
+     */
+    private void trimDatabases(NavigableMap<Long, MetricsDB> map, int maxSize) throws Exception {
+        boolean deleteDBFiles = PluginSettings.instance().shouldCleanupMetricsDBFiles();
+        // Remove the oldest entries from the map, upto maxSize.
+        while (map.size() > maxSize) {
+            Map.Entry<Long, MetricsDB> lowestEntry = map.firstEntry();
+            if (lowestEntry != null) {
+                MetricsDB value = lowestEntry.getValue();
+                value.remove();
+                if (deleteDBFiles) {
+                    value.deleteOnDiskFile();
+                }
                 map.remove(lowestEntry.getKey());
             }
         }

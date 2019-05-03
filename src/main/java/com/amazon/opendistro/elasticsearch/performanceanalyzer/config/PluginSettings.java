@@ -40,33 +40,19 @@ public class PluginSettings {
     private static final int DELETION_INTERVAL_MIN = 1;
     private static final int DELETION_INTERVAL_MAX = 60;
     private static final String HTTPS_ENABLED = "https-enabled";
-    public static final String DB_FILE_MAX_COUNT_CONF_NAME = "max-metrics-db-files";
 
     /**
-     * The default number of files the reader keeps around
+     * Determines whether the metricsdb files should be cleaned up.
      */
-    private static final int DB_FILE_MAX_COUNT_DEFAULT = 4;
- 
-    /**
-     * Maximum number of of metricsdb files that the configuration allows
-     */
-    private static final int DB_FILE_MAX_COUNT_MAX = 1000;
-
-    /**
-     * Minimum number of files that can be kept around.
-     */
-    public static final int DB_FILE_MAX_COUNT_MIN = 1;
-
-    /**
-     * Setting the configuration to -1 makes the metricsdb files to not be deleted.
-     * If this is set to -1, then the disk usage will build up and therefore,
-     * set it to -1 only if the you will be archiving the files yourself.
-     */
-    public static final int DB_FILE_VALUE_FOR_NO_DELETION = -1;
+    public static final String DB_FILE_CLEANUP_CONF_NAME = "cleanup-metrics-db-files";
 
     private String metricsLocation;
     private int metricsDeletionInterval;
-    private int maxMetricsDBFilesCount;
+
+    /**
+     * If set to true, the metricsdb files are cleaned up, or else the on-disk files are left out.
+     */
+    private boolean shouldCleanupMetricsDBFiles;
     private boolean httpsEnabled;
     private Properties settings;
     private final String configFilePath;
@@ -82,8 +68,6 @@ public class PluginSettings {
     public int getMetricsDeletionInterval() {
         return metricsDeletionInterval * 60 * 1000;
     }
-
-    public int getMaxMetricsDBFilesCount() { return maxMetricsDBFilesCount; }
 
     public String getSettingValue(String settingName) {
         return settings.getProperty(settingName);
@@ -110,10 +94,13 @@ public class PluginSettings {
         return this.httpsEnabled;
     }
 
+    public boolean shouldCleanupMetricsDBFiles() {
+        return shouldCleanupMetricsDBFiles;
+    }
+
     private PluginSettings(String cfPath) {
         metricsLocation = METRICS_LOCATION_DEFAULT;
         metricsDeletionInterval = DELETION_INTERVAL_DEFAULT;
-        maxMetricsDBFilesCount = DB_FILE_MAX_COUNT_DEFAULT;
         if (cfPath == null || cfPath.isEmpty()) {
             this.configFilePath = DEFAULT_CONFIG_FILE_PATH;
         } else {
@@ -126,7 +113,7 @@ public class PluginSettings {
             loadMetricsDeletionIntervalFromConfig();
             loadMetricsLocationFromConfig();
             loadHttpsEnabled();
-            loadMetricsDBFilesCount();
+            loadMetricsDBFilesCleanupEnabled();
         } catch (ConfigFileException e) {
             LOG.error("Loading config file {} failed with error: {}. Using default values.",
                       this.configFilePath, e.toString());
@@ -137,9 +124,9 @@ public class PluginSettings {
             LOG.error("Unexpected exception while initializing config. Disabling plugin.", e);
             ConfigStatus.INSTANCE.setConfigurationInvalid();
         }
-        LOG.error("Config: metricsLocation: {}, metricsDeletionInterval: {}, httpsEnabled: {}," +
-                  " max-metrics-db-files: {}",
-                metricsLocation, metricsDeletionInterval, httpsEnabled, maxMetricsDBFilesCount);
+        LOG.info("Config: metricsLocation: {}, metricsDeletionInterval: {}, httpsEnabled: {}," +
+                  " cleanup-metrics-db-files: {}",
+                metricsLocation, metricsDeletionInterval, httpsEnabled, shouldCleanupMetricsDBFiles);
     }
 
     public static PluginSettings instance() {
@@ -209,29 +196,16 @@ public class PluginSettings {
                     e);
         }
     }
-    private void loadMetricsDBFilesCount() {
-        if (!settings.containsKey(DB_FILE_MAX_COUNT_CONF_NAME)) {
-            LOG.info("config '{}' is not provided. So, the default value '{}' will be used.",
-                     DB_FILE_MAX_COUNT_CONF_NAME, DB_FILE_MAX_COUNT_DEFAULT);
-            return;
-        }
-
+    private void loadMetricsDBFilesCleanupEnabled() {
+        String cleanupEnabledString = settings.getProperty(DB_FILE_CLEANUP_CONF_NAME, "True");
         try {
-            int count = Integer.parseInt(settings.getProperty(DB_FILE_MAX_COUNT_CONF_NAME));
-            if (DB_FILE_VALUE_FOR_NO_DELETION != count && (count <  DB_FILE_MAX_COUNT_MIN || count > DB_FILE_MAX_COUNT_MAX)) {
-                LOG.error("'{}' out of range. The value can be either '{}' (never delete a file) or " +
-                        "between ({}-{}). The default of '{}' will be used.", DB_FILE_MAX_COUNT_CONF_NAME,
-                        DB_FILE_VALUE_FOR_NO_DELETION, DB_FILE_MAX_COUNT_MIN,
-                        DB_FILE_MAX_COUNT_MAX, DB_FILE_MAX_COUNT_DEFAULT);
-                return;
-            }
-            maxMetricsDBFilesCount = count;
-        } catch (NumberFormatException e) {
-            LOG.error(
-                    (Supplier<?>) () -> new ParameterizedMessage(
-                            "Invalid '{}'. Using default value '{}'.",
-                            DB_FILE_MAX_COUNT_CONF_NAME, instance.maxMetricsDBFilesCount),
-                    e);
+            shouldCleanupMetricsDBFiles = Boolean.parseBoolean(cleanupEnabledString);
+        } catch (Exception ex) {
+            LOG.error("Unable to parse {} property with value {}. Only true/false expected.",
+                    DB_FILE_CLEANUP_CONF_NAME, cleanupEnabledString);
+
+            // In case of exception, we go with the safe default that the files will always be cleaned up.
+            shouldCleanupMetricsDBFiles = true;
         }
     }
 }
