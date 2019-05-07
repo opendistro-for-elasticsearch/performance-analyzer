@@ -264,11 +264,15 @@ public class MetricsDB implements Removable {
     @Override
     public void remove() throws Exception {
        conn.close();
-       File dbFile = new File(getDBFilePath());
-       if (!dbFile.delete()) {
-           LOG.error("Failed to delete File - {} with ExceptionCode: {}", getDBFilePath(), StatExceptionCode.OTHER.toString());
-           StatsCollector.instance().logException();
-       }
+    }
+
+    public void deleteOnDiskFile() {
+        File dbFile = new File(getDBFilePath());
+        if (!dbFile.delete()) {
+            LOG.error("Failed to delete File - {} with ExceptionCode: {}",
+                    getDBFilePath(), StatExceptionCode.OTHER.toString());
+            StatsCollector.instance().logException();
+        }
     }
 
     public Result<Record> queryMetric(String metric) {
