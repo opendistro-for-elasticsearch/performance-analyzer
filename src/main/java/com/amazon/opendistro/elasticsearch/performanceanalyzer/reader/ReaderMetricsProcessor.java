@@ -187,7 +187,7 @@ public class ReaderMetricsProcessor implements Runnable {
         trimMap(shardRqMetricsMap, RQ_SNAPSHOTS);
         trimMap(httpRqMetricsMap, HTTP_RQ_SNAPSHOTS);
         trimMap(masterEventMetricsMap, MASTER_EVENT_SNAPSHOTS);
-        trimDatabases(metricsDBMap, MAX_DATABASES);
+        trimDatabases(metricsDBMap, MAX_DATABASES, PluginSettings.instance().shouldCleanupMetricsDBFiles());
 
         for (NavigableMap<Long, MemoryDBSnapshot> snap : nodeMetricsMap
                 .values()) {
@@ -217,18 +217,17 @@ public class ReaderMetricsProcessor implements Runnable {
      * Deletes the MetricsDB entries in the map till the size of the map is equal to maxSize. The actual on-disk
      * files is deleted ony if the config is not set or set to true.
      */
-    private void trimDatabases(NavigableMap<Long, MetricsDB> map, int maxSize) throws Exception {
-        boolean deleteDBFiles = PluginSettings.instance().shouldCleanupMetricsDBFiles();
+    public static void trimDatabases(NavigableMap<Long, MetricsDB> map, int maxSize, boolean deleteDBFiles) throws Exception {
         // Remove the oldest entries from the map, upto maxSize.
         while (map.size() > maxSize) {
             Map.Entry<Long, MetricsDB> lowestEntry = map.firstEntry();
             if (lowestEntry != null) {
                 MetricsDB value = lowestEntry.getValue();
+                map.remove(lowestEntry.getKey());
                 value.remove();
                 if (deleteDBFiles) {
                     value.deleteOnDiskFile();
                 }
-                map.remove(lowestEntry.getKey());
             }
         }
     }
