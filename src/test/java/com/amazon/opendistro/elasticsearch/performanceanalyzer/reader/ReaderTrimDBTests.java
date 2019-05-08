@@ -33,7 +33,6 @@ public class ReaderTrimDBTests {
     public void tearDown() {
         for (String file : fileNames) {
             File dbFile = new File(file);
-            assertEquals(true, dbFile.delete());
         }
     }
 
