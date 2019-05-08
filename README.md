@@ -27,7 +27,7 @@ GET `_opendistro/_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&ag
 
 ## Documentation
 
-Please refer to the [technical documentation](https://opendistro.github.io/for-elasticsearch-docs/) for detailed information on installing and configuring opendistro-elasticsearch-security plugin.
+Please refer to the [technical documentation](https://opendistro.github.io/for-elasticsearch-docs/) for detailed information on installing and configuring Performance Analyzer.
 
 ## Code of Conduct
 

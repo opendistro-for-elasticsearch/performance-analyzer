@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
@@ -80,8 +81,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Metric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-
 
 public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
@@ -102,7 +103,19 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             try {
                 runner.run();
             } catch(Exception ex) {
-                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("{}",
+                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
+                        ex.toString()), ex);
+            }
+            return null;
+        } );
+    }
+
+    public static void invokePrivilegedAndLogError(Runnable runner) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                runner.run();
+            } catch(Exception ex) {
+                LOG.error((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
                         ex.toString()), ex);
             }
             return null;
@@ -118,6 +131,9 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setConfigPath(configPath);
         ESResources.INSTANCE.setPluginFileLocation(new Environment(settings, configPath).
                 pluginsFile().toAbsolutePath().toString() + File.separator + PLUGIN_NAME + File.separator);
+        //Initialize plugin settings. Accessing plugin settings before this
+        //point will break, as the plugin location will not be initialized.
+        PluginSettings.instance();
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector());
@@ -131,6 +147,7 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkE2ECollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
         scheduledMetricCollectorsExecutor.start();
     }
 

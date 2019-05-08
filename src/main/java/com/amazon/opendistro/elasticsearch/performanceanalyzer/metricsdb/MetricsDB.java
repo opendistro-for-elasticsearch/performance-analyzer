@@ -36,6 +36,8 @@ import org.jooq.impl.DSL;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.DBUtils;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.Removable;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 /**
  * On-disk database that holds a 5 second snapshot of all metrics.
@@ -262,10 +264,15 @@ public class MetricsDB implements Removable {
     @Override
     public void remove() throws Exception {
        conn.close();
-       File dbFile = new File(getDBFilePath());
-       if (!dbFile.delete()) {
-           LOG.error("Failed to delete File - {}", getDBFilePath());
-       }
+    }
+
+    public void deleteOnDiskFile() {
+        File dbFile = new File(getDBFilePath());
+        if (!dbFile.delete()) {
+            LOG.error("Failed to delete File - {} with ExceptionCode: {}",
+                    getDBFilePath(), StatExceptionCode.OTHER.toString());
+            StatsCollector.instance().logException();
+        }
     }
 
     public Result<Record> queryMetric(String metric) {

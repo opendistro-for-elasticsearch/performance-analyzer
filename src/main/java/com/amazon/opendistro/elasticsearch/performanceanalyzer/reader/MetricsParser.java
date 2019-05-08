@@ -37,6 +37,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.MasterMetricDimensions;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.FileHelper;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 /**
  * Read metrics files emitted by Elasticsearch in /dev/shm and efficiently load them into tables for further processing.
@@ -150,7 +152,9 @@ public class MetricsParser {
                             }
                         } catch (Exception e) {
                             LOG.error(e, e);
-                            LOG.error("Error parsing file - {}\n", metricsFile.getAbsolutePath());
+                            LOG.error("Error parsing file - {} ExcepionCode: {}\n",
+                                       metricsFile.getAbsolutePath(), StatExceptionCode.READER_PARSER_ERROR.toString());
+                            StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
                             throw e;
                         }
                     }
@@ -188,7 +192,8 @@ public class MetricsParser {
 
                 emitMasterStartFinishMetrics(startTime, endTime, handle, queue, idQueue);
             } catch (Exception e) {
-                LOG.error("Failed to parse master metrics", e);
+                LOG.error("Failed to parse master metrics with ExceptionCode: " + StatExceptionCode.READER_PARSER_ERROR.toString(),  e);
+                StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
             }
         }
 
@@ -223,7 +228,9 @@ public class MetricsParser {
                 }
             } catch (Exception e) {
                 LOG.error(e, e);
-                LOG.error("Error parsing file - {},\n {}", metricsFile.getAbsolutePath(), metrics);
+                LOG.error("Error parsing file - {} ExcepionCode: {},\n {}",
+                          metricsFile.getAbsolutePath(), StatExceptionCode.READER_PARSER_ERROR.toString(), metrics);
+                StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
             }
         }
     }
@@ -328,8 +335,9 @@ public class MetricsParser {
             long itemCount = Long.parseLong(itemCountVal);
             handle.bind(rid, operation, indices, null, null, itemCount, st, null);
         } catch (NumberFormatException e) {
-            LOG.error("Unable to parse string. StartTime:{}, itemCount:{},\n startMetrics:{}",
-                    startTimeVal, itemCountVal, startMetrics);
+            LOG.error("Unable to parse string. StartTime:{}, itemCount:{}, ExcepionCode: {},\n startMetrics:{}",
+                    startTimeVal, itemCountVal, StatExceptionCode.READER_PARSER_ERROR.toString(), startMetrics);
+            StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
             throw e;
         }
     }
@@ -346,8 +354,9 @@ public class MetricsParser {
         long ft = Long.parseLong(finishTimeVal);
         handle.bind(rid, operation, null, status, exception, null, null, ft);
         } catch (NumberFormatException e) {
-            LOG.error("Unable to parse string. FinishTime:{}\n finishMetrics:{}",
-                    finishTimeVal, finishMetrics);
+            LOG.error("Unable to parse string. FinishTime:{} ExcepionCode: {} \n finishMetrics:{}",
+                    finishTimeVal, StatExceptionCode.READER_PARSER_ERROR.toString(), finishMetrics);
+            StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
             throw e;
         }
     }
@@ -386,7 +395,9 @@ public class MetricsParser {
                 }
             } catch (Exception e) {
                 LOG.error(e, e);
-                LOG.error("Error parsing file - {},\n {}", opFile.getAbsolutePath(), sOSMetrics);
+                LOG.error("Error parsing file - {} ExcepionCode: {},\n {}",
+                          opFile.getAbsolutePath(), StatExceptionCode.READER_PARSER_ERROR.toString(), sOSMetrics);
+                StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
                 throw e;
             }
         }
@@ -414,7 +425,8 @@ public class MetricsParser {
             try {
                 handleidFile(idFile, threadID, startTime, endTime, operation, handle);
             } catch (Exception e) {
-                LOG.error("Failed to parse ES Metrics", e);
+                LOG.error("Failed to parse ES Metrics with ExcepionCode: " + StatExceptionCode.READER_PARSER_ERROR.toString(), e);
+                StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
             }
         }
     }
@@ -473,6 +485,9 @@ public class MetricsParser {
             } catch (Exception e) {
                 LOG.error(e, e);
                 LOG.error("Error parsing file - {},\n {}", metricsFile.getAbsolutePath(), metrics);
+                LOG.error("Error parsing file - {} ExcepionCode: {},\n {}",
+                          metricsFile.getAbsolutePath(), StatExceptionCode.READER_PARSER_ERROR.toString(), metrics);
+                StatsCollector.instance().logException(StatExceptionCode.READER_PARSER_ERROR);
             }
         }
     }

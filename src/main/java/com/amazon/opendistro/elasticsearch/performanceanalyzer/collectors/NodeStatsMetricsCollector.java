@@ -41,6 +41,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -184,7 +186,9 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                 }
             }
         } catch (Exception ex) {
-            LOG.debug("Exception in Collecting NodesStats Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
+            LOG.debug("Exception in Collecting NodesStats Metrics: {} for startTime {} with ExceptionCode: {}",
+                      () -> ex.toString(), () -> startTime, () -> StatExceptionCode.NODESTATS_COLLECTION_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.NODESTATS_COLLECTION_ERROR);
         }
 
         //- remove from Cache if IndexName/ShardId is not present anymore...this will keep the Sanity of Cache

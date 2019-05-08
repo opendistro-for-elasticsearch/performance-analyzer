@@ -37,7 +37,10 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.google.common.annotations.VisibleForTesting;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 public class ReaderMetricsProcessor implements Runnable {
     private static final Logger LOG = LogManager.getLogger(ReaderMetricsProcessor.class);
@@ -54,15 +57,28 @@ public class ReaderMetricsProcessor implements Runnable {
     private NavigableMap<Long, HttpRequestMetricsSnapshot> httpRqMetricsMap;
     private NavigableMap<Long, MasterEventMetricsSnapshot> masterEventMetricsMap;
     private Map<AllMetrics.MetricName, NavigableMap<Long, MemoryDBSnapshot>> nodeMetricsMap;
-    private static final int MAX_DATABASES = 4;
+    private static final int MAX_DATABASES = 2;
     private static final int OS_SNAPSHOTS = 4;
     private static final int RQ_SNAPSHOTS = 4;
     private static final int HTTP_RQ_SNAPSHOTS = 4;
     private static final int MASTER_EVENT_SNAPSHOTS = 4;
     private final MetricsParser metricsParser;
     private final String rootLocation;
+    private static final Map<String, Double> TIMING_STATS = new HashMap<>();
+    private static final Map<String, String> STATS_DATA = new HashMap<>();
+    static {
+        STATS_DATA.put("MethodName", "ProcessMetrics");
+    }
 
-    public static ReaderMetricsProcessor current = null;
+    private static ReaderMetricsProcessor current = null;
+
+    public static void setCurrentInstance(ReaderMetricsProcessor currentInstance) {
+        current = currentInstance;
+    }
+
+    public static ReaderMetricsProcessor getInstance() {
+        return current;
+    }
 
     public ReaderMetricsProcessor(String rootLocation) throws Exception {
         conn = DriverManager.getConnection(DB_URL);
@@ -126,9 +142,10 @@ public class ReaderMetricsProcessor implements Runnable {
         } catch (Throwable e) {
             LOG.error(
                     (Supplier<?>) () -> new ParameterizedMessage(
-                            "READER PROCESSOR ERROR. NEEDS DEBUGGING {}.",
-                            e.toString()),
+                            "READER PROCESSOR ERROR. NEEDS DEBUGGING {} ExceptionCode: {}.",
+                            StatExceptionCode.OTHER.toString(), e.toString()),
                     e);
+            StatsCollector.instance().logException();
 
             try {
                 long duration = System.currentTimeMillis() - startTime;
@@ -170,7 +187,8 @@ public class ReaderMetricsProcessor implements Runnable {
         trimMap(shardRqMetricsMap, RQ_SNAPSHOTS);
         trimMap(httpRqMetricsMap, HTTP_RQ_SNAPSHOTS);
         trimMap(masterEventMetricsMap, MASTER_EVENT_SNAPSHOTS);
-        trimMap(metricsDBMap, MAX_DATABASES);
+        trimDatabases(metricsDBMap, MAX_DATABASES, PluginSettings.instance().shouldCleanupMetricsDBFiles());
+
         for (NavigableMap<Long, MemoryDBSnapshot> snap : nodeMetricsMap
                 .values()) {
             // do the same thing as OS_SNAPSHOTS.  Eventually MemoryDBSnapshot
@@ -191,6 +209,25 @@ public class ReaderMetricsProcessor implements Runnable {
                 Removable value = (Removable) lowestEntry.getValue();
                 value.remove();
                 map.remove(lowestEntry.getKey());
+            }
+        }
+    }
+
+    /**
+     * Deletes the MetricsDB entries in the map till the size of the map is equal to maxSize. The actual on-disk
+     * files is deleted ony if the config is not set or set to true.
+     */
+    public static void trimDatabases(NavigableMap<Long, MetricsDB> map, int maxSize, boolean deleteDBFiles) throws Exception {
+        // Remove the oldest entries from the map, upto maxSize.
+        while (map.size() > maxSize) {
+            Map.Entry<Long, MetricsDB> lowestEntry = map.firstEntry();
+            if (lowestEntry != null) {
+                MetricsDB value = lowestEntry.getValue();
+                map.remove(lowestEntry.getKey());
+                value.remove();
+                if (deleteDBFiles) {
+                    value.deleteOnDiskFile();
+                }
             }
         }
     }
@@ -227,6 +264,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing OS Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseOSMetrics", (double)(mFinalT - mCurrT));
     }
 
     /**
@@ -320,6 +358,7 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing Request Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseRequestMetrics", (double)(mFinalT - mCurrT));
     }
 
 
@@ -357,6 +396,7 @@ public class ReaderMetricsProcessor implements Runnable {
         }
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing HTTP Request Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseHttpRequestMetrics", (double)(mFinalT - mCurrT));
     }
 
     /**
@@ -401,6 +441,7 @@ public class ReaderMetricsProcessor implements Runnable {
         metricsDBMap.put(prevWindowStartTime, metricsDB);
         mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for emitting Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("emitMetrics", (double)(mFinalT - mCurrT));
     }
 
     private void emitHttpRequestMetrics(long prevWindowStartTime, MetricsDB metricsDB) throws Exception {
@@ -464,9 +505,12 @@ public class ReaderMetricsProcessor implements Runnable {
 
         long mFinalT = System.currentTimeMillis();
         LOG.info("Total time taken for parsing Master Event Metrics: {}", mFinalT - mCurrT);
+        TIMING_STATS.put("parseMasterEventMetrics", (double)(mFinalT - mCurrT));
     }
 
     public void processMetrics(String rootLocation, long currTimestamp) throws Exception {
+        TIMING_STATS.clear();
+        long start = System.currentTimeMillis();
         parseNodeMetrics(currTimestamp);
         long currWindowEndTime = PerformanceAnalyzerMetrics.getTimeInterval(currTimestamp, MetricsConfiguration.SAMPLING_INTERVAL);
         long currWindowStartTime = currWindowEndTime - MetricsConfiguration.SAMPLING_INTERVAL;
@@ -475,6 +519,7 @@ public class ReaderMetricsProcessor implements Runnable {
         parseHttpRequestMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         parseMasterEventMetrics(rootLocation, currWindowStartTime, currWindowEndTime);
         emitMetrics(currWindowStartTime);
+        StatsCollector.instance().logStatsRecord(null, STATS_DATA, TIMING_STATS, start, System.currentTimeMillis());
     }
 
     /**

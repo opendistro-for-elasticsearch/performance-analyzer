@@ -27,6 +27,8 @@ import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 @SuppressWarnings("checkstyle:constantname")
 public class PerformanceAnalyzerMetrics {
@@ -110,9 +112,10 @@ public class PerformanceAnalyzerMetrics {
         } catch (IOException ex) {
             LOG.debug(
                     (Supplier<?>) () -> new ParameterizedMessage(
-                            "Error In Creating Directories: {} for keyPath:{}",
-                            ex.toString(), keyPath),
+                            "Error In Creating Directories: {} for keyPath:{} with ExceptionCode: {}",
+                            ex.toString(), keyPath, StatExceptionCode.METRICS_WRITE_ERROR.toString()),
                     ex);
+            StatsCollector.instance().logException(StatExceptionCode.METRICS_WRITE_ERROR);
             return;
         }
 
@@ -122,9 +125,10 @@ public class PerformanceAnalyzerMetrics {
         } catch (Exception ex) {
             LOG.debug(
                     (Supplier<?>) () -> new ParameterizedMessage(
-                            "Error in Writing to Tmp File: {} for keyPath:{}",
-                            ex.toString(), keyPath),
+                            "Error in Writing to Tmp File: {} for keyPath:{} with ExceptionCode: {}",
+                            ex.toString(), keyPath, StatExceptionCode.METRICS_WRITE_ERROR.toString()),
                     ex);
+            StatsCollector.instance().logException(StatExceptionCode.METRICS_WRITE_ERROR);
             return;
         }
 
@@ -133,9 +137,10 @@ public class PerformanceAnalyzerMetrics {
         } catch (Exception ex) {
             LOG.debug(
                     (Supplier<?>) () -> new ParameterizedMessage(
-                            "Error in Renaming Tmp File: {} for keyPath:{}",
-                            ex.toString(), keyPath),
+                            "Error in Renaming Tmp File: {} for keyPath:{} with ExceptionCode: {}",
+                            ex.toString(), keyPath, StatExceptionCode.METRICS_WRITE_ERROR.toString()),
                     ex);
+            StatsCollector.instance().logException(StatExceptionCode.METRICS_WRITE_ERROR);
         }
     }
 
@@ -214,10 +219,11 @@ public class PerformanceAnalyzerMetrics {
         try {
             keyPathFile.delete();
         } catch (Exception ex) {
+            StatsCollector.instance().logException(StatExceptionCode.METRICS_REMOVE_ERROR);
             LOG.debug(
                     (Supplier<?>) () -> new ParameterizedMessage(
-                            "Error in deleting file: {} for keyPath:{}",
-                            ex.toString(), keyPathFile.getAbsolutePath()),
+                            "Error in deleting file: {} for keyPath:{} with ExceptionCode: {}",
+                            ex.toString(), keyPathFile.getAbsolutePath(), StatExceptionCode.METRICS_REMOVE_ERROR.toString()),
                     ex);
         }
     }

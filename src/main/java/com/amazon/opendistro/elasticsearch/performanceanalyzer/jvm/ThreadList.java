@@ -32,6 +32,8 @@ import java.util.regex.Pattern;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.OSMetricsGeneratorFactory;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -128,20 +130,26 @@ public class ThreadList {
         try {
             vm = VirtualMachine.attach(pid);
         } catch (Exception ex) {
-            LOGGER.debug("Error in Attaching to VM with exception: {}", () -> ex.toString());
+            LOGGER.debug("Error in Attaching to VM with exception: {} with ExceptionCode: {}",
+                         () -> ex.toString(),  () -> StatExceptionCode.JVM_ATTACH_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.JVM_ATTACH_ERROR);
             return;
         }
 
         try (InputStream in = ((HotSpotVirtualMachine) vm).remoteDataDump((Object[]) args);) {
             createMap(in);
         } catch (Exception ex) {
-            LOGGER.debug("Cannot list threads with exception: {}", () -> ex.toString());
+            LOGGER.debug("Cannot list threads with exception: {} with ExceptionCode: {}",
+                         () -> ex.toString(),  () -> StatExceptionCode.JVM_ATTACH_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.JVM_ATTACH_ERROR);
         }
 
         try {
             vm.detach();
         } catch (Exception ex) {
-            LOGGER.debug("Failed in VM Detach with exception: {}", () -> ex.toString());
+            LOGGER.debug("Failed in VM Detach with exception: {} with ExceptionCode: {}",
+                         () -> ex.toString(),  () -> StatExceptionCode.JVM_ATTACH_ERROR.toString());
+            StatsCollector.instance().logException(StatExceptionCode.JVM_ATTACH_ERROR);
         }
     }
 

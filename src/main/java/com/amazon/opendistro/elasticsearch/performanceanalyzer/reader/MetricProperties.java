@@ -42,6 +42,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonPathNotFoundException;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
 
@@ -191,8 +193,9 @@ public class MetricProperties {
             }
             return processed;
         } catch (JsonPathNotFoundException | JsonProcessingException e) {
-            LOG.warn(String.format("Fail to get last modified time of %s",
-                    file.getAbsolutePath()), e);
+            LOG.warn(String.format("Fail to get last modified time of %s ExceptionCode: %s",
+                    file.getAbsolutePath(), StatExceptionCode.JSON_PARSER_ERROR.toString()), e);
+            StatsCollector.instance().logException(StatExceptionCode.JSON_PARSER_ERROR);
             return false;
         }
     }
