@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "7.0.0")
+        es_version = System.getProperty("es.version", "7.0.1")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -146,7 +146,6 @@ dependencyLicenses.doFirst {
 integTestRunner {
     // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
     systemProperty 'tests.security.manager', 'false'
-    ifNoTests 'ignore'
 }
 
 bundlePlugin {
