@@ -70,6 +70,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
+        LOG.info("{} {} {}", exchange.getRequestMethod(), exchange.getRemoteAddress(), exchange.getRequestURI());
         ReaderMetricsProcessor mp = ReaderMetricsProcessor.getInstance();
         if (mp == null) {
             sendResponse(exchange,
