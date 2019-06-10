@@ -34,7 +34,7 @@ plugins {
 }
 
 ext {
-    opendistroVersion = '0.9.0'
+    opendistroVersion = '1.0.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
