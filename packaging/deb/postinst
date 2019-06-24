@@ -1,0 +1,38 @@
+#!/bin/sh
+set -e
+
+if ! grep -q '## OpenDistro Performance Analyzer' /etc/elasticsearch/jvm.options; then
+   CLK_TCK=`/usr/bin/getconf CLK_TCK`
+   echo >> /etc/elasticsearch/jvm.options
+   echo '## OpenDistro Performance Analyzer' >> /etc/elasticsearch/jvm.options
+   echo "-Dclk.tck=$CLK_TCK" >> /etc/elasticsearch/jvm.options
+   echo "-Djdk.attach.allowAttachSelf=true" >> /etc/elasticsearch/jvm.options
+   echo "-Djava.security.policy=file:///usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_config/es_security.policy" >> /etc/elasticsearch/jvm.options
+fi
+
+IS_UPGRADE=false
+# Below codeblock is using the fact that postinst script is called with the most-recently configured version.
+# In other words, a fresh installed will be called like "postinst configure" with no previous version ($2 is null)
+if [ -z "$2" ]; then
+  # If $2 is null, this is an install
+  IS_UPGRADE=false
+else
+  # otherwise this is an upgrade
+  IS_UPGRADE=true
+fi
+
+#DEBHELPER#
+
+if [ "x$IS_UPGRADE" != "xtrue" ]; then
+    if command -v systemctl > /dev/null; then
+        echo '# Enabling opendistro performance analyzer to start and stop along with elasticsearch.service'
+        systemctl daemon-reload
+        systemctl enable opendistro-performance-analyzer.service || true
+
+    elif command -v chkconfig >/dev/null; then
+        echo "### Non systemd distro. Please start and stop performance analyzer manually using the command: "
+        echo "sh /usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_bin/performance-analyzer-agent /usr/share/elasticsearch -d"
+    fi
+fi
+
+exit 0
