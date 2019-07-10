@@ -82,7 +82,13 @@ public class PerformanceAnalyzerMetrics {
     public static String generatePath(long startTime, String... keysPath) {
         StringBuilder stringBuilder = new StringBuilder(sDevShmLocation);
 
-        stringBuilder.append(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime))).append(File.separator);
+        char lastChar = stringBuilder.charAt(stringBuilder.length() - 1);
+        if (lastChar == File.separatorChar) {
+            stringBuilder.append(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime))).append(File.separator);
+        }
+        else {
+            stringBuilder.append(File.separator).append(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime))).append(File.separator);
+        }
 
         for (String key: keysPath) {
             stringBuilder.append(File.separator).append(key);
