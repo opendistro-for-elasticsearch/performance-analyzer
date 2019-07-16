@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.logging.log4j.LogManager;
@@ -80,21 +81,11 @@ public class PerformanceAnalyzerMetrics {
     }
 
     public static String generatePath(long startTime, String... keysPath) {
-        StringBuilder stringBuilder = new StringBuilder(sDevShmLocation);
-
-        char lastChar = stringBuilder.charAt(stringBuilder.length() - 1);
-        if (lastChar == File.separatorChar) {
-            stringBuilder.append(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime))).append(File.separator);
-        }
-        else {
-            stringBuilder.append(File.separator).append(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime))).append(File.separator);
-        }
-
+	Path sDevShmLocationPath = Paths.get(sDevShmLocation).resolve(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime)));
         for (String key: keysPath) {
-            stringBuilder.append(File.separator).append(key);
+            sDevShmLocationPath = sDevShmLocationPath.resolve(key);
         }
-
-        return stringBuilder.toString();
+        return sDevShmLocationPath.toString();
     }
 
     public static void addMetricEntry(StringBuilder value, String metricKey, String metricValue) {

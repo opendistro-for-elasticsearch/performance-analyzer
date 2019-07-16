@@ -188,12 +188,13 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 }
             }
         }
-        for (String agg: aggList) {
-            if (!agg.equals("sum") && !agg.equals("avg") && !agg.equals("min") && !agg.equals("max")) {
+	for (String agg : aggList) {
+            if (!MetricsDB.AGG_VALUES.contains(agg)) {
                 sendResponse(exchange, String.format("{\"error\":\"%s is an invalid aggregation type.\"}", agg), HttpURLConnection.HTTP_BAD_REQUEST);
                 return false;
             }
         }
+
         return true;
     }
 
