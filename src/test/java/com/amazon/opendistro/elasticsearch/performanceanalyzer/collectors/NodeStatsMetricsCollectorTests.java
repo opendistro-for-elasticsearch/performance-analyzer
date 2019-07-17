@@ -15,12 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class NodeStatsMetricsCollectorTests {
+    @Before
+    public void setup() {
+        PluginSettings.instance().setMetricsLocation("/tmp/");
+    }
 
     @Test
     public void testNodeStatsMetrics() {
@@ -32,9 +39,9 @@ public class NodeStatsMetricsCollectorTests {
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("89123.23", fetchedValue);
 

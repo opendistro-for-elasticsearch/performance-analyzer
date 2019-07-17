@@ -15,11 +15,20 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class SearchListenerTests {
+
+    @Before
+    public void setup() {
+        PluginSettings.instance().setMetricsLocation("/tmp/");
+    }
+
     @Test
     public void testShardSearchMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
@@ -27,31 +36,31 @@ public class SearchListenerTests {
         PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener();
         performanceanalyzerSearchListener.saveMetricValues("dewrjcve", startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID", "start");
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID/start");
         assertEquals("dewrjcve", fetchedValue);
 
         String startMetricsValue = performanceanalyzerSearchListener.generateStartMetrics(100, "index1", 1).toString();
         performanceanalyzerSearchListener.saveMetricValues(startMetricsValue, startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID1", "start");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID1/start");
         assertEquals(startMetricsValue, fetchedValue);
 
         String finishMetricsValue = performanceanalyzerSearchListener.generateFinishMetrics(123, false, "index1", 10).toString();
         performanceanalyzerSearchListener.saveMetricValues(finishMetricsValue, startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID1", "finish");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID1/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
         performanceanalyzerSearchListener.saveMetricValues(finishMetricsValue, startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID2", "finish");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID2/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
     }
 }

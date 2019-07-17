@@ -15,11 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class PerformanceAnalyzerTransportChannelTests {
+    @Before
+    public void setup() {
+        PluginSettings.instance().setMetricsLocation("/tmp/");
+    }
+
     @Test
     public void testShardBulkMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
@@ -27,9 +35,9 @@ public class PerformanceAnalyzerTransportChannelTests {
         PerformanceAnalyzerTransportChannel performanceanalyzerTransportChannel = new PerformanceAnalyzerTransportChannel();
         performanceanalyzerTransportChannel.saveMetricValues("ABCDEF", startTimeInMills, "BulkThread", "ShardBulkId", "start");
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation +
+                PluginSettings.instance().getMetricsLocation() +
                         PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/BulkThread/shardbulk/ShardBulkId/start");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("ABCDEF", fetchedValue);
     }

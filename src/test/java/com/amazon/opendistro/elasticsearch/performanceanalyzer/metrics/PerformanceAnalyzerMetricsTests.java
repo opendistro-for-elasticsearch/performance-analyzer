@@ -46,12 +46,12 @@ public class PerformanceAnalyzerMetricsTests {
     @Test
     public void testBasicMetric() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        PerformanceAnalyzerMetrics.emitMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test1", "value1");
-        assertEquals("value1", PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test1"));
+        PerformanceAnalyzerMetrics.emitMetric(PluginSettings.instance().getMetricsLocation() + "/dir1/test1", "value1");
+        assertEquals("value1", PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() + "/dir1/test1"));
 
-        assertEquals("", PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test2"));
+        assertEquals("", PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() + "/dir1/test2"));
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1");
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation() + "/dir1");
     }
 
     @Test
