@@ -15,26 +15,24 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.List;
-import java.util.Vector;
-import java.util.Properties;
-
-import java.io.InputStream;
-import java.io.FileInputStream;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
     private static final String LOG_ENTRY_INIT = "------------------------------------------------------------------------";
@@ -75,6 +73,11 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
 
     public void logException(StatExceptionCode statExceptionCode) {
         incCounter(statExceptionCode.toString());
+        incErrorCounter();
+    }
+
+    public void logMetric(final String metricName) {
+        incCounter(metricName);
     }
 
     public void logStatsRecord(Map<String, AtomicInteger> counters, Map<String, String> statsdata, 
@@ -133,7 +136,9 @@ public class StatsCollector extends PerformanceAnalyzerMetricsCollector {
         if (val != null) {
             val.getAndIncrement();
         }
+    }
 
+    private void incErrorCounter() {
         AtomicInteger all_val = counters.putIfAbsent(StatExceptionCode.TOTAL_ERROR.toString(), new AtomicInteger(1));
         if (all_val != null) {
             all_val.getAndIncrement();
