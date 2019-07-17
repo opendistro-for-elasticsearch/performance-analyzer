@@ -16,8 +16,6 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
-import java.io.File;
-
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Filter;
 import org.apache.logging.log4j.core.appender.ConsoleAppender;
@@ -31,6 +29,8 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
 
 @Ignore
 public class AbstractTests {

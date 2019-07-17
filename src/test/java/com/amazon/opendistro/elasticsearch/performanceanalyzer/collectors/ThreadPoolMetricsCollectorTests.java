@@ -15,11 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class ThreadPoolMetricsCollectorTests {
+
+    @Before
+    public void setup() {
+        PluginSettings.instance().setMetricsLocation("/tmp/");
+    }
 
     @Test
     public void testThreadPoolMetrics() {
@@ -31,8 +39,9 @@ public class ThreadPoolMetricsCollectorTests {
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/thread_pool/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
+                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/thread_pool/");
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("12321.5464", fetchedValue);
 

@@ -15,11 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.action;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class PerformanceAnalyzerActionListenerTests {
+
+    @Before
+    public void setup() {
+        PluginSettings.instance().setMetricsLocation("/tmp/");
+    }
 
     @Test
     public void testHttpMetrics() {
@@ -28,31 +36,31 @@ public class PerformanceAnalyzerActionListenerTests {
         PerformanceAnalyzerActionListener performanceanalyzerActionListener = new PerformanceAnalyzerActionListener();
         performanceanalyzerActionListener.saveMetricValues("XYZADFAS", startTimeInMills, "bulk", "bulkId", "start");
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/bulk/bulkId/start");
         assertEquals("XYZADFAS", fetchedValue);
 
         String startMetricsValue = performanceanalyzerActionListener.generateStartMetrics(123, "val2", 0).toString();
         performanceanalyzerActionListener.saveMetricValues(startMetricsValue,  startTimeInMills, "search", "searchId1", "start");
         fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId1/start");
         assertEquals(startMetricsValue, fetchedValue);
 
         String finishMetricsValue = performanceanalyzerActionListener.generateFinishMetrics(456, 200, "val4").toString();
         performanceanalyzerActionListener.saveMetricValues(finishMetricsValue, startTimeInMills, "search", "searchId1", "finish");
         fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId1/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
         performanceanalyzerActionListener.saveMetricValues(finishMetricsValue, startTimeInMills, "search", "searchId2", "finish");
         fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId2/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation 
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
     }
 }

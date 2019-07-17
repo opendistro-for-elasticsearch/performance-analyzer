@@ -15,20 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 @SuppressWarnings("checkstyle:constantname")
 public class PerformanceAnalyzerMetrics {
@@ -80,7 +79,7 @@ public class PerformanceAnalyzerMetrics {
     }
 
     public static String generatePath(long startTime, String... keysPath) {
-        StringBuilder stringBuilder = new StringBuilder(sDevShmLocation);
+        StringBuilder stringBuilder = new StringBuilder(PluginSettings.instance().getMetricsLocation());
 
         stringBuilder.append(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime))).append(File.separator);
 

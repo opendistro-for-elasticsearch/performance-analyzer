@@ -16,16 +16,15 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
-import java.io.File;
-import java.util.Properties;
-
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
+import java.io.File;
+import java.util.Properties;
 
 public class PluginSettings {
     private static final Logger LOG = LogManager.getLogger(PluginSettings.class);
@@ -63,6 +62,10 @@ public class PluginSettings {
 
     public String getMetricsLocation() {
         return metricsLocation;
+    }
+
+    public void setMetricsLocation(final String metricsLocation) {
+        this.metricsLocation = metricsLocation;
     }
 
     public int getMetricsDeletionInterval() {
