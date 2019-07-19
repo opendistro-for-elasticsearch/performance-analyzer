@@ -26,9 +26,11 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+@PowerMockIgnore({ "org.apache.logging.log4j.*" })
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ PerformanceAnalyzerMetrics.class, PluginSettings.class })
 @SuppressStaticInitializationFor({ "PluginSettings" })
@@ -37,7 +39,7 @@ public class PerformanceAnalyzerMetricsTests {
     @Before
     public void setUp() throws Exception {
         PluginSettings config = Mockito.mock(PluginSettings.class);
-        Mockito.when(config.getMetricsLocation()).thenReturn("dev/shm/performanceanalyzer");
+        Mockito.when(config.getMetricsLocation()).thenReturn("/dev/shm/performanceanalyzer");
         PowerMockito.mockStatic(PluginSettings.class);
         PowerMockito.when(PluginSettings.instance()).thenReturn(config);
     }
