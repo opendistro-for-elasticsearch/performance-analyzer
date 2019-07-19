@@ -15,12 +15,32 @@
 
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.Before;
+import static org.mockito.Mockito.when;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
+import org.junit.runner.RunWith;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ PerformanceAnalyzerMetrics.class, PluginSettings.class })
+@SuppressStaticInitializationFor({ "PluginSettings" })
 public class PerformanceAnalyzerMetricsTests {
 
+    @Before
+    public void setUp() throws Exception {
+        PluginSettings config = Mockito.mock(PluginSettings.class);
+        Mockito.when(config.getMetricsLocation()).thenReturn("dev/shm/performanceanalyzer");
+        PowerMockito.mockStatic(PluginSettings.class);
+        PowerMockito.when(PluginSettings.instance()).thenReturn(config);
+    }
 
     @Test
     public void testBasicMetric() {
@@ -31,5 +51,13 @@ public class PerformanceAnalyzerMetricsTests {
         assertEquals("", PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test2"));
 
         PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1");
+    }
+
+    @Test
+    public void testGeneratePath() {
+        long startTimeInMillis = 1553725339;
+        String generatedPath = PerformanceAnalyzerMetrics.generatePath(startTimeInMillis, "dir1", "id", "dir2");
+        String expectedPath = PerformanceAnalyzerMetrics.sDevShmLocation + "/" + String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMillis)) + "/dir1/id/dir2";
+        assertEquals(expectedPath, generatedPath);
     }
 }
