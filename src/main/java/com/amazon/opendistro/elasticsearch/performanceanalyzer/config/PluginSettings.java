@@ -16,15 +16,16 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
+import java.io.File;
+import java.util.Properties;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
 
-import java.io.File;
-import java.util.Properties;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 
 public class PluginSettings {
     private static final Logger LOG = LogManager.getLogger(PluginSettings.class);

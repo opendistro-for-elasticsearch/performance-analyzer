@@ -16,18 +16,13 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import org.junit.Before;
 import org.junit.Test;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import static org.junit.Assert.assertEquals;
 
-public class PerformanceAnalyzerMetricsTests {
-
-    @Before
-    public void setup() {
-        PluginSettings.instance().setMetricsLocation("/tmp/");
-    }
+public class PerformanceAnalyzerMetricsTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testBasicMetric() {

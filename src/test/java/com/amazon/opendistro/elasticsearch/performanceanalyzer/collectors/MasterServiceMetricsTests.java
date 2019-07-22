@@ -15,20 +15,15 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import org.junit.Before;
 import org.junit.Test;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class MasterServiceMetricsTests {
-
-    @Before
-    public void setup() {
-        PluginSettings.instance().setMetricsLocation("/tmp/");
-    }
+public class MasterServiceMetricsTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testMasterServiceMetrics() {
