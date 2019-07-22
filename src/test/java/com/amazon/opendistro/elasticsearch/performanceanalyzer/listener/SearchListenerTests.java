@@ -15,19 +15,14 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import org.junit.Before;
 import org.junit.Test;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 
-public class SearchListenerTests {
-
-    @Before
-    public void setup() {
-        PluginSettings.instance().setMetricsLocation("/tmp/");
-    }
+public class SearchListenerTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testShardSearchMetrics() {

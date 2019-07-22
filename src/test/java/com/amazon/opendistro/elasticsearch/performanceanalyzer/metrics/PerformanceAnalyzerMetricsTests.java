@@ -38,7 +38,7 @@ public class PerformanceAnalyzerMetricsTests {
     @Before
     public void setUp() throws Exception {
         PluginSettings config = Mockito.mock(PluginSettings.class);
-        Mockito.when(config.getMetricsLocation()).thenReturn("/dev/shm/performanceanalyzer");
+        Mockito.when(config.getMetricsLocation()).thenReturn("build/tmp/junit_metrics");
         PowerMockito.mockStatic(PluginSettings.class);
         PowerMockito.when(PluginSettings.instance()).thenReturn(config);
     }
