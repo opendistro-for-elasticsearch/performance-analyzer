@@ -20,6 +20,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Arrays;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,6 +70,7 @@ public class MetricsDB implements Removable {
     public static final String AVG = "avg";
     public static final String MIN = "min";
     public static final String MAX = "max";
+    public static final HashSet<String> AGG_VALUES = new HashSet<>(Arrays.asList(SUM, AVG, MIN, MAX));
     private long windowStartTime;
 
     public String getDBFilePath() {
@@ -264,11 +267,15 @@ public class MetricsDB implements Removable {
     @Override
     public void remove() throws Exception {
        conn.close();
-       File dbFile = new File(getDBFilePath());
-       if (!dbFile.delete()) {
-           LOG.error("Failed to delete File - {} with ExceptionCode: {}", getDBFilePath(), StatExceptionCode.OTHER.toString());
-           StatsCollector.instance().logException();
-       }
+    }
+
+    public void deleteOnDiskFile() {
+        File dbFile = new File(getDBFilePath());
+        if (!dbFile.delete()) {
+            LOG.error("Failed to delete File - {} with ExceptionCode: {}",
+                    getDBFilePath(), StatExceptionCode.OTHER.toString());
+            StatsCollector.instance().logException();
+        }
     }
 
     public Result<Record> queryMetric(String metric) {

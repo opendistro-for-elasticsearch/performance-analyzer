@@ -37,6 +37,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.google.common.annotations.VisibleForTesting;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
@@ -56,7 +57,7 @@ public class ReaderMetricsProcessor implements Runnable {
     private NavigableMap<Long, HttpRequestMetricsSnapshot> httpRqMetricsMap;
     private NavigableMap<Long, MasterEventMetricsSnapshot> masterEventMetricsMap;
     private Map<AllMetrics.MetricName, NavigableMap<Long, MemoryDBSnapshot>> nodeMetricsMap;
-    private static final int MAX_DATABASES = 4;
+    private static final int MAX_DATABASES = 2;
     private static final int OS_SNAPSHOTS = 4;
     private static final int RQ_SNAPSHOTS = 4;
     private static final int HTTP_RQ_SNAPSHOTS = 4;
@@ -186,7 +187,8 @@ public class ReaderMetricsProcessor implements Runnable {
         trimMap(shardRqMetricsMap, RQ_SNAPSHOTS);
         trimMap(httpRqMetricsMap, HTTP_RQ_SNAPSHOTS);
         trimMap(masterEventMetricsMap, MASTER_EVENT_SNAPSHOTS);
-        trimMap(metricsDBMap, MAX_DATABASES);
+        trimDatabases(metricsDBMap, MAX_DATABASES, PluginSettings.instance().shouldCleanupMetricsDBFiles());
+
         for (NavigableMap<Long, MemoryDBSnapshot> snap : nodeMetricsMap
                 .values()) {
             // do the same thing as OS_SNAPSHOTS.  Eventually MemoryDBSnapshot
@@ -207,6 +209,25 @@ public class ReaderMetricsProcessor implements Runnable {
                 Removable value = (Removable) lowestEntry.getValue();
                 value.remove();
                 map.remove(lowestEntry.getKey());
+            }
+        }
+    }
+
+    /**
+     * Deletes the MetricsDB entries in the map till the size of the map is equal to maxSize. The actual on-disk
+     * files is deleted ony if the config is not set or set to true.
+     */
+    public static void trimDatabases(NavigableMap<Long, MetricsDB> map, int maxSize, boolean deleteDBFiles) throws Exception {
+        // Remove the oldest entries from the map, upto maxSize.
+        while (map.size() > maxSize) {
+            Map.Entry<Long, MetricsDB> lowestEntry = map.firstEntry();
+            if (lowestEntry != null) {
+                MetricsDB value = lowestEntry.getValue();
+                map.remove(lowestEntry.getKey());
+                value.remove();
+                if (deleteDBFiles) {
+                    value.deleteOnDiskFile();
+                }
             }
         }
     }
