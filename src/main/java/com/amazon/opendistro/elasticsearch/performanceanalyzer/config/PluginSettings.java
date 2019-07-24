@@ -41,8 +41,18 @@ public class PluginSettings {
     private static final int DELETION_INTERVAL_MAX = 60;
     private static final String HTTPS_ENABLED = "https-enabled";
 
+    /**
+     * Determines whether the metricsdb files should be cleaned up.
+     */
+    public static final String DB_FILE_CLEANUP_CONF_NAME = "cleanup-metrics-db-files";
+
     private String metricsLocation;
     private int metricsDeletionInterval;
+
+    /**
+     * If set to true, the metricsdb files are cleaned up, or else the on-disk files are left out.
+     */
+    private boolean shouldCleanupMetricsDBFiles;
     private boolean httpsEnabled;
     private Properties settings;
     private final String configFilePath;
@@ -84,6 +94,10 @@ public class PluginSettings {
         return this.httpsEnabled;
     }
 
+    public boolean shouldCleanupMetricsDBFiles() {
+        return shouldCleanupMetricsDBFiles;
+    }
+
     private PluginSettings(String cfPath) {
         metricsLocation = METRICS_LOCATION_DEFAULT;
         metricsDeletionInterval = DELETION_INTERVAL_DEFAULT;
@@ -99,6 +113,7 @@ public class PluginSettings {
             loadMetricsDeletionIntervalFromConfig();
             loadMetricsLocationFromConfig();
             loadHttpsEnabled();
+            loadMetricsDBFilesCleanupEnabled();
         } catch (ConfigFileException e) {
             LOG.error("Loading config file {} failed with error: {}. Using default values.",
                       this.configFilePath, e.toString());
@@ -109,9 +124,9 @@ public class PluginSettings {
             LOG.error("Unexpected exception while initializing config. Disabling plugin.", e);
             ConfigStatus.INSTANCE.setConfigurationInvalid();
         }
-
-        LOG.error("Config: metricsLocation: {}, metricsDeletionInterval: {}, httpsEnabled: {}",
-                metricsLocation, metricsDeletionInterval, httpsEnabled);
+        LOG.info("Config: metricsLocation: {}, metricsDeletionInterval: {}, httpsEnabled: {}," +
+                  " cleanup-metrics-db-files: {}",
+                metricsLocation, metricsDeletionInterval, httpsEnabled, shouldCleanupMetricsDBFiles);
     }
 
     public static PluginSettings instance() {
@@ -179,6 +194,18 @@ public class PluginSettings {
                             "Invalid metrics-deletion-interval. Using default value {}.",
                             metricsDeletionInterval),
                     e);
+        }
+    }
+    private void loadMetricsDBFilesCleanupEnabled() {
+        String cleanupEnabledString = settings.getProperty(DB_FILE_CLEANUP_CONF_NAME, "True");
+        try {
+            shouldCleanupMetricsDBFiles = Boolean.parseBoolean(cleanupEnabledString);
+        } catch (Exception ex) {
+            LOG.error("Unable to parse {} property with value {}. Only true/false expected.",
+                    DB_FILE_CLEANUP_CONF_NAME, cleanupEnabledString);
+
+            // In case of exception, we go with the safe default that the files will always be cleaned up.
+            shouldCleanupMetricsDBFiles = true;
         }
     }
 }

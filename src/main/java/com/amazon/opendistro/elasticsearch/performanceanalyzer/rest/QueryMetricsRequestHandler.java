@@ -70,6 +70,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
+        LOG.info("{} {} {}", exchange.getRequestMethod(), exchange.getRemoteAddress(), exchange.getRequestURI());
         ReaderMetricsProcessor mp = ReaderMetricsProcessor.getInstance();
         if (mp == null) {
             sendResponse(exchange,
@@ -116,13 +117,23 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                     return;
                 }
 
-                if (!validParams(exchange, metricList, dimList)) {
+                if (!validParams(exchange, metricList, dimList, aggList)) {
                     return;
                 }
 
                 String nodes = params.get("nodes");
                 String response = collectStats(db, dbTimestamp, metricList, aggList, dimList, nodes);
                 sendResponse(exchange, response, HttpURLConnection.HTTP_OK);
+            } catch (InvalidParameterException e) {
+                LOG.error("DB file path : {}", db.getDBFilePath());
+                LOG.error(
+                        (Supplier<?>) () -> new ParameterizedMessage(
+                                "QueryException {} ExceptionCode: {}.",
+                                e.toString(), StatExceptionCode.REQUEST_ERROR.toString()),
+                        e);
+                StatsCollector.instance().logException(StatExceptionCode.REQUEST_ERROR);
+                String response = "{\"error\":\"" + e.getMessage() + "\"}";
+                sendResponse(exchange, response, HttpURLConnection.HTTP_BAD_REQUEST);
             } catch (Exception e) {
                 LOG.error("DB file path : {}", db.getDBFilePath());
                 LOG.error(
@@ -157,7 +168,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
         sendResponse(exchange, JsonConverter.writeValueAsString(metricUnits), HttpURLConnection.HTTP_OK);
     }
 
-    public boolean validParams(HttpExchange exchange, List<String> metricList, List<String> dimList)
+    public boolean validParams(HttpExchange exchange, List<String> metricList, List<String> dimList, List<String> aggList)
             throws IOException {
         for (String metric : metricList) {
             if (MetricsModel.ALL_METRICS.get(metric) == null) {
@@ -177,6 +188,13 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 }
             }
         }
+	for (String agg : aggList) {
+            if (!MetricsDB.AGG_VALUES.contains(agg)) {
+                sendResponse(exchange, String.format("{\"error\":\"%s is an invalid aggregation type.\"}", agg), HttpURLConnection.HTTP_BAD_REQUEST);
+                return false;
+            }
+        }
+
         return true;
     }
 
