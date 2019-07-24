@@ -29,17 +29,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
-
 import org.jooq.Record;
 import org.jooq.Result;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricAttributes;
@@ -47,11 +46,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricsMode
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ClusterLevelMetricsReader;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Request handler that supports querying MetricsDB on every EC2 instance.
@@ -188,9 +185,10 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 }
             }
         }
-	for (String agg : aggList) {
+        for (String agg : aggList) {
             if (!MetricsDB.AGG_VALUES.contains(agg)) {
-                sendResponse(exchange, String.format("{\"error\":\"%s is an invalid aggregation type.\"}", agg), HttpURLConnection.HTTP_BAD_REQUEST);
+                sendResponse(exchange, String.format("{\"error\":\"%s is an invalid aggregation type.\"}", agg),
+                        HttpURLConnection.HTTP_BAD_REQUEST);
                 return false;
             }
         }
