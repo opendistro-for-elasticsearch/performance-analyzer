@@ -81,7 +81,8 @@ public class PerformanceAnalyzerMetrics {
     }
 
     public static String generatePath(long startTime, String... keysPath) {
-	Path sDevShmLocationPath = Paths.get(sDevShmLocation).resolve(Paths.get(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime)), keysPath));
+        Path sDevShmLocationPath = Paths.get(sDevShmLocation)
+                                    .resolve(Paths.get(String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTime)), keysPath));
         return sDevShmLocationPath.toString();
     }
 
@@ -163,7 +164,7 @@ public class PerformanceAnalyzerMetrics {
     }
 
     public static String getMetric(long startTime, String... keysPath) {
-	return getMetric(generatePath(startTime, keysPath));
+        return getMetric(generatePath(startTime, keysPath));
     }
 
     public static String getMetric(String keyPath) {
