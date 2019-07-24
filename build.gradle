@@ -146,7 +146,6 @@ dependencyLicenses.doFirst {
 integTestRunner {
     // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
     systemProperty 'tests.security.manager', 'false'
-    ifNoTests 'ignore'
 }
 
 bundlePlugin {
