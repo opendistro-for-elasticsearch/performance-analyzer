@@ -15,12 +15,15 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.junit.Test;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class MasterServiceMetricsTests {
+public class MasterServiceMetricsTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testMasterServiceMetrics() {
@@ -31,9 +34,9 @@ public class MasterServiceMetricsTests {
         masterServiceMetrics.saveMetricValues("master_metrics_value", startTimeInMills, "current", "start");
 
 
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/pending_tasks/current/start/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("master_metrics_value", fetchedValue);
 

@@ -65,6 +65,10 @@ public class PluginSettings {
         return metricsLocation;
     }
 
+    public void setMetricsLocation(final String metricsLocation) {
+        this.metricsLocation = metricsLocation;
+    }
+
     public int getMetricsDeletionInterval() {
         return metricsDeletionInterval * 60 * 1000;
     }
