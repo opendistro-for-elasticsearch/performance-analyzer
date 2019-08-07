@@ -15,23 +15,24 @@
 
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 
-import static org.junit.Assert.assertEquals;
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-@PowerMockIgnore({ "org.apache.logging.log4j.*" })
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import static org.junit.Assert.assertEquals;
+
+@PowerMockIgnore({"org.apache.logging.log4j.*"})
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ PerformanceAnalyzerMetrics.class, PluginSettings.class })
-@SuppressStaticInitializationFor({ "PluginSettings" })
+@PrepareForTest({PerformanceAnalyzerMetrics.class, PluginSettings.class})
+@SuppressStaticInitializationFor({"PluginSettings"})
 public class PerformanceAnalyzerMetricsTests {
 
     @Before
@@ -57,8 +58,8 @@ public class PerformanceAnalyzerMetricsTests {
     public void testGeneratePath() {
         long startTimeInMillis = 1553725339;
         String generatedPath = PerformanceAnalyzerMetrics.generatePath(startTimeInMillis, "dir1", "id", "dir2");
-        String expectedPath = PerformanceAnalyzerMetrics.sDevShmLocation + "/" + 
-                String.valueOf(PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMillis)) + "/dir1/id/dir2";
+        String expectedPath = PerformanceAnalyzerMetrics.sDevShmLocation +
+                "/" + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMillis) + "/dir1/id/dir2";
         assertEquals(expectedPath, generatedPath);
     }
 }
