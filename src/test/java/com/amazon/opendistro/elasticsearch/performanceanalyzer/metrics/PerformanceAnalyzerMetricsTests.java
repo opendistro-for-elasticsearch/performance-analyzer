@@ -16,20 +16,50 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
+import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import static org.junit.Assert.assertEquals;
+
+@PowerMockIgnore({"org.apache.logging.log4j.*"})
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({PerformanceAnalyzerMetrics.class, PluginSettings.class})
+@SuppressStaticInitializationFor({"PluginSettings"})
 public class PerformanceAnalyzerMetricsTests {
 
+    @Before
+    public void setUp() throws Exception {
+        PluginSettings config = Mockito.mock(PluginSettings.class);
+        Mockito.when(config.getMetricsLocation()).thenReturn("build/tmp/junit_metrics");
+        PowerMockito.mockStatic(PluginSettings.class);
+        PowerMockito.when(PluginSettings.instance()).thenReturn(config);
+    }
 
     @Test
     public void testBasicMetric() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        PerformanceAnalyzerMetrics.emitMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test1", "value1");
-        assertEquals("value1", PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test1"));
+        PerformanceAnalyzerMetrics.emitMetric(PluginSettings.instance().getMetricsLocation() + "/dir1/test1", "value1");
+        assertEquals("value1", PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() + "/dir1/test1"));
 
-        assertEquals("", PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1/test2"));
+        assertEquals("", PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() + "/dir1/test2"));
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation + "/dir1");
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation() + "/dir1");
+    }
+
+    @Test
+    public void testGeneratePath() {
+        long startTimeInMillis = 1553725339;
+        String generatedPath = PerformanceAnalyzerMetrics.generatePath(startTimeInMillis, "dir1", "id", "dir2");
+        String expectedPath = PerformanceAnalyzerMetrics.sDevShmLocation +
+                "/" + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMillis) + "/dir1/id/dir2";
+        assertEquals(expectedPath, generatedPath);
     }
 }

@@ -29,17 +29,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.net.ssl.HttpsURLConnection;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
-
 import org.jooq.Record;
 import org.jooq.Result;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricAttributes;
@@ -47,11 +46,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricsMode
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ClusterLevelMetricsReader;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Request handler that supports querying MetricsDB on every EC2 instance.
@@ -117,13 +114,23 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                     return;
                 }
 
-                if (!validParams(exchange, metricList, dimList)) {
+                if (!validParams(exchange, metricList, dimList, aggList)) {
                     return;
                 }
 
                 String nodes = params.get("nodes");
                 String response = collectStats(db, dbTimestamp, metricList, aggList, dimList, nodes);
                 sendResponse(exchange, response, HttpURLConnection.HTTP_OK);
+            } catch (InvalidParameterException e) {
+                LOG.error("DB file path : {}", db.getDBFilePath());
+                LOG.error(
+                        (Supplier<?>) () -> new ParameterizedMessage(
+                                "QueryException {} ExceptionCode: {}.",
+                                e.toString(), StatExceptionCode.REQUEST_ERROR.toString()),
+                        e);
+                StatsCollector.instance().logException(StatExceptionCode.REQUEST_ERROR);
+                String response = "{\"error\":\"" + e.getMessage() + "\"}";
+                sendResponse(exchange, response, HttpURLConnection.HTTP_BAD_REQUEST);
             } catch (Exception e) {
                 LOG.error("DB file path : {}", db.getDBFilePath());
                 LOG.error(
@@ -158,7 +165,7 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
         sendResponse(exchange, JsonConverter.writeValueAsString(metricUnits), HttpURLConnection.HTTP_OK);
     }
 
-    public boolean validParams(HttpExchange exchange, List<String> metricList, List<String> dimList)
+    public boolean validParams(HttpExchange exchange, List<String> metricList, List<String> dimList, List<String> aggList)
             throws IOException {
         for (String metric : metricList) {
             if (MetricsModel.ALL_METRICS.get(metric) == null) {
@@ -178,6 +185,14 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
                 }
             }
         }
+        for (String agg : aggList) {
+            if (!MetricsDB.AGG_VALUES.contains(agg)) {
+                sendResponse(exchange, String.format("{\"error\":\"%s is an invalid aggregation type.\"}", agg),
+                        HttpURLConnection.HTTP_BAD_REQUEST);
+                return false;
+            }
+        }
+
         return true;
     }
 
