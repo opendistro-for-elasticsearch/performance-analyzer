@@ -15,8 +15,6 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
-import static java.util.Collections.singletonList;
-
 import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -27,20 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkE2ECollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -56,6 +40,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -76,13 +61,29 @@ import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkE2ECollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.SettingsHelper;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
+import static java.util.Collections.singletonList;
 
 public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
@@ -96,6 +97,14 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             // unprivileged code such as scripts do not have SpecialPermission
             sm.checkPermission(new SpecialPermission());
         }
+    }
+
+    /**
+     * Returns a list of additional {@link Setting} definitions for this plugin.
+     */
+    @Override
+    public List<Setting<?>> getSettings() {
+        return Collections.singletonList(SettingsHelper.getPerformanceAnalyzerClusterSetting());
     }
 
     public static void invokePrivileged(Runnable runner) {
@@ -200,6 +209,7 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setClusterService(clusterService);
         ESResources.INSTANCE.setThreadPool(threadPool);
         ESResources.INSTANCE.setEnvironment(environment);
+        ESResources.INSTANCE.setClient(client);
         return Collections.emptyList();
     }
 
@@ -213,7 +223,5 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setCircuitBreakerService(circuitBreakerService);
         return Collections.emptyMap();
     }
-
-
 }
 

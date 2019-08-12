@@ -16,22 +16,34 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-
-import java.io.InputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
+import org.elasticsearch.common.settings.Setting;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+
 public class SettingsHelper {
+    private static final Setting<Boolean> PERFORMANCE_ANALYZER_CLUSTER_SETTING = Setting.boolSetting(
+            "cluster.metadata.performance_analyzer.enabled",
+            false,
+            Setting.Property.Dynamic,
+            Setting.Property.NodeScope);
+
     public static Properties getSettings(final String fileRelativePath) throws IOException {
         Properties prop = new Properties();
 
-        try (InputStream input = new FileInputStream(ESResources.INSTANCE.getPluginFileLocation() + fileRelativePath); ) {
+        try (InputStream input = new FileInputStream(ESResources.INSTANCE.getPluginFileLocation() + fileRelativePath);) {
             // load a properties file
             prop.load(input);
         }
 
         return prop;
+    }
+
+    public static Setting<Boolean> getPerformanceAnalyzerClusterSetting() {
+        return PERFORMANCE_ANALYZER_CLUSTER_SETTING;
     }
 }
