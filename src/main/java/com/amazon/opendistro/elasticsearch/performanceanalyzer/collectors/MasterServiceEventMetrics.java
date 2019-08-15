@@ -18,12 +18,11 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Queue;
-import java.util.HashSet;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.MasterService;
@@ -35,15 +34,15 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.MasterMetricValues;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.ThreadIDUtil;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 
 @SuppressWarnings("unchecked")
 public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
             MasterServiceEventMetrics.class).samplingInterval;
     private static final Logger LOG = LogManager.getLogger(MasterServiceEventMetrics.class);
+    private static final String MASTER_NODE_NOT_UP_METRIC = "MasterNodeNotUp";
     private long lastTaskInsertionOrder;
     private static final int KEYS_PATH_LENGTH = 3;
     private StringBuilder value;
@@ -193,8 +192,12 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
                                 (PrioritizedEsThreadPoolExecutor) getMasterServiceTPExecutorField().get(masterService);
                     }
 
-                    masterServiceCurrentQueue =
-                            (Queue<Runnable>) getPrioritizedTPExecutorCurrentField().get(prioritizedEsThreadPoolExecutor);
+                    if (prioritizedEsThreadPoolExecutor != null) {
+                        masterServiceCurrentQueue =
+                                (Queue<Runnable>) getPrioritizedTPExecutorCurrentField().get(prioritizedEsThreadPoolExecutor);
+                    } else {
+                        StatsCollector.instance().logMetric(MASTER_NODE_NOT_UP_METRIC);
+                    }
                 }
             }
         }
