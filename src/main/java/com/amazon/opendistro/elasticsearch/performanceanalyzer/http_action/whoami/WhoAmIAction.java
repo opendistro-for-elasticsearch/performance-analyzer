@@ -15,19 +15,22 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami;
 
-import org.elasticsearch.action.Action;
+import org.elasticsearch.action.ActionType;
+import org.elasticsearch.common.io.stream.Writeable;
 
-public class WhoAmIAction extends Action<WhoAmIResponse> {
+public class WhoAmIAction extends ActionType<WhoAmIResponse> {
 
     public static final WhoAmIAction INSTANCE = new WhoAmIAction();
     public static final String NAME = "cluster:admin/performanceanalyzer/whoami";
+    public static final Writeable.Reader<WhoAmIResponse> responseReader = null;
 
-    protected WhoAmIAction() {
-        super(NAME);
+    private WhoAmIAction() {
+        super(NAME, responseReader);
     }
 
     @Override
-    public WhoAmIResponse newResponse() {
-        return new WhoAmIResponse();
+    public Writeable.Reader<WhoAmIResponse> getResponseReader() {
+        return responseReader;
     }
 }
+
