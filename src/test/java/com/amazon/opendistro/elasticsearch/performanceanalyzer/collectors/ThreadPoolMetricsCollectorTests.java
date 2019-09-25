@@ -15,24 +15,33 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 
-public class ThreadPoolMetricsCollectorTests {
+@Ignore
+public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testThreadPoolMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1453724339;
-
+        
+        MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, MetricsConfiguration.cdefault);
+        
         ThreadPoolMetricsCollector threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
         threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/thread_pool/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
+                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/thread_pool/");
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("12321.5464", fetchedValue);
 
@@ -50,5 +59,4 @@ public class ThreadPoolMetricsCollectorTests {
             //- expecting exception...2 values passed; 0 expected
         }
     }
-
 }

@@ -15,21 +15,27 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 
-public class CircuitBreakerCollectorTests {
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import static org.junit.Assert.assertEquals;
+@Ignore
+public class CircuitBreakerCollectorTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testCircuitBreakerMetrics() {
+        MetricsConfiguration.CONFIG_MAP.put(CircuitBreakerCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
         CircuitBreakerCollector circuitBreakerCollector = new CircuitBreakerCollector();
         circuitBreakerCollector.saveMetricValues("werjbdsiviewur", startTimeInMills);
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation
+        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation()
                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/circuit_breaker/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("werjbdsiviewur", fetchedValue);
 

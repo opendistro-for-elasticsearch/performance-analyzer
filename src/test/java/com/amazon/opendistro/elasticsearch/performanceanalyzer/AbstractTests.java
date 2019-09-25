@@ -32,6 +32,8 @@ import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
+
 @Ignore
 public class AbstractTests {
 
@@ -52,6 +54,7 @@ public class AbstractTests {
 
     @BeforeClass
     public static void setupLogging() {
+    	Utils.configureMetrics();
         ConfigurationBuilder<BuiltConfiguration> configurationBuilder = ConfigurationBuilderFactory
                 .newConfigurationBuilder();
         configurationBuilder.setStatusLevel(Level.INFO);

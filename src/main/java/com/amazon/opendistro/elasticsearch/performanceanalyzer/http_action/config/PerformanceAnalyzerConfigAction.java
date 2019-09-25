@@ -16,6 +16,8 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
@@ -50,6 +52,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static PerformanceAnalyzerConfigAction instance = null;
     private boolean isInitialized = false;
     private boolean featureEanbledDefaultValue = true;
+    private ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
 
     public static PerformanceAnalyzerConfigAction getInstance() {
         return instance;
@@ -61,10 +64,11 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
 
     private static final String METRIC_ENABLED_CONF_FILENAME = "performance_analyzer_enabled.conf";
     @Inject
-    public PerformanceAnalyzerConfigAction(Settings settings, RestController controller) {
+    public PerformanceAnalyzerConfigAction(Settings settings, RestController controller,ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
         super(settings);
         controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config", this);
         controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config", this);
+        this.scheduledMetricCollectorsExecutor = scheduledMetricCollectorsExecutor ;
         this.featureEnabled = getFeatureEnabledFromConf();
         LOG.info("PerformanceAnalyzer Enabled: {}", this.featureEnabled);
     }
@@ -82,6 +86,9 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                         bValue, this.featureEnabled);
                 if (this.featureEnabled != bValue) {
                     this.featureEnabled = (Boolean) value;
+                    if( scheduledMetricCollectorsExecutor != null) {
+                       scheduledMetricCollectorsExecutor.setEnabled(this.featureEnabled);
+                    }
                     saveFeatureEnabledToConf(this.featureEnabled);
                 }
             }
@@ -138,10 +145,16 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 String nextLine = sc.nextLine();
                 featureEnabled = Boolean.parseBoolean(nextLine);
                 isInitialized = true;
+                if ( scheduledMetricCollectorsExecutor != null) {
+                	scheduledMetricCollectorsExecutor.setEnabled(featureEnabled);
+                }
             } catch (java.nio.file.NoSuchFileException ex) {
                 saveFeatureEnabledToConf(featureEanbledDefaultValue);
                 isInitialized = true;
                 featureEnabled = featureEanbledDefaultValue;
+                if( scheduledMetricCollectorsExecutor != null) {
+                       scheduledMetricCollectorsExecutor.setEnabled(featureEnabled);
+                }
             } catch (Exception e) {
                 LOG.error("Error reading Feature Enabled from Conf file", e);
                 featureEnabled = featureEanbledDefaultValue;
