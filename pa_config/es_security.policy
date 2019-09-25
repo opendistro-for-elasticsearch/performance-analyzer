@@ -1,0 +1,12 @@
+grant codebase "file:${java.home}/../lib/tools.jar" {
+  permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.attach" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.internal.jvmstat" {
+    permission java.security.AllPermission;
+};
+
