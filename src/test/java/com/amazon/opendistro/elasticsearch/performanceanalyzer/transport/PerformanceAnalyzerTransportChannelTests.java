@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
@@ -22,8 +23,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSett
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 
+@Ignore
 public class PerformanceAnalyzerTransportChannelTests extends CustomMetricsLocationTestBase {
-
     @Test
     public void testShardBulkMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");

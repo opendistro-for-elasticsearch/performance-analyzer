@@ -15,18 +15,26 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
 
+@Ignore
 public class MasterServiceMetricsTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testMasterServiceMetrics() {
+        MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
+        MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1353723339;
 

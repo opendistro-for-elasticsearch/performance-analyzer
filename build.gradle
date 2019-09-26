@@ -21,6 +21,7 @@ buildscript {
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 
     dependencies {
@@ -92,6 +93,7 @@ project.afterEvaluate {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 
@@ -114,12 +116,11 @@ dependencies {
         all*.exclude group: "org.elasticsearch", module: "securemock"
     }
 
-    compile 'org.jooq:jooq:3.10.8'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
-    compile 'org.xerial:sqlite-jdbc:3.8.11.2'
     compile 'com.google.guava:guava:27.0.1-jre'
+    compile 'org.jooq:jooq:3.10.8'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer:1.0';
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
 
     // JDK9+ has to run powermock 2+. https://github.com/powermock/powermock/issues/888
