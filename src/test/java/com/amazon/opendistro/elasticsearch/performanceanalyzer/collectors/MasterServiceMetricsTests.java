@@ -33,9 +33,9 @@ public class MasterServiceMetricsTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testMasterServiceMetrics() {
-    	MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
-    	MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
-    	System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+        MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
+        MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1353723339;
 
         MasterServiceMetrics masterServiceMetrics = new MasterServiceMetrics();

@@ -54,7 +54,7 @@ public class AbstractTests {
 
     @BeforeClass
     public static void setupLogging() {
-    	Utils.configureMetrics();
+        Utils.configureMetrics();
         ConfigurationBuilder<BuiltConfiguration> configurationBuilder = ConfigurationBuilderFactory
                 .newConfigurationBuilder();
         configurationBuilder.setStatusLevel(Level.INFO);

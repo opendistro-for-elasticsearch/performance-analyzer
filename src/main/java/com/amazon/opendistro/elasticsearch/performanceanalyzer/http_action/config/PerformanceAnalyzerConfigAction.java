@@ -64,7 +64,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
 
     private static final String METRIC_ENABLED_CONF_FILENAME = "performance_analyzer_enabled.conf";
     @Inject
-    public PerformanceAnalyzerConfigAction(Settings settings, RestController controller,ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
+    public PerformanceAnalyzerConfigAction(Settings settings, RestController controller,
+        ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
         super(settings);
         controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config", this);
         controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config", this);
@@ -146,7 +147,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 featureEnabled = Boolean.parseBoolean(nextLine);
                 isInitialized = true;
                 if ( scheduledMetricCollectorsExecutor != null) {
-                	scheduledMetricCollectorsExecutor.setEnabled(featureEnabled);
+                    scheduledMetricCollectorsExecutor.setEnabled(featureEnabled);
                 }
             } catch (java.nio.file.NoSuchFileException ex) {
                 saveFeatureEnabledToConf(featureEanbledDefaultValue);

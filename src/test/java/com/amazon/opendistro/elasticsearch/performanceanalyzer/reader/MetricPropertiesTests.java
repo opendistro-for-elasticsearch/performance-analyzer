@@ -24,6 +24,7 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -38,6 +39,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@Ignore
 public class MetricPropertiesTests extends AbstractReaderTests {
 
     public MetricPropertiesTests() throws SQLException, ClassNotFoundException {
