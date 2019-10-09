@@ -15,21 +15,28 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Mock;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 @Ignore
 public class SearchListenerTests extends CustomMetricsLocationTestBase {
+    @Mock
+    private PerformanceAnalyzerController mockController;
+
     @Test
     public void testShardSearchMetrics() {
+        initMocks(this);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1053720339;
-        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener();
+        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener(mockController);
         performanceanalyzerSearchListener.saveMetricValues("dewrjcve", startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID", "start");
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +

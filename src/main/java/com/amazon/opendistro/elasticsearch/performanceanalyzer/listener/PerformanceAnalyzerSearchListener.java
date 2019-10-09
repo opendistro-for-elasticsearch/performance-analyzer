@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.index.shard.SearchOperationListener;
 import org.elasticsearch.search.internal.SearchContext;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CommonDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CommonMetric;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
@@ -32,7 +32,12 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
     private static final SearchListener NO_OP_SEARCH_LISTENER = new NoOpSearchListener();
     private static final int KEYS_PATH_LENGTH = 4;
+    private final PerformanceAnalyzerController controller;
     private SearchListener searchListener;
+
+    public PerformanceAnalyzerSearchListener(final PerformanceAnalyzerController controller) {
+        this.controller = controller;
+    }
 
     @Override
     public String toString() {
@@ -41,8 +46,7 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
 
     private SearchListener getSearchListener() {
-        return PerformanceAnalyzerConfigAction.getInstance() != null
-                && PerformanceAnalyzerConfigAction.getInstance().isFeatureEnabled() ? this : NO_OP_SEARCH_LISTENER;
+        return controller.isPerformanceAnalyzerEnabled() ? this : NO_OP_SEARCH_LISTENER;
     }
 
     @Override

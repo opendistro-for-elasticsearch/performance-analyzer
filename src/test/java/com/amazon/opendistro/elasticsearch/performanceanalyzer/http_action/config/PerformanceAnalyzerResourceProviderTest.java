@@ -15,36 +15,20 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.MockitoAnnotations.initMocks;
+
+import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-import org.powermock.api.mockito.PowerMockito;
-
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
-import java.util.Collections;
-
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-import org.elasticsearch.rest.BaseRestHandler;
 
 
 public class PerformanceAnalyzerResourceProviderTest {
@@ -61,8 +45,10 @@ public class PerformanceAnalyzerResourceProviderTest {
   @Test
   public void getAgentUriTest() throws Exception {
     //Case1 : Positive Scenario
-    String requestUri1 = "http://localhost:9200/_opendistro/_performanceanalyzer/_agent/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all";
-    String expectedResponseUri = "http://localhost:9600/_opendistro/_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all";
+    String requestUri1 = "http://localhost:9200/_opendistro/_performanceanalyzer/"
+        + "_agent/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all";
+    String expectedResponseUri = "http://localhost:9600/_opendistro/_performanceanalyzer/"
+        + "metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all";
 
     RestRequest request = new RestRequest(null, new HashMap<>(), requestUri1, Collections.emptyMap(), null, null) {
       @Override

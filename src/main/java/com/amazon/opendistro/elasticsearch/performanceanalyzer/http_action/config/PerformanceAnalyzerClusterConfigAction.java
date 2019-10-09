@@ -1,0 +1,102 @@
+package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
+
+import java.io.IOException;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentHelper;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.BytesRestResponse;
+import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestStatus;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
+
+/**
+ * Rest request handler for handling cluster-wide enabling and disabling of performance analyzer features.
+ */
+public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
+    private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerClusterConfigAction.class);
+    private static final String PA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/cluster/config";
+    private static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
+    private static final String ENABLED = "enabled";
+    private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
+    private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
+
+    private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
+
+    public PerformanceAnalyzerClusterConfigAction(final Settings settings, final RestController restController,
+                                                  final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler) {
+        super(settings);
+        this.clusterSettingHandler = clusterSettingHandler;
+        registerHandlers(restController);
+    }
+
+    private void registerHandlers(final RestController controller) {
+        controller.registerHandler(RestRequest.Method.GET, PA_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, PA_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, RCA_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH, this);
+    }
+
+    /**
+     * @return the name of this handler. The name should be human readable and
+     * should describe the action that will performed when this API is
+     * called.
+     */
+    @Override
+    public String getName() {
+        return PerformanceAnalyzerClusterConfigAction.class.getSimpleName();
+    }
+
+    /**
+     * Prepare the request for execution. Implementations should consume all request params before
+     * returning the runnable for actual execution. Unconsumed params will immediately terminate
+     * execution of the request. However, some params are only used in processing the response;
+     * implementations can override {@link BaseRestHandler#responseParams()} to indicate such
+     * params.
+     *
+     * @param request the request to execute
+     * @param client  client for executing actions on the local node
+     * @return the action to execute
+     * @throws IOException if an I/O exception occurred parsing the request and preparing for
+     *                     execution
+     */
+    @Override
+    protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
+        if (request.method() == RestRequest.Method.POST && request.content().length() > 0) {
+            Map<String, Object> map = XContentHelper.convertToMap(request.content(), false, XContentType.JSON).v2();
+            Object value = map.get(ENABLED);
+            LOG.debug("PerformanceAnalyzer:Value (Object) Received as Part of Request: {} current value: {}", value,
+                    clusterSettingHandler.getCurrentClusterSettingValue());
+
+            if (value instanceof Boolean) {
+                if (request.path().contains(RCA_CLUSTER_CONFIG_PATH)) {
+                    clusterSettingHandler.updateRcaSetting((Boolean) value);
+                } else {
+                    clusterSettingHandler.updatePerformanceAnalyzerSetting((Boolean) value);
+                }
+            } else {
+                LOG.error("Needed boolean value for enabled key. Got non-boolean instead. Ignoring the request.");
+            }
+        }
+
+        return channel -> {
+            try {
+                XContentBuilder builder = channel.newBuilder();
+                builder.startObject();
+                builder.field(CURRENT, clusterSettingHandler.getCurrentClusterSettingValue());
+                builder.endObject();
+                channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
+            } catch (IOException ioe) {
+                LOG.error("Error sending response", ioe);
+            }
+        };
+    }
+}

@@ -4,20 +4,29 @@ import java.io.File;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 public class EventLogFileHandlerTest {
+    @Mock
+    private PerformanceAnalyzerController mockController;
+
     String pathToTestMetricsDir;
 
     @Before
     public void init() {
+        initMocks(this);
         pathToTestMetricsDir = "/tmp/testMetrics/";
         deleteDirectory(new File(pathToTestMetricsDir));
         boolean newDir = new File(pathToTestMetricsDir).mkdir();
+        when(mockController.isPerformanceAnalyzerEnabled()).thenReturn(true);
     }
 
     private boolean deleteDirectory(File directoryToBeDeleted) {
@@ -39,14 +48,14 @@ public class EventLogFileHandlerTest {
         long currTime = System.currentTimeMillis();
         HeapMetricsCollector heapMetricsCollector = new HeapMetricsCollector();
 
-        for (int i=0; i<count; i++) {
+        for (int i = 0; i < count; i++) {
             heapMetricsCollector.collectMetrics(currTime);
         }
 
         EventLog eventLog = new EventLog();
         EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, pathToTestMetricsDir);
         EventLogQueueProcessor queuePurgerAndPersistor = new EventLogQueueProcessor(eventLogFileHandler,
-                MetricsConfiguration.SAMPLING_INTERVAL, MetricsConfiguration.SAMPLING_INTERVAL);
+                MetricsConfiguration.SAMPLING_INTERVAL, MetricsConfiguration.SAMPLING_INTERVAL, mockController);
         queuePurgerAndPersistor.purgeQueueAndPersist();
         return PerformanceAnalyzerMetrics.getTimeInterval(currTime);
     }
