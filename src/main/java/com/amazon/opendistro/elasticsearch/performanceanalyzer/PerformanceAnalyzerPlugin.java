@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -200,7 +201,12 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings,
             restController, scheduledMetricCollectorsExecutor);
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
-        return singletonList(performanceanalyzerConfigAction);
+        PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
+        List<org.elasticsearch.rest.RestHandler> handlerList = new ArrayList<org.elasticsearch.rest.RestHandler>();
+        handlerList.add(performanceanalyzerConfigAction);
+        handlerList.add(performanceAnalyzerRp);
+
+        return handlerList;
     }
 
     @Override
