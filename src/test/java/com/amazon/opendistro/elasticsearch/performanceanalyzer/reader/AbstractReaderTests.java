@@ -27,6 +27,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
 import org.junit.Ignore;
@@ -178,7 +180,7 @@ public class AbstractReaderTests extends AbstractTests {
     protected String createNodeDetailsMetrics(String id, String ipAddress) {
         StringBuffer value = new StringBuffer();
 
-        value.append(new NodeDetailsStatus(id, ipAddress)
+        value.append(new NodeDetailsStatus(id, ipAddress, NodeRole.UNKNOWN.toString())
                 .serialize());
 
         return value.toString();
