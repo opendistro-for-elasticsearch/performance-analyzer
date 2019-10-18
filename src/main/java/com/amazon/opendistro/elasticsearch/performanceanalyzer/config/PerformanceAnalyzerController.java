@@ -92,7 +92,7 @@ public class PerformanceAnalyzerController {
             try {
                 paEnabledFromConf = readBooleanFromFile(filePath);
             } catch (Exception e) {
-                LOG.error("Error reading Performance Analyzer state from Conf file", e);
+                LOG.debug("Error reading Performance Analyzer state from Conf file", e);
                 if (e instanceof NoSuchFileException) {
                     saveStateToConf(paEnabledDefaultValue, PERFORMANCE_ANALYZER_ENABLED_CONF);
                 }
@@ -110,7 +110,7 @@ public class PerformanceAnalyzerController {
             try {
                 rcaEnabledFromConf = readBooleanFromFile(filePath);
             } catch (Exception e) {
-                LOG.error("Error reading Performance Analyzer state from Conf file", e);
+                LOG.debug("Error reading Performance Analyzer state from Conf file", e);
                 if (e instanceof NoSuchFileException) {
                     saveStateToConf(rcaEnabledDefaultValue, RCA_ENABLED_CONF);
                 }
