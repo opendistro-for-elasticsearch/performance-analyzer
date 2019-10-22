@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -40,7 +41,8 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   private static PerformanceAnalyzerResourceProvider instance = null;
   private static final int HTTP_CLIENT_CONNECTION_TIMEOUT_MILLIS = 200;
   private static final String AGENT_PATH = "/_opendistro/_performanceanalyzer/_agent/";
-  private static final String REDIRECT_BASE_PATH = "http://localhost:9600/_opendistro/_performanceanalyzer/";
+  private static final String DEFAULT_PORT_NUMBER = "9650";
+  private final String portNumber;
   private static final String RCA = "rca";
   private static final String METRICS = "metrics";
 
@@ -48,6 +50,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   public PerformanceAnalyzerResourceProvider(Settings settings, RestController controller) {
     super(settings);
     controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, AGENT_PATH + "{redirectEndpoint}", this);
+    portNumber = PluginSettings.instance().getSettingValue("webservice-listener-port", DEFAULT_PORT_NUMBER);
   }
 
   public String getName() {
@@ -109,6 +112,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   public URL getAgentUri(RestRequest request) throws IOException{
     String redirectEndpoint = request.param("redirectEndpoint");
     String uri = "";
+    String redirectBasePath = "http://localhost:" + portNumber + "/_opendistro/_performanceanalyzer/";
     // Need to register all params in ES request else es throws illegal_argument_exception
     for (String key : request.params().keySet()){
       request.param(key);
@@ -118,7 +122,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
     switch (redirectEndpoint){
       case METRICS:
       case RCA:
-        uri = String.format(REDIRECT_BASE_PATH + request.uri().split(AGENT_PATH)[1]);
+        uri = String.format(redirectBasePath + request.uri().split(AGENT_PATH)[1]);
         break;
 
       default:
