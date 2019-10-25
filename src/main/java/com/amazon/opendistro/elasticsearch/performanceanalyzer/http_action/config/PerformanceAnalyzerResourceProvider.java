@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -68,17 +69,18 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
     if (isHttpsEnabled) {
       // skip host name verification
       // Create a trust manager that does not validate certificate chains
-      TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager() {
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
+      TrustManager[] trustAllCerts = new TrustManager[] {
+          new X509TrustManager() {
+          public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+            return null;
+          }
 
-        public void checkClientTrusted(X509Certificate[] certs, String authType) {
-        }
+          public void checkClientTrusted(X509Certificate[] certs, String authType) {
+          }
 
-        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+          public void checkServerTrusted(X509Certificate[] certs, String authType) {
+          }
         }
-      }
       };
 
       // Install the all-trusting trust manager
@@ -107,6 +109,8 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
     StringBuilder response = new StringBuilder();
     String inputLine;
+    int responseCode;
+
     URL url = getAgentUri(request);
     // 'url' is null if no correct mapping for input uri is found
     if (url == null) {
@@ -116,24 +120,31 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
       };
     } else {
       HttpURLConnection httpURLConnection = isHttpsEnabled ? createHttpsURLConnection(url) :
-              createHttpURLConnection(url);
+          createHttpURLConnection(url);
       //Build Response in buffer
-      try (BufferedReader in = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()))) {
+      responseCode = httpURLConnection.getResponseCode();
+      InputStream inputStream = (responseCode == HttpsURLConnection.HTTP_OK) ?
+          httpURLConnection.getInputStream() : httpURLConnection.getErrorStream();
+
+      try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
         while ((inputLine = in.readLine()) != null) {
           response.append(inputLine);
         }
         LOG.debug("Response received - {}", response);
       } catch (Exception ex) {
-        LOG.error("Error receiving response for Request Uri {} - {}", request.uri(), ex);
+        LOG.debug("Error receiving response for Request Uri {} - {}", request.uri(), ex);
         return channel -> {
-          channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "Something went wrong"));
+          channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR,
+              "Encountered error possibly with downstream APIs"));
         };
       }
 
+      RestResponse finalResponse = new BytesRestResponse(RestStatus.fromCode(responseCode),
+          String.valueOf(response));
+      LOG.debug("finalResponse: {}", finalResponse);
+
       return channel -> {
         try {
-          RestResponse finalResponse = new BytesRestResponse(RestStatus.OK, String.valueOf(response));
-          LOG.debug("finalResponse: {}", finalResponse);
           Map<String, List<String>> map = httpURLConnection.getHeaderFields();
           for (Map.Entry<String, List<String>> entry : map.entrySet()) {
             finalResponse.addHeader(entry.getKey(), entry.getValue().toString());
