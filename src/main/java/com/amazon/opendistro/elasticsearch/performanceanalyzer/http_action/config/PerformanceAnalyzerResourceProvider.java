@@ -69,18 +69,18 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
     if (isHttpsEnabled) {
       // skip host name verification
       // Create a trust manager that does not validate certificate chains
-      TrustManager[] trustAllCerts = new TrustManager[] {
-          new X509TrustManager() {
-          public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return null;
-          }
+      TrustManager[] trustAllCerts = new TrustManager[]{
+              new X509TrustManager() {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                  return null;
+                }
 
-          public void checkClientTrusted(X509Certificate[] certs, String authType) {
-          }
+                public void checkClientTrusted(X509Certificate[] certs, String authType) {
+                }
 
-          public void checkServerTrusted(X509Certificate[] certs, String authType) {
-          }
-        }
+                public void checkServerTrusted(X509Certificate[] certs, String authType) {
+                }
+              }
       };
 
       // Install the all-trusting trust manager
@@ -132,7 +132,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
         }
         LOG.debug("Response received - {}", response);
       } catch (Exception ex) {
-        LOG.debug("Error receiving response for Request Uri {} - {}", request.uri(), ex);
+        LOG.error("Error receiving response for Request Uri {} - {}", request.uri(), ex);
         return channel -> {
           channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR,
               "Encountered error possibly with downstream APIs"));
