@@ -13,6 +13,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     private static final int ENABLED_VALUE = 1;
     private static final int RCA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal();
     private static final int PA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.PA_BIT.ordinal();
+    private static final int LOGGING_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.LOGGING_BIT.ordinal();
     private static final int MAX_ALLOWED_BIT_POS = Math.min(PerformanceAnalyzerFeatureBits.values().length, Integer.SIZE - 1);
 
     private final PerformanceAnalyzerController controller;
@@ -33,6 +34,16 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      */
     public void updatePerformanceAnalyzerSetting(final boolean state) {
         final Integer settingIntValue = getPASettingValueFromState(state);
+        clusterSettingsManager.updateSetting(COMPOSITE_PA_SETTING, settingIntValue);
+    }
+
+    /**
+     * Updates the Logging setting across the cluster.
+     *
+     * @param state The desired state for logging.
+     */
+    public void updateLoggingSetting(final boolean state) {
+        final Integer settingIntValue = getLoggingSettingValueFromState(state);
         clusterSettingsManager.updateSetting(COMPOSITE_PA_SETTING, settingIntValue);
     }
 
@@ -58,6 +69,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         if (newSettingValue != null) {
             controller.updatePerformanceAnalyzerState(getPAStateFromSetting(newSettingValue));
             controller.updateRcaState(getRcaStateFromSetting(newSettingValue));
+            controller.updateLoggingState(getLoggingStateFromSetting(newSettingValue));
         }
     }
 
@@ -94,7 +106,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         if (state) {
             return setBit(clusterSetting, PA_ENABLED_BIT_POS);
         } else {
-            return resetBit(resetBit(clusterSetting, PA_ENABLED_BIT_POS), RCA_ENABLED_BIT_POS);
+            return resetBit(resetBit(resetBit(clusterSetting, PA_ENABLED_BIT_POS), RCA_ENABLED_BIT_POS), LOGGING_ENABLED_BIT_POS);
         }
     }
 
@@ -106,6 +118,16 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      */
     private boolean getRcaStateFromSetting(final int settingValue) {
         return ((settingValue >> RCA_ENABLED_BIT_POS) & BIT_ONE) == ENABLED_VALUE;
+    }
+
+    /**
+     * Extracts the boolean value for logging state from the cluster setting.
+     *
+     * @param settingValue The composite setting value.
+     * @return true if the LOGGING bit is set, false otherwise.
+     */
+    private boolean getLoggingStateFromSetting(final int settingValue) {
+        return ((settingValue >> LOGGING_ENABLED_BIT_POS) & BIT_ONE) == ENABLED_VALUE;
     }
 
     /**
@@ -122,6 +144,23 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
             return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
         } else {
             return resetBit(clusterSetting, RCA_ENABLED_BIT_POS);
+        }
+    }
+
+    /**
+     * Converts the boolean logging state to composite cluster setting.
+     * Enables logging only if performance analyzer is also set. Otherwise, results in a no-op.
+     *
+     * @param shouldEnable the state of logging. Will try to enable if true, disables logging if false.
+     * @return composite cluster setting as an integer.
+     */
+    private Integer getLoggingSettingValueFromState(final boolean shouldEnable) {
+        int clusterSetting = currentClusterSetting != UNSET_CLUSTER_SETTING_VALUE ? currentClusterSetting : CLUSTER_SETTING_DISABLED_VALUE;
+
+        if (shouldEnable) {
+            return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
+        } else {
+            return resetBit(clusterSetting, LOGGING_ENABLED_BIT_POS);
         }
     }
 

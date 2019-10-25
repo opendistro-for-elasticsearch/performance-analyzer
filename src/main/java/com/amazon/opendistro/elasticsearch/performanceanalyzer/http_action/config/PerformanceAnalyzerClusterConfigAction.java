@@ -25,6 +25,7 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerClusterConfigAction.class);
     private static final String PA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/cluster/config";
     private static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
+    private static final String LOGGING_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/cluster/config";
     private static final String ENABLED = "enabled";
     private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
@@ -43,6 +44,8 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
         controller.registerHandler(RestRequest.Method.POST, PA_CLUSTER_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.GET, RCA_CLUSTER_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, LOGGING_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, LOGGING_CLUSTER_CONFIG_PATH, this);
     }
 
     /**
@@ -79,6 +82,8 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
             if (value instanceof Boolean) {
                 if (request.path().contains(RCA_CLUSTER_CONFIG_PATH)) {
                     clusterSettingHandler.updateRcaSetting((Boolean) value);
+                } else if (request.path().contains(LOGGING_CLUSTER_CONFIG_PATH)) {
+                    clusterSettingHandler.updateLoggingSetting((Boolean) value);
                 } else {
                     clusterSettingHandler.updatePerformanceAnalyzerSetting((Boolean) value);
                 }

@@ -39,10 +39,12 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final String ENABLED = "enabled";
     private static final String PA_ENABLED = "performanceAnalyzerEnabled";
     private static final String RCA_ENABLED = "rcaEnabled";
+    private static final String PA_LOGGING_ENABLED = "loggingEnabled";
     private static PerformanceAnalyzerConfigAction instance = null;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
     private static final String PA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/config";
+    private static final String LOGGING_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/config";
 
     public static PerformanceAnalyzerConfigAction getInstance() {
         return instance;
@@ -67,6 +69,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
         controller.registerHandler(RestRequest.Method.POST, PA_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.GET, RCA_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.POST, RCA_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, LOGGING_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, LOGGING_CONFIG_PATH, this);
     }
 
     @Override
@@ -83,20 +87,21 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                     // If RCA needs to be turned on, we need to have PA turned on also.
                     // If this is not the case, return error.
                     if (shouldEnable && !performanceAnalyzerController.isPerformanceAnalyzerEnabled()) {
-                        return restChannel -> {
-                            XContentBuilder builder = restChannel.newErrorBuilder();
-                            builder.startObject();
-                            builder.field("Error: PA not enabled. Enable PA before turning RCA on");
-                            builder.endObject();
-                            restChannel.sendResponse(new BytesRestResponse(RestStatus.BAD_REQUEST, builder));
-                        };
+                        return getChannelConsumerWithError("Error: PA not enabled. Enable PA before turning RCA on");
                     }
 
                     performanceAnalyzerController.updateRcaState(shouldEnable);
+                } else if (request.path().contains(LOGGING_CONFIG_PATH)) {
+                    if (shouldEnable && !performanceAnalyzerController.isPerformanceAnalyzerEnabled()) {
+                        return getChannelConsumerWithError("Error: PA not enabled. Enable PA before turning Logging on");
+                    }
+
+                    performanceAnalyzerController.updateLoggingState(shouldEnable);
                 } else {
                     // Disabling Performance Analyzer should disable the RCA framework as well.
                     if (!shouldEnable) {
                         performanceAnalyzerController.updateRcaState(false);
+                        performanceAnalyzerController.updateLoggingState(false);
                     }
                     performanceAnalyzerController.updatePerformanceAnalyzerState(shouldEnable);
                 }
@@ -109,6 +114,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 builder.startObject();
                 builder.field(PA_ENABLED, performanceAnalyzerController.isPerformanceAnalyzerEnabled());
                 builder.field(RCA_ENABLED, performanceAnalyzerController.isRcaEnabled());
+                builder.field(PA_LOGGING_ENABLED, performanceAnalyzerController.isLoggingEnabled());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
@@ -120,5 +126,15 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     @Override
     public String getName() {
         return "PerformanceAnalyzer_Config_Action";
+    }
+
+    private RestChannelConsumer getChannelConsumerWithError(String error) {
+        return restChannel -> {
+            XContentBuilder builder = restChannel.newErrorBuilder();
+            builder.startObject();
+            builder.field(error);
+            builder.endObject();
+            restChannel.sendResponse(new BytesRestResponse(RestStatus.BAD_REQUEST, builder));
+        };
     }
 }

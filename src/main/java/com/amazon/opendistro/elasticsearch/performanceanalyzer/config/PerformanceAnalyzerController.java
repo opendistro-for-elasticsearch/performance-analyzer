@@ -3,6 +3,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -15,18 +16,22 @@ import org.apache.logging.log4j.Logger;
 public class PerformanceAnalyzerController {
     private static final String PERFORMANCE_ANALYZER_ENABLED_CONF = "performance_analyzer_enabled.conf";
     private static final String RCA_ENABLED_CONF = "rca_enabled.conf";
+    private static final String LOGGING_ENABLED_CONF = "logging_enabled.conf";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
 
     private boolean paEnabled;
     private boolean rcaEnabled;
+    private boolean loggingEnabled;
     private boolean paEnabledDefaultValue = false;
     private boolean rcaEnabledDefaultValue = false;
+    private boolean loggingEnabledDefaultValue = false;
     private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
 
     public PerformanceAnalyzerController(final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
         this.scheduledMetricCollectorsExecutor = scheduledMetricCollectorsExecutor;
         initPerformanceAnalyzerStateFromConf();
         initRcaStateFromConf();
+        initLoggingStateFromConf();
     }
 
     /**
@@ -56,6 +61,10 @@ public class PerformanceAnalyzerController {
         return rcaEnabled;
     }
 
+    public boolean isLoggingEnabled() {
+        return loggingEnabled;
+    }
+
     /**
      * Updates the state of performance analyzer(writer and engine).
      *
@@ -83,6 +92,22 @@ public class PerformanceAnalyzerController {
 
         this.rcaEnabled = shouldEnable;
         saveStateToConf(this.rcaEnabled, RCA_ENABLED_CONF);
+    }
+
+    /**
+     * Updates the state of performance analyzer logging.
+     *
+     * @param shouldEnable The desired state of performance analyzer logging. False to disable, and true to enable.
+     */
+    public void updateLoggingState(final boolean shouldEnable) {
+        if (shouldEnable && !isPerformanceAnalyzerEnabled()) {
+            return;
+        }
+        this.loggingEnabled = shouldEnable;
+        if (scheduledMetricCollectorsExecutor != null) {
+            PerformanceAnalyzerMetrics.setIsMetricsLogEnabled(this.loggingEnabled);
+        }
+        saveStateToConf(this.loggingEnabled, LOGGING_ENABLED_CONF);
     }
 
     private void initPerformanceAnalyzerStateFromConf() {
@@ -119,6 +144,25 @@ public class PerformanceAnalyzerController {
 
             // For RCA framework to be enabled, it needs both PA and RCA to be enabled.
             updateRcaState(paEnabled && rcaEnabledFromConf);
+        });
+    }
+
+    private void initLoggingStateFromConf() {
+        Path filePath = Paths.get(getDataDirectory(), LOGGING_ENABLED_CONF);
+        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
+            boolean loggingEnabledFromConf;
+            try {
+                loggingEnabledFromConf = readBooleanFromFile(filePath);
+            } catch (Exception e) {
+                LOG.debug("Error reading logging state from Conf file", e);
+                if (e instanceof NoSuchFileException) {
+                    saveStateToConf(loggingEnabledDefaultValue, LOGGING_ENABLED_CONF);
+                }
+                loggingEnabledFromConf = loggingEnabledDefaultValue;
+            }
+
+            // For logging to be enabled, it needs both PA and Logging to be enabled.
+            updateLoggingState(paEnabled && loggingEnabledFromConf);
         });
     }
 
