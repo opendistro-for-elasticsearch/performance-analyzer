@@ -38,7 +38,7 @@ import java.util.Map;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.node.DiscoveryNode;
-import org.elasticsearch.cluster.node.DiscoveryNode.Role;
+import org.elasticsearch.cluster.node.DiscoveryNodeRole;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.transport.TransportAddress;
@@ -466,12 +466,12 @@ public class CollectMetricsTests extends AbstractTests {
 
         final DiscoveryNode node1 = new DiscoveryNode("s7gDCVn", nodeId1,
                 new TransportAddress(address1, 9200), emptyMap(),
-                singleton(Role.MASTER), Version.CURRENT);
+                singleton(DiscoveryNodeRole.MASTER_ROLE), Version.CURRENT);
         nodesList.add(node1);
 
         final DiscoveryNode node2 = new DiscoveryNode("Zn1QcSU", nodeId2,
                 new TransportAddress(address2, 9200), emptyMap(),
-                singleton(Role.DATA), Version.CURRENT);
+                singleton(DiscoveryNodeRole.DATA_ROLE), Version.CURRENT);
         nodesList.add(node2);
 
         return nodesList;
