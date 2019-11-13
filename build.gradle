@@ -63,8 +63,8 @@ esplugin {
     classname 'com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin'
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+//sourceCompatibility = 1.8
+//targetCompatibility = 1.8
 
 compileJava {
     JavaVersion targetVersion = JavaVersion.toVersion(targetCompatibility);
