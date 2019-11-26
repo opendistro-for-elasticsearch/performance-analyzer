@@ -16,6 +16,17 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.AbstractTests;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DiskMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.MetricPropertiesTests.FailureCondition;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,23 +37,9 @@ import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
 import org.junit.Ignore;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.AbstractTests;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DiskMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.MetricPropertiesTests.FailureCondition;
 
 @Ignore
 public class AbstractReaderTests extends AbstractTests {
