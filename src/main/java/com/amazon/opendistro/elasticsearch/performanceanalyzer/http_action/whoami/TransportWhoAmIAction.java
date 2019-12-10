@@ -16,14 +16,13 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.support.ActionFilters;
 import org.elasticsearch.action.support.HandledTransportAction;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.transport.TransportService;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.tasks.Task;
+import org.elasticsearch.transport.TransportService;
 
 public class TransportWhoAmIAction extends HandledTransportAction<WhoAmIRequest, WhoAmIResponse> {
 

@@ -186,7 +186,7 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
                                                                     final SettingsFilter settingsFilter,
                                                                     final IndexNameExpressionResolver indexNameExpressionResolver,
                                                                     final Supplier<DiscoveryNodes> nodesInCluster) {
-        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings, restController);
+        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(restController);
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
         return singletonList(performanceanalyzerConfigAction);
     }

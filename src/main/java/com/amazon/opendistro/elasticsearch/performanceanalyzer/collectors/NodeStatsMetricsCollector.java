@@ -152,7 +152,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             return;
         }
 
-        NodeIndicesStats nodeIndicesStats = indicesService.stats(true, CommonStatsFlags.ALL);
+        NodeIndicesStats nodeIndicesStats = indicesService.stats(CommonStatsFlags.ALL);
 
         HashSet<ShardId> currentShards = new HashSet<>();
 
