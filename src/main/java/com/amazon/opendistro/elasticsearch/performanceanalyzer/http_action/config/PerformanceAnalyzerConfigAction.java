@@ -15,32 +15,27 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Scanner;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
-import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.client.node.NodeClient;
-
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.rest.BytesRestResponse;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Map;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.io.File;
-import java.util.Scanner;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ConfigStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-import org.elasticsearch.common.inject.Inject;
 
 @SuppressWarnings("deprecation")
 public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
@@ -61,8 +56,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
 
     private static final String METRIC_ENABLED_CONF_FILENAME = "performance_analyzer_enabled.conf";
     @Inject
-    public PerformanceAnalyzerConfigAction(Settings settings, RestController controller) {
-        super(settings);
+    public PerformanceAnalyzerConfigAction(RestController controller) {
+        super();
         controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config", this);
         controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config", this);
         this.featureEnabled = getFeatureEnabledFromConf();

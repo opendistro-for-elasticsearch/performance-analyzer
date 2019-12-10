@@ -18,6 +18,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoa
 import java.io.IOException;
 
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
@@ -27,5 +28,11 @@ public class WhoAmIResponse extends ActionResponse implements ToXContent {
         builder.startObject("whoami");
         builder.endObject();
         return builder;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        // This is a no-op call just like how it was in 7.3.2(inherited from TransportMessage
+        // .writeTo)
     }
 }
