@@ -15,18 +15,18 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import java.util.Iterator;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.elasticsearch.cluster.node.DiscoveryNode;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeDetailColumns;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.cluster.node.DiscoveryNode;
+
+import java.util.Iterator;
 
 public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(NodeDetailsCollector.class).samplingInterval;
@@ -40,18 +40,32 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
     @Override
     public void collectMetrics(long startTime) {
         if (ESResources.INSTANCE.getClusterService() == null
-                || ESResources.INSTANCE.getClusterService().state() == null
-                || ESResources.INSTANCE.getClusterService().state().nodes() == null) {
+                || ESResources.INSTANCE.getClusterService()
+                                       .state() == null
+                || ESResources.INSTANCE.getClusterService()
+                                       .state()
+                                       .nodes() == null) {
             return;
         }
 
         StringBuilder value = new StringBuilder();
-        value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds()).append(
-                PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+        value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
+             .append(
+                     PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
-        Iterator<DiscoveryNode> discoveryNodeIterator = ESResources.INSTANCE.getClusterService().state().nodes().iterator();
-        addMetricsToStringBuilder(ESResources.INSTANCE.getClusterService().state().nodes().getLocalNode(), value, "");
-        String localNodeID = ESResources.INSTANCE.getClusterService().state().nodes().getLocalNode().getId();
+        Iterator<DiscoveryNode> discoveryNodeIterator = ESResources.INSTANCE.getClusterService()
+                                                                            .state()
+                                                                            .nodes()
+                                                                            .iterator();
+        addMetricsToStringBuilder(ESResources.INSTANCE.getClusterService()
+                                                      .state()
+                                                      .nodes()
+                                                      .getLocalNode(), value, "");
+        String localNodeID = ESResources.INSTANCE.getClusterService()
+                                                 .state()
+                                                 .nodes()
+                                                 .getLocalNode()
+                                                 .getId();
 
         while (discoveryNodeIterator.hasNext()) {
             addMetricsToStringBuilder(discoveryNodeIterator.next(), value, localNodeID);
@@ -60,12 +74,18 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
     }
 
     private void addMetricsToStringBuilder(DiscoveryNode discoveryNode,
-            StringBuilder value, String localNodeID) {
-        if (!discoveryNode.getId().equals(localNodeID)) {
+                                           StringBuilder value, String localNodeID) {
+        if (!discoveryNode.getId()
+                          .equals(localNodeID)) {
             value.append(new NodeDetailsStatus(discoveryNode.getId(),
-                    discoveryNode.getHostAddress()).serialize())
-                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+                                               discoveryNode.getHostAddress(), getNodeRole(discoveryNode)).serialize())
+                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         }
+    }
+
+    private String getNodeRole(final DiscoveryNode node) {
+        final NodeRole role = node.isDataNode() ? NodeRole.DATA : node.isMasterNode() ? NodeRole.MASTER : NodeRole.UNKNOWN;
+        return role.toString();
     }
 
     @Override
@@ -83,10 +103,13 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
 
         private String hostAddress;
 
-        public NodeDetailsStatus(String id, String hostAddress) {
+        private String role;
+
+        public NodeDetailsStatus(String id, String hostAddress, String role) {
             super();
             this.id = id;
             this.hostAddress = hostAddress;
+            this.role = role;
         }
 
         @JsonProperty(NodeDetailColumns.Constants.ID_VALUE)
@@ -97,6 +120,11 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         @JsonProperty(NodeDetailColumns.Constants.HOST_ADDRESS_VALUE)
         public String getHostAddress() {
             return hostAddress;
+        }
+
+        @JsonProperty(NodeDetailColumns.Constants.ROLE_VALUE)
+        public String getRole() {
+            return role;
         }
     }
 }
