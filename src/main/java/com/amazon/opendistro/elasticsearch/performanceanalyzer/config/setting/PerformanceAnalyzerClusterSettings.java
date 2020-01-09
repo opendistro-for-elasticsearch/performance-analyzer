@@ -21,4 +21,16 @@ public final class PerformanceAnalyzerClusterSettings {
         RCA_BIT,
         LOGGING_BIT
     }
+
+    /**
+     * node stats collector enabled/disabled
+     * less than or equal to 0 : disabled
+     * greater than 0 : enabled, and this set the number of shards per collection
+     */
+    public static final Setting<Integer> PA_NODE_STATS_SETTING = Setting.intSetting(
+            "cluster.metadata.perf_analyzer.pa_node_stats_setting",
+            1,
+            Setting.Property.NodeScope,
+            Setting.Property.Dynamic
+    );
 }
