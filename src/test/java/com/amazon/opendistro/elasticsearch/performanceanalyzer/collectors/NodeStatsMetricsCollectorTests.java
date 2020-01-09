@@ -35,7 +35,7 @@ public class NodeStatsMetricsCollectorTests extends CustomMetricsLocationTestBas
         
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsMetricsCollector.class, MetricsConfiguration.cdefault);
 
-        NodeStatsMetricsCollector nodeStatsMetricsCollector = new NodeStatsMetricsCollector();
+        NodeStatsMetricsCollector nodeStatsMetricsCollector = new NodeStatsMetricsCollector(null);
         nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
 
 

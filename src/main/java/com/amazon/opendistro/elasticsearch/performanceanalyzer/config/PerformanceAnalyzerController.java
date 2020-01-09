@@ -1,27 +1,31 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 
 public class PerformanceAnalyzerController {
     private static final String PERFORMANCE_ANALYZER_ENABLED_CONF = "performance_analyzer_enabled.conf";
     private static final String RCA_ENABLED_CONF = "rca_enabled.conf";
     private static final String LOGGING_ENABLED_CONF = "logging_enabled.conf";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
+    public static final int DEFAULT_NUM_OF_SHARDS_PER_COLLECTION = 0;
 
     private boolean paEnabled;
     private boolean rcaEnabled;
     private boolean loggingEnabled;
+    private volatile int shardsPerCollection;
     private boolean paEnabledDefaultValue = false;
     private boolean rcaEnabledDefaultValue = false;
     private boolean loggingEnabledDefaultValue = false;
@@ -32,6 +36,7 @@ public class PerformanceAnalyzerController {
         initPerformanceAnalyzerStateFromConf();
         initRcaStateFromConf();
         initLoggingStateFromConf();
+        shardsPerCollection = DEFAULT_NUM_OF_SHARDS_PER_COLLECTION;
     }
 
     /**
@@ -63,6 +68,22 @@ public class PerformanceAnalyzerController {
 
     public boolean isLoggingEnabled() {
         return loggingEnabled;
+    }
+
+    /**
+     * Reads the shardsPerCollection parameter in NodeStatsMetric
+     *  @return the count of Shards per Collection
+     */
+    public int getNodeStatsShardsPerCollection() {
+        return shardsPerCollection;
+    }
+
+    /**
+     * Updates the shardsPerCollection parameter in NodeStatsMetric
+     * @param value the desired integer value for Shards per Collection
+     */
+    public void updateNodeStatsShardsPerCollection(int value) {
+        shardsPerCollection = value;
     }
 
     /**
@@ -173,12 +194,12 @@ public class PerformanceAnalyzerController {
         }
     }
 
-        private String getDataDirectory() {
+    private String getDataDirectory() {
         return new org.elasticsearch.env.Environment(
-                ESResources.INSTANCE.getSettings(), ESResources.INSTANCE.getConfigPath())
-                .dataFiles()[0] // $ES_HOME/var/es/data
-                .toFile()
-                .getPath();
+            ESResources.INSTANCE.getSettings(), ESResources.INSTANCE.getConfigPath())
+            .dataFiles()[0] // $ES_HOME/var/es/data
+            .toFile()
+            .getPath();
     }
 
     private void saveStateToConf(boolean featureEnabled, String fileName) {

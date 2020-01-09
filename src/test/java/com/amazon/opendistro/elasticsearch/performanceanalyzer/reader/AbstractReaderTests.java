@@ -37,6 +37,8 @@ import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
 import org.junit.Ignore;
@@ -123,7 +125,7 @@ public class AbstractReaderTests extends AbstractTests {
             long indexWriterMemory, long versionMapMemory,
             long bitsetMemory, FailureCondition condition) {
         // dummyCollector is only used to create the json string
-        NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector();
+        NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
         String str = (dummyCollector.new NodeStatsMetricsStatus(
                 indexingThrottleTime,
                  queryCacheHitCount,

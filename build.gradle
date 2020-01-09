@@ -173,7 +173,8 @@ bundlePlugin {
 
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
-                                             "thirdPartyAudit", "testingConventions"]
+                                             "thirdPartyAudit",
+                                             "testingConventions"]
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {
@@ -214,7 +215,7 @@ afterEvaluate {
         maintainer 'OpenDistro for Elasticsearch Team <opendistro@amazon.com>'
         url 'https://opendistro.github.io/elasticsearch/downloads'
         summary '''
-         Performance Analyzer plugin for OpenDistro for Elasticsearch. 
+         Performance Analyzer plugin for OpenDistro for Elasticsearch.
          Reference documentation can be found at https://opendistro.github.io/elasticsearch/docs.
     '''.stripIndent().replace('\n', ' ').trim()
     }
@@ -232,7 +233,7 @@ afterEvaluate {
         archiveName "${packageName}-${version}.deb"
         dependsOn 'assemble'
     }
-    
+
     task buildPackages(type: GradleBuild) {
          tasks = ['build', 'buildRpm', 'buildDeb']
     }

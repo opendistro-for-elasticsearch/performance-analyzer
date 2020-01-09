@@ -15,37 +15,8 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
-import static java.util.Collections.singletonList;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ClusterSettingsManager;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerClusterConfigAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLog;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLogFileHandler;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -56,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -92,12 +64,45 @@ import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ClusterSettingsManager;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerClusterConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLog;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLogFileHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
+import static java.util.Collections.singletonList;
+
 public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
     public static final String PLUGIN_NAME = "opendistro_performance_analyzer";
     public static final int QUEUE_PURGE_INTERVAL_MS = 1000;
     private static SecurityManager sm = null;
     private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
+    private final NodeStatsSettingHandler nodeStatsSettingHandler;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private final ClusterSettingsManager clusterSettingsManager;
 
@@ -148,6 +153,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PluginSettings.instance();
 
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
+        this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CircuitBreakerCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new OSMetricsCollector());
@@ -156,6 +162,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MetricsPurgeActivity());
 
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector(performanceAnalyzerController));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
@@ -163,16 +170,21 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
         scheduledMetricCollectorsExecutor.start();
 
-        this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
         clusterSettingsManager = new ClusterSettingsManager(
-                Collections.singletonList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING));
+                Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING));
 
         perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(
                 performanceAnalyzerController,
                 clusterSettingsManager);
-
         clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
                 perfAnalyzerClusterSettingHandler);
+
+        nodeStatsSettingHandler = new NodeStatsSettingHandler(
+                performanceAnalyzerController,
+                clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+                nodeStatsSettingHandler);
 
         EventLog eventLog = new EventLog();
         EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
@@ -220,9 +232,10 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings,
                 restController, performanceAnalyzerController);
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
+        PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
         PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
-                restController, perfAnalyzerClusterSettingHandler);
-        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction);
+                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
+        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp);
     }
 
     @Override
@@ -259,7 +272,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
      */
     @Override
     public List<Setting<?>> getSettings() {
-        return Collections.singletonList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING);
+        return Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING);
     }
 
 }

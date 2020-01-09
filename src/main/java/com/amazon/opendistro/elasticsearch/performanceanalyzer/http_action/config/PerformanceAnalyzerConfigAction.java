@@ -37,6 +37,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.Performanc
 public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerConfigAction.class);
     private static final String ENABLED = "enabled";
+    private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
     private static final String PA_ENABLED = "performanceAnalyzerEnabled";
     private static final String RCA_ENABLED = "rcaEnabled";
     private static final String PA_LOGGING_ENABLED = "loggingEnabled";
@@ -106,6 +107,13 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                     performanceAnalyzerController.updatePerformanceAnalyzerState(shouldEnable);
                 }
             }
+            // update node stats setting if exists
+            if (map.containsKey(SHARDS_PER_COLLECTION)) {
+                Object shardPerCollectionValue = map.get(SHARDS_PER_COLLECTION);
+                if (shardPerCollectionValue instanceof Integer) {
+                    performanceAnalyzerController.updateNodeStatsShardsPerCollection((Integer)shardPerCollectionValue);
+                }
+            }
         }
 
         return channel -> {
@@ -115,6 +123,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 builder.field(PA_ENABLED, performanceAnalyzerController.isPerformanceAnalyzerEnabled());
                 builder.field(RCA_ENABLED, performanceAnalyzerController.isRcaEnabled());
                 builder.field(PA_LOGGING_ENABLED, performanceAnalyzerController.isLoggingEnabled());
+                builder.field(SHARDS_PER_COLLECTION, performanceAnalyzerController.getNodeStatsShardsPerCollection());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {

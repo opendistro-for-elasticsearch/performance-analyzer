@@ -3,6 +3,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.conf
 import java.io.IOException;
 import java.util.Map;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -27,15 +28,19 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
     private static final String LOGGING_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/cluster/config";
     private static final String ENABLED = "enabled";
+    private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
     private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
 
     private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
+    private final NodeStatsSettingHandler nodeStatsSettingHandler;
 
     public PerformanceAnalyzerClusterConfigAction(final Settings settings, final RestController restController,
-                                                  final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler) {
+                                                  final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler,
+                                                  final NodeStatsSettingHandler nodeStatsSettingHandler) {
         super(settings);
         this.clusterSettingHandler = clusterSettingHandler;
+        this.nodeStatsSettingHandler = nodeStatsSettingHandler;
         registerHandlers(restController);
     }
 
@@ -87,8 +92,13 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
                 } else {
                     clusterSettingHandler.updatePerformanceAnalyzerSetting((Boolean) value);
                 }
-            } else {
-                LOG.error("Needed boolean value for enabled key. Got non-boolean instead. Ignoring the request.");
+            }
+            // update node stats setting if exists
+            if (map.containsKey(SHARDS_PER_COLLECTION)) {
+                Object shardPerCollectionValue = map.get(SHARDS_PER_COLLECTION);
+                if (shardPerCollectionValue instanceof Integer) {
+                    nodeStatsSettingHandler.updateNodeStatsSetting((Integer)shardPerCollectionValue);
+                }
             }
         }
 
@@ -97,6 +107,7 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
                 XContentBuilder builder = channel.newBuilder();
                 builder.startObject();
                 builder.field(CURRENT, clusterSettingHandler.getCurrentClusterSettingValue());
+                builder.field(SHARDS_PER_COLLECTION, nodeStatsSettingHandler.getNodeStatsSetting());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
