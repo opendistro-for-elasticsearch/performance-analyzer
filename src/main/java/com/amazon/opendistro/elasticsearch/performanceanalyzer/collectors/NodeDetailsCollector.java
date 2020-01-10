@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.node.DiscoveryNode;
+import org.elasticsearch.cluster.node.DiscoveryNodes;
 
 import java.util.Iterator;
 
@@ -53,32 +54,27 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
              .append(
                      PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
-        Iterator<DiscoveryNode> discoveryNodeIterator = ESResources.INSTANCE.getClusterService()
-                                                                            .state()
-                                                                            .nodes()
-                                                                            .iterator();
-        addMetricsToStringBuilder(ESResources.INSTANCE.getClusterService()
-                                                      .state()
-                                                      .nodes()
-                                                      .getLocalNode(), value, "");
-        String localNodeID = ESResources.INSTANCE.getClusterService()
-                                                 .state()
-                                                 .nodes()
-                                                 .getLocalNode()
-                                                 .getId();
+        DiscoveryNodes discoveryNodes = ESResources.INSTANCE.getClusterService().state().nodes();
+
+        DiscoveryNode masterNode = discoveryNodes.getMasterNode();
+
+        Iterator<DiscoveryNode> discoveryNodeIterator = discoveryNodes.iterator();
+        addMetricsToStringBuilder(discoveryNodes.getLocalNode(), value, "", masterNode);
+        String localNodeID = discoveryNodes.getLocalNode().getId();
 
         while (discoveryNodeIterator.hasNext()) {
-            addMetricsToStringBuilder(discoveryNodeIterator.next(), value, localNodeID);
+            addMetricsToStringBuilder(discoveryNodeIterator.next(), value, localNodeID, masterNode);
         }
         saveMetricValues(value.toString(), startTime);
     }
 
     private void addMetricsToStringBuilder(DiscoveryNode discoveryNode,
-                                           StringBuilder value, String localNodeID) {
+                                           StringBuilder value, String localNodeID, DiscoveryNode masterNode) {
         if (!discoveryNode.getId()
                           .equals(localNodeID)) {
+            boolean isMasterNode = discoveryNode.equals(masterNode);
             value.append(new NodeDetailsStatus(discoveryNode.getId(),
-                                               discoveryNode.getHostAddress(), getNodeRole(discoveryNode)).serialize())
+                                               discoveryNode.getHostAddress(), getNodeRole(discoveryNode), isMasterNode).serialize())
                  .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         }
     }
@@ -105,11 +101,14 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
 
         private String role;
 
-        public NodeDetailsStatus(String id, String hostAddress, String role) {
+        private boolean isMasterNode;
+
+        public NodeDetailsStatus(String id, String hostAddress, String role, boolean isMasterNode) {
             super();
             this.id = id;
             this.hostAddress = hostAddress;
             this.role = role;
+            this.isMasterNode = isMasterNode;
         }
 
         @JsonProperty(NodeDetailColumns.Constants.ID_VALUE)
@@ -125,6 +124,11 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         @JsonProperty(NodeDetailColumns.Constants.ROLE_VALUE)
         public String getRole() {
             return role;
+        }
+
+        @JsonProperty(NodeDetailColumns.Constants.IS_MASTER_NODE)
+        public boolean getIsMasterNode() {
+            return isMasterNode;
         }
     }
 }
