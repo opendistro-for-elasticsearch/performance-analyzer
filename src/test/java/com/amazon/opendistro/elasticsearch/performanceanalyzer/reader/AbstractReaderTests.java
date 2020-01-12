@@ -179,7 +179,7 @@ public class AbstractReaderTests extends AbstractTests {
     protected String createNodeDetailsMetrics(String id, String ipAddress) {
         StringBuffer value = new StringBuffer();
 
-        value.append(new NodeDetailsStatus(id, ipAddress, NodeRole.UNKNOWN.toString())
+        value.append(new NodeDetailsStatus(id, ipAddress, NodeRole.UNKNOWN.toString(), false)
                 .serialize());
 
         return value.toString();
