@@ -229,12 +229,12 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                                                                     final SettingsFilter settingsFilter,
                                                                     final IndexNameExpressionResolver indexNameExpressionResolver,
                                                                     final Supplier<DiscoveryNodes> nodesInCluster) {
-        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings,
-                restController, performanceAnalyzerController);
+        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(restController,
+            performanceAnalyzerController);
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
-        PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
-        PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
-                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
+        PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(restController);
+        PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(restController,
+            perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
         return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp);
     }
 

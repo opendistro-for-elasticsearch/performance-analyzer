@@ -60,8 +60,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   private static Set<String> SUPPORTED_REDIRECTIONS = ImmutableSet.of("rca", "metrics");
 
   @Inject
-  public PerformanceAnalyzerResourceProvider(Settings settings, RestController controller) {
-    super(settings);
+  public PerformanceAnalyzerResourceProvider(RestController controller) {
     controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, AGENT_PATH + "{redirectEndpoint}", this);
     PluginSettings pluginSettings = PluginSettings.instance();
     portNumber = pluginSettings.getSettingValue("webservice-listener-port", DEFAULT_PORT_NUMBER);

@@ -35,10 +35,9 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
 
-    public PerformanceAnalyzerClusterConfigAction(final Settings settings, final RestController restController,
+    public PerformanceAnalyzerClusterConfigAction(final RestController restController,
                                                   final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler,
                                                   final NodeStatsSettingHandler nodeStatsSettingHandler) {
-        super(settings);
         this.clusterSettingHandler = clusterSettingHandler;
         this.nodeStatsSettingHandler = nodeStatsSettingHandler;
         registerHandlers(restController);

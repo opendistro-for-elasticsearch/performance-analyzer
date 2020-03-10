@@ -56,10 +56,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     }
 
     @Inject
-    public PerformanceAnalyzerConfigAction(final Settings settings,
-                                           final RestController controller,
+    public PerformanceAnalyzerConfigAction(final RestController controller,
                                            final PerformanceAnalyzerController performanceAnalyzerController) {
-        super(settings);
         this.performanceAnalyzerController = performanceAnalyzerController;
         registerHandlers(controller);
         LOG.info("PerformanceAnalyzer Enabled: {}", performanceAnalyzerController::isPerformanceAnalyzerEnabled);

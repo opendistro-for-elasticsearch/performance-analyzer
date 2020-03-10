@@ -18,14 +18,21 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoa
 import java.io.IOException;
 
 import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.common.io.stream.StreamOutput;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 
 public class WhoAmIResponse extends ActionResponse implements ToXContent {
+
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         builder.startObject("whoami");
         builder.endObject();
         return builder;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) throws IOException {
+        out.writeString("whoami");
     }
 }

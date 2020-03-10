@@ -15,7 +15,13 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami;
 
+import java.io.IOException;
 import org.elasticsearch.action.support.nodes.BaseNodesRequest;
+import org.elasticsearch.common.io.stream.StreamInput;
 
 public class WhoAmIRequest extends BaseNodesRequest<WhoAmIRequest> {
+  // for serialization
+  public WhoAmIRequest(StreamInput in) throws IOException {
+    super(in);
+  }
 }
