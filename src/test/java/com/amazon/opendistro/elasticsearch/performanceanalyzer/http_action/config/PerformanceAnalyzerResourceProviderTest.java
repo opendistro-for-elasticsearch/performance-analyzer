@@ -17,7 +17,6 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.conf
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.junit.Before;
@@ -61,7 +60,7 @@ public class PerformanceAnalyzerResourceProviderTest {
     PowerMockito.mockStatic(PluginSettings.class);
     PowerMockito.when(PluginSettings.instance()).thenReturn(config);
 
-    performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(Settings.EMPTY, mockRestController);
+    performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(mockRestController);
     performanceAnalyzerRp.setPortNumber("9650");
   }
 

@@ -20,7 +20,7 @@ import org.elasticsearch.action.support.nodes.BaseNodesRequest;
 import org.elasticsearch.common.io.stream.StreamInput;
 
 public class WhoAmIRequest extends BaseNodesRequest<WhoAmIRequest> {
-  // for serialization
+
   public WhoAmIRequest(StreamInput in) throws IOException {
     super(in);
   }
