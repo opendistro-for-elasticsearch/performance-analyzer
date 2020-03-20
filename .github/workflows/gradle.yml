@@ -4,6 +4,7 @@ on:
   push: 
     branches: 
       - master
+      - 'rguo*'
 
   pull_request:
     branches: 
