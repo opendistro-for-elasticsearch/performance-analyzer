@@ -2,12 +2,8 @@ name: CD
 
 on:
   push:
-    branches:
-      - 'rguo*'
-
-  pull_request:
-    branches:
-      - 'rguo*'
+    tags:
+      - 'v*'
 
 jobs:
   build:
