@@ -43,9 +43,10 @@ jobs:
 
     - name: Upload Artifacts to S3
       run: |
-        aws s3 cp $artifact s3://artifacts.opendistroforelasticsearch.amazon.com/downloads/elasticsearch-plugins/performance-analyzer/
-        aws s3 cp $rpm_artifact s3://artifacts.opendistroforelasticsearch.amazon.com/downloads/rpms/opendistro-performance-analyzer/
-        aws s3 cp $deb_artifact s3://artifacts.opendistroforelasticsearch.amazon.com/downloads/debs/opendistro-performance-analyzer/
+        s3_path=s3://artifacts.opendistroforelasticsearch.amazon.com/downloads
+        aws s3 cp artifacts/*.zip $s3_path/elasticsearch-plugins/performance-analyzer/
+        aws s3 cp artifacts/*.rpm $s3_path/rpms/opendistro-performance-analyzer/
+        aws s3 cp artifacts/*.deb $s3_path/debs/opendistro-performance-analyzer/
         aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION_ID }} --paths "/downloads/*"
 
     - name: Upload Workflow Artifacts
