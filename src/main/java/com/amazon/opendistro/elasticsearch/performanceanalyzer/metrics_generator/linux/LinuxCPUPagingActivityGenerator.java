@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,72 +15,71 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.linux;
 
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.CPUPagingActivityGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.ThreadCPU;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class LinuxCPUPagingActivityGenerator implements CPUPagingActivityGenerator {
 
-    private Map<String, Double> cpu;
-    private Map<String, Double[]> pagingActivities;
-    public LinuxCPUPagingActivityGenerator() {
-        cpu = new HashMap<>();
-        pagingActivities = new HashMap<>();
-    }
+  private Map<String, Double> cpu;
+  private Map<String, Double[]> pagingActivities;
 
-    @Override
-    public double getCPUUtilization(final String threadId) {
+  public LinuxCPUPagingActivityGenerator() {
+    cpu = new HashMap<>();
+    pagingActivities = new HashMap<>();
+  }
 
-        return cpu.getOrDefault(threadId, 0.0);
-    }
+  @Override
+  public double getCPUUtilization(final String threadId) {
 
-    @Override
-    public double getMajorFault(final String threadId) {
+    return cpu.getOrDefault(threadId, 0.0);
+  }
 
-        return pagingActivities.get(threadId)[0];
-    }
+  @Override
+  public double getMajorFault(final String threadId) {
 
-    @Override
-    public double getMinorFault(final String threadId) {
+    return pagingActivities.get(threadId)[0];
+  }
 
-        return pagingActivities.get(threadId)[1];
-    }
+  @Override
+  public double getMinorFault(final String threadId) {
 
-    @Override
-    public double getResidentSetSize(final String threadId) {
+    return pagingActivities.get(threadId)[1];
+  }
 
-        return pagingActivities.get(threadId)[2];
-    }
+  @Override
+  public double getResidentSetSize(final String threadId) {
 
-    @Override
-    public boolean hasPagingActivity(final String threadId) {
+    return pagingActivities.get(threadId)[2];
+  }
 
-        return pagingActivities.containsKey(threadId);
-    }
+  @Override
+  public boolean hasPagingActivity(final String threadId) {
 
-    @Override
-    public void addSample() {
+    return pagingActivities.containsKey(threadId);
+  }
 
-        cpu.clear();
-        pagingActivities.clear();
-        ThreadCPU.INSTANCE.addSample();
-    }
+  @Override
+  public void addSample() {
 
-    public void setCPUUtilization(final String threadId, final Double cpuUtilization) {
+    cpu.clear();
+    pagingActivities.clear();
+    ThreadCPU.INSTANCE.addSample();
+  }
 
-        cpu.put(threadId, cpuUtilization);
-    }
+  public void setCPUUtilization(final String threadId, final Double cpuUtilization) {
 
-    public Set<String> getAllThreadIds() {
+    cpu.put(threadId, cpuUtilization);
+  }
 
-        return cpu.keySet();
-    }
+  public Set<String> getAllThreadIds() {
 
-    public void setPagingActivities(final String threadId, final Double[] activityes) {
-        pagingActivities.put(threadId, activityes);
-    }
+    return cpu.keySet();
+  }
+
+  public void setPagingActivities(final String threadId, final Double[] activityes) {
+    pagingActivities.put(threadId, activityes);
+  }
 }

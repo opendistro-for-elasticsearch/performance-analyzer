@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -13,19 +13,13 @@
  * permissions and limitations under the License.
  */
 
-
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
 
 /**
- * This helps writing a general parser. Given a MetricDimension, I can parse the
- * metric file using the values provided by the MetricDimension enum. I don't
- * need to hardcode the exact enum name in the parser. The parser only needs to
- * know this enum has a metric's dimensions and use its members as Json key to
- * parse out the concrete metric dimensions. See
+ * This helps writing a general parser. Given a MetricDimension, I can parse the metric file using
+ * the values provided by the MetricDimension enum. I don't need to hardcode the exact enum name in
+ * the parser. The parser only needs to know this enum has a metric's dimensions and use its members
+ * as Json key to parse out the concrete metric dimensions. See
  * src/main/java/com/amazon/opendistro/elasticsearch/performanceanalyzer/reader/MetricProperties.java
- *
- *
  */
-public interface MetricDimension {
-
-}
+public interface MetricDimension {}

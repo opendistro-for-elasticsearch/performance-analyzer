@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -21,84 +21,82 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator
 
 public class LinuxIPMetricsGenerator implements IPMetricsGenerator {
 
+  private NetInterfaceSummary inNetInterfaceSummary;
+  private NetInterfaceSummary outNetInterfaceSummary;
 
-    private NetInterfaceSummary inNetInterfaceSummary;
-    private NetInterfaceSummary outNetInterfaceSummary;
+  @Override
+  public double getInPacketRate4() {
 
-    @Override
-    public double getInPacketRate4() {
+    return inNetInterfaceSummary.getPacketRate4();
+  }
 
-        return inNetInterfaceSummary.getPacketRate4();
-    }
+  @Override
+  public double getOutPacketRate4() {
 
-    @Override
-    public double getOutPacketRate4() {
+    return outNetInterfaceSummary.getPacketRate4();
+  }
 
-        return outNetInterfaceSummary.getPacketRate4();
-    }
+  @Override
+  public double getInDropRate4() {
 
-    @Override
-    public double getInDropRate4() {
+    return inNetInterfaceSummary.getDropRate4();
+  }
 
-        return inNetInterfaceSummary.getDropRate4();
-    }
+  @Override
+  public double getOutDropRate4() {
 
-    @Override
-    public double getOutDropRate4() {
+    return outNetInterfaceSummary.getDropRate4();
+  }
 
-        return outNetInterfaceSummary.getDropRate4();
-    }
+  @Override
+  public double getInPacketRate6() {
 
-    @Override
-    public double getInPacketRate6() {
+    return inNetInterfaceSummary.getPacketRate6();
+  }
 
-        return inNetInterfaceSummary.getPacketRate6();
-    }
+  @Override
+  public double getOutPacketRate6() {
 
-    @Override
-    public double getOutPacketRate6() {
+    return outNetInterfaceSummary.getPacketRate6();
+  }
 
-        return outNetInterfaceSummary.getPacketRate6();
-    }
+  @Override
+  public double getInDropRate6() {
 
-    @Override
-    public double getInDropRate6() {
+    return inNetInterfaceSummary.getDropRate6();
+  }
 
-        return inNetInterfaceSummary.getDropRate6();
-    }
+  @Override
+  public double getOutDropRate6() {
 
-    @Override
-    public double getOutDropRate6() {
+    return outNetInterfaceSummary.getDropRate6();
+  }
 
-        return outNetInterfaceSummary.getDropRate6();
-    }
+  @Override
+  public double getInBps() {
 
-    @Override
-    public double getInBps() {
+    return inNetInterfaceSummary.getBps();
+  }
 
-        return inNetInterfaceSummary.getBps();
-    }
+  @Override
+  public double getOutBps() {
 
-    @Override
-    public double getOutBps() {
+    return outNetInterfaceSummary.getBps();
+  }
 
-        return outNetInterfaceSummary.getBps();
-    }
+  @Override
+  public void addSample() {
 
-    @Override
-    public void addSample() {
+    NetworkInterface.addSample();
+  }
 
-        NetworkInterface.addSample();
-    }
+  public void setInNetworkInterfaceSummary(final NetInterfaceSummary netInterfaceSummary) {
 
-    public void setInNetworkInterfaceSummary(final NetInterfaceSummary netInterfaceSummary) {
+    this.inNetInterfaceSummary = netInterfaceSummary;
+  }
 
-        this.inNetInterfaceSummary = netInterfaceSummary;
-    }
+  public void setOutNetworkInterfaceSummary(final NetInterfaceSummary netInterfaceSummary) {
 
-    public void setOutNetworkInterfaceSummary(final NetInterfaceSummary netInterfaceSummary) {
-
-        this.outNetInterfaceSummary = netInterfaceSummary;
-    }
-
+    this.outNetInterfaceSummary = netInterfaceSummary;
+  }
 }

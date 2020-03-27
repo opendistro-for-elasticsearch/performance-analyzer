@@ -15,6 +15,15 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.rest;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricAttributes;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricsModel;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ClusterDetailsEventProcessor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,21 +37,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 import org.apache.logging.log4j.util.Supplier;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metricsdb.MetricsDB;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricAttributes;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.model.MetricsModel;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ClusterLevelMetricsReader;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.ReaderMetricsProcessor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.JsonConverter;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import org.jooq.Record;
 import org.jooq.Result;
 
@@ -63,7 +61,23 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
-        Map.Entry<Long, MetricsDB> dbEntry = ReaderMetricsProcessor.current.getMetricsDB();
+        LOG.info(
+            "{} {} {}",
+            exchange.getRequestMethod(),
+            exchange.getRemoteAddress(),
+            exchange.getRequestURI());
+        ReaderMetricsProcessor mp = ReaderMetricsProcessor.getInstance();
+        if (mp == null) {
+            sendResponse(
+                exchange,
+                "{\"error\":\"Metrics Processor is not initialized. The reader has run into an issue or has just started.\"}",
+                HttpURLConnection.HTTP_UNAVAILABLE);
+
+            LOG.warn(
+                "Metrics Processor is not initialized. The reader has run into an issue or has just started.");
+            return;
+        }
+        Map.Entry<Long, MetricsDB> dbEntry = mp.getMetricsDB();
         if (dbEntry == null) {
             sendResponse(exchange,
                     "{\"error\":\"There are no metrics databases. The reader has run into an issue or has just started.\"}",
@@ -218,14 +232,16 @@ public class QueryMetricsRequestHandler extends MetricsHandler implements HttpHa
             LOG.debug("Collecting metrics from all nodes");
             HashMap<String, String> nodeResponses = new HashMap<>();
             String params = getParamString(metricList, aggList, dimList);
-            ClusterLevelMetricsReader.NodeDetails[] nodes = ClusterLevelMetricsReader.getNodes();
+            ClusterDetailsEventProcessor.NodeDetails[] nodes =
+                ClusterDetailsEventProcessor.getNodesDetails().toArray(
+                    new ClusterDetailsEventProcessor.NodeDetails[0]);
             String localNodeId = "local";
             if (nodes.length != 0) {
                 localNodeId = nodes[0].getId();
             }
             nodeResponses.put(localNodeId, localResponseWithTimestamp);
             for (int i = 1; i < nodes.length; i++) {
-                ClusterLevelMetricsReader.NodeDetails node = nodes[i];
+                ClusterDetailsEventProcessor.NodeDetails node = nodes[i];
                 LOG.debug("Collecting remote stats");
                 try {
                 String remoteNodeStats = collectRemoteStats(node.getHostAddress(),

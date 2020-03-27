@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -20,44 +20,43 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DiskMetrics extends MetricStatus {
-    public String name;
+  public String name;
 
-    public double utilization; // fraction, 0-1
+  public double utilization; // fraction, 0-1
 
-    public double await; // ms
+  public double await; // ms
 
-    public double serviceRate; // MBps
+  public double serviceRate; // MBps
 
-    public DiskMetrics(String name, double utilization, double await,
-                       double serviceRate) {
-        super();
-        this.name = name;
-        this.utilization = utilization;
-        this.await = await;
-        this.serviceRate = serviceRate;
-    }
+  public DiskMetrics(String name, double utilization, double await, double serviceRate) {
+    super();
+    this.name = name;
+    this.utilization = utilization;
+    this.await = await;
+    this.serviceRate = serviceRate;
+  }
 
-    public DiskMetrics() {
-        super();
-    }
+  public DiskMetrics() {
+    super();
+  }
 
-    @JsonProperty(DiskDimension.Constants.NAME_VALUE)
-    public String getName() {
-        return name;
-    }
+  @JsonProperty(DiskDimension.Constants.NAME_VALUE)
+  public String getName() {
+    return name;
+  }
 
-    @JsonProperty(DiskValue.Constants.UTIL_VALUE)
-    public double getUtilization() {
-        return utilization;
-    }
+  @JsonProperty(DiskValue.Constants.UTIL_VALUE)
+  public double getUtilization() {
+    return utilization;
+  }
 
-    @JsonProperty(DiskValue.Constants.WAIT_VALUE)
-    public double getAwait() {
-        return await;
-    }
+  @JsonProperty(DiskValue.Constants.WAIT_VALUE)
+  public double getAwait() {
+    return await;
+  }
 
-    @JsonProperty(DiskValue.Constants.SRATE_VALUE)
-    public double getServiceRate() {
-        return serviceRate;
-    }
+  @JsonProperty(DiskValue.Constants.SRATE_VALUE)
+  public double getServiceRate() {
+    return serviceRate;
+  }
 }

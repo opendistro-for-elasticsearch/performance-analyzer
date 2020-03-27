@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -20,21 +20,20 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator
 
 public class OSMetricsGeneratorFactory {
 
-    private static final String OS_TYPE = System.getProperty("os.name");
+  private static final String OS_TYPE = System.getProperty("os.name");
 
-    public static OSMetricsGenerator getInstance() {
+  public static OSMetricsGenerator getInstance() {
 
-        if (isLinux()) {
-            return LinuxOSMetricsGenerator.getInstance();
-        } else {
-            ConfigStatus.INSTANCE.setConfigurationInvalid();
-        }
-
-        return null;
+    if (isLinux()) {
+      return LinuxOSMetricsGenerator.getInstance();
+    } else {
+      ConfigStatus.INSTANCE.setConfigurationInvalid();
     }
 
-    private static boolean isLinux() {
-        return OS_TYPE.toLowerCase().contains("linux");
-    }
+    return null;
+  }
 
+  private static boolean isLinux() {
+    return OS_TYPE.toLowerCase().contains("linux");
+  }
 }

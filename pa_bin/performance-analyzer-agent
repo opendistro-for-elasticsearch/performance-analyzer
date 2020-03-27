@@ -1,25 +1,32 @@
 #!/bin/bash
 
 if [ "$START_PERF_ANALYZER" = "false" ]; then
-    echo "Not starting performance-analyzer-agent"
-    exit 0
+  echo "Not starting performance-analyzer-agent"
+  exit 0
 fi
 
-if [ -z "$ES_HOME" ]; then
-    ES_HOME=$1
-    if [ -z "$1" ]; then
-        echo "ES_HOME needs to be set or passed in as the first parameter."
-        exit 1
-    fi
+if [ -z "$1" ]; then
+  if [ -z "$ES_HOME" ]; then
+    echo "ES_HOME needs to be set or passed in as the first parameter."
+    exit 1
+  fi
+else
+  ES_HOME=$1
 fi
 
-if [ -z "$JAVA_HOME" ]; then
-    JAVA_HOME=$2
-    if [ -z "$2" ]; then
-        echo "JAVA_HOME needs to be set or passed in as the second parameter."
-        exit 1
-    fi
+if [ -z "$2" ]; then
+  if [ -z "$JAVA_HOME" ]; then
+    echo "JAVA_HOME needs to be set or passed in as the second parameter."
+    exit 1
+  fi
+else
+  JAVA_HOME=$2
 fi
+
+# Instead of the supervisor executing peformance-analyzer-agent from the plugin location,
+# we should move this to the reader. The entry-point script should be executing
+# performance-analyzer-agent from the reader location.
+# We need to change this file: https://github.com/opendistro-for-elasticsearch/elasticsearch-build/blob/6d6230e180c86c3249c7fa0786d685e48772d454/docker/build/elasticsearch/bin/docker-entrypoint.sh#L94
 
 if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' > /dev/null; then
     $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
@@ -39,7 +46,7 @@ else
         PID_LOC=$3
     fi
 
-    if ! ps -p $pid > $PID_LOC ; then
-        exit 1
-    fi
+  if ! ps -p $pid >$PID_LOC; then
+    exit 1
+  fi
 fi

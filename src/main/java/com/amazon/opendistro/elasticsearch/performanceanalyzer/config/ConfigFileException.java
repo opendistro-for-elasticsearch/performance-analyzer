@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -13,11 +13,10 @@
  * permissions and limitations under the License.
  */
 
-
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
 class ConfigFileException extends Exception {
-    ConfigFileException(Throwable cause) {
-        super(cause);
-    }
+  ConfigFileException(Throwable cause) {
+    super(cause);
+  }
 }

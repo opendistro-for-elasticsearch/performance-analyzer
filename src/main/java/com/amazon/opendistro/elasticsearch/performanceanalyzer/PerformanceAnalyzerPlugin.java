@@ -17,29 +17,48 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import static java.util.Collections.singletonList;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ClusterSettingsManager;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerClusterConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLog;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLogFileHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
 import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkE2ECollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.message.ParameterizedMessage;
@@ -55,6 +74,7 @@ import org.elasticsearch.common.io.stream.NamedWriteableRegistry;
 import org.elasticsearch.common.network.NetworkService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.IndexScopedSettings;
+import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.PageCacheRecycler;
@@ -75,22 +95,19 @@ import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-
-
-public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
+public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
     public static final String PLUGIN_NAME = "opendistro_performance_analyzer";
+    public static final int QUEUE_PURGE_INTERVAL_MS = 1000;
     private static SecurityManager sm = null;
+    private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
+    private final NodeStatsSettingHandler nodeStatsSettingHandler;
+    private final PerformanceAnalyzerController performanceAnalyzerController;
+    private final ClusterSettingsManager clusterSettingsManager;
 
     static {
         SecurityManager sm = System.getSecurityManager();
-
+        Utils.configureMetrics();
         if(sm != null) {
             // unprivileged code such as scripts do not have SpecialPermission
             sm.checkPermission(new SpecialPermission());
@@ -102,7 +119,19 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
             try {
                 runner.run();
             } catch(Exception ex) {
-                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("{}",
+                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
+                        ex.toString()), ex);
+            }
+            return null;
+        } );
+    }
+
+    public static void invokePrivilegedAndLogError(Runnable runner) {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            try {
+                runner.run();
+            } catch(Exception ex) {
+                LOG.error((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
                         ex.toString()), ex);
             }
             return null;
@@ -118,26 +147,55 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setConfigPath(configPath);
         ESResources.INSTANCE.setPluginFileLocation(new Environment(settings, configPath).
                 pluginsFile().toAbsolutePath().toString() + File.separator + PLUGIN_NAME + File.separator);
+        //initialize plugin settings. Accessing plugin settings before this
+        //point will break, as the plugin location will not be initialized.
+        PluginSettings.instance();
+
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
+        this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CircuitBreakerCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new OSMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new HeapMetricsCollector());
+
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MetricsPurgeActivity());
+
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector(performanceAnalyzerController));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkE2ECollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
         scheduledMetricCollectorsExecutor.start();
+
+        clusterSettingsManager = new ClusterSettingsManager(
+                Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING));
+
+        perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(
+                performanceAnalyzerController,
+                clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                perfAnalyzerClusterSettingHandler);
+
+        nodeStatsSettingHandler = new NodeStatsSettingHandler(
+                performanceAnalyzerController,
+                clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+                nodeStatsSettingHandler);
+
+        EventLog eventLog = new EventLog();
+        EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
+        new EventLogQueueProcessor(eventLogFileHandler,
+                MetricsConfiguration.SAMPLING_INTERVAL,
+                QUEUE_PURGE_INTERVAL_MS, performanceAnalyzerController).scheduleExecutor();
     }
 
     // - http level: bulk, search
     @Override
     public List<ActionFilter> getActionFilters() {
-        return singletonList(new PerformanceAnalyzerActionFilter());
+        return singletonList(new PerformanceAnalyzerActionFilter(performanceAnalyzerController));
     }
 
     @Override
@@ -151,14 +209,15 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
     //- shardquery, shardfetch
     @Override
     public void onIndexModule(IndexModule indexModule) {
-        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener();
+        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener =
+            new PerformanceAnalyzerSearchListener(performanceAnalyzerController);
         indexModule.addSearchOperationListener(performanceanalyzerSearchListener);
     }
 
     //- shardbulk
     @Override
     public List<TransportInterceptor> getTransportInterceptors(NamedWriteableRegistry namedWriteableRegistry, ThreadContext threadContext) {
-        return singletonList(new PerformanceAnalyzerTransportInterceptor());
+        return singletonList(new PerformanceAnalyzerTransportInterceptor(performanceAnalyzerController));
     }
 
     @Override
@@ -169,9 +228,13 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
                                                                     final SettingsFilter settingsFilter,
                                                                     final IndexNameExpressionResolver indexNameExpressionResolver,
                                                                     final Supplier<DiscoveryNodes> nodesInCluster) {
-        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings, restController);
+        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings,
+                restController, performanceAnalyzerController);
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
-        return singletonList(performanceanalyzerConfigAction);
+        PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
+        PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
+                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
+        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp);
     }
 
     @Override
@@ -183,20 +246,34 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
         ESResources.INSTANCE.setClusterService(clusterService);
         ESResources.INSTANCE.setThreadPool(threadPool);
         ESResources.INSTANCE.setEnvironment(environment);
-        return Collections.emptyList();
+        ESResources.INSTANCE.setClient(client);
+
+        // ClusterSettingsManager needs ClusterService to have been created before we can
+        // initialize it. This is the earliest point at which we know ClusterService is created.
+        // So, call the initialize method here.
+        clusterSettingsManager.initialize();
+        return Collections.singletonList(performanceAnalyzerController);
     }
 
     @Override
     public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool,
-                                                           PageCacheRecycler pageCacheRecycler,
-                                                           CircuitBreakerService circuitBreakerService,
-                                                           NamedWriteableRegistry namedWriteableRegistry,
-                                                           NetworkService networkService) {
+                                                          PageCacheRecycler pageCacheRecycler,
+                                                          CircuitBreakerService circuitBreakerService,
+                                                          NamedWriteableRegistry namedWriteableRegistry,
+                                                          NetworkService networkService) {
         ESResources.INSTANCE.setSettings(settings);
         ESResources.INSTANCE.setCircuitBreakerService(circuitBreakerService);
         return Collections.emptyMap();
     }
 
+    /**
+     * Returns a list of additional {@link Setting} definitions for this plugin.
+     */
+    @Override
+    public List<Setting<?>> getSettings() {
+        return Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING);
+    }
 
 }
 

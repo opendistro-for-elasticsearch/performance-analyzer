@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -19,12 +19,19 @@ import java.util.Set;
 
 public interface TCPMetricsGenerator {
 
-    Set<String> getAllDestionationIps();
-    int getNumberOfFlows(String ip);
-    double getTransmitQueueSize(String ip);
-    double getReceiveQueueSize(String ip);
-    double getCurrentLost(String ip);
-    double getSendCongestionWindow(String ip);
-    double getSlowStartThreshold(String ip);
-    void addSample();
+  Set<String> getAllDestionationIps();
+
+  int getNumberOfFlows(String ip);
+
+  double getTransmitQueueSize(String ip);
+
+  double getReceiveQueueSize(String ip);
+
+  double getCurrentLost(String ip);
+
+  double getSendCongestionWindow(String ip);
+
+  double getSlowStartThreshold(String ip);
+
+  void addSample();
 }

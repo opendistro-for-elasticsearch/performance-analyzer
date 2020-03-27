@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -18,23 +18,23 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.jvm.ThreadList;
 
 public final class ThreadIDUtil {
-    private ThreadIDUtil() { }
+  private ThreadIDUtil() {}
 
-    public static final ThreadIDUtil INSTANCE = new ThreadIDUtil();
+  public static final ThreadIDUtil INSTANCE = new ThreadIDUtil();
 
-    public long getNativeCurrentThreadId() {
+  public long getNativeCurrentThreadId() {
 
-        return getNativeThreadId(Thread.currentThread().getId());
+    return getNativeThreadId(Thread.currentThread().getId());
+  }
+
+  public long getNativeThreadId(long jTid) {
+    ThreadList.ThreadState threadState1 = ThreadList.getThreadState(jTid);
+
+    long nid = -1;
+    if (threadState1 != null) {
+      nid = threadState1.nativeTid;
     }
 
-    public long getNativeThreadId(long jTid) {
-        ThreadList.ThreadState threadState1 = ThreadList.getThreadState(jTid);
-
-        long nid = -1;
-        if (threadState1 != null) {
-            nid = threadState1.nativeTid;
-        }
-
-        return nid;
-    }
+    return nid;
+  }
 }

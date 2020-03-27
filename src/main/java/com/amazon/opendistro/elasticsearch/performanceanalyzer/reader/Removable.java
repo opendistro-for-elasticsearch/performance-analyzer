@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,9 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader;
 
-/**
- * Interface that should be implemented by snapshot holders that need to be trimmed.
- */
+/** Interface that should be implemented by snapshot holders that need to be trimmed. */
 public interface Removable {
-    void remove() throws Exception;
+  void remove() throws Exception;
 }

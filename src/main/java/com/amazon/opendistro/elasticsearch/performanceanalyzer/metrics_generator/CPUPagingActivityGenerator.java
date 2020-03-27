@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -17,13 +17,17 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generato
 
 public interface CPUPagingActivityGenerator {
 
-    // This method will be called before all following get methods
-    // to make sure that all information exists for a thread id
-    boolean hasPagingActivity(String threadId);
+  // This method will be called before all following get methods
+  // to make sure that all information exists for a thread id
+  boolean hasPagingActivity(String threadId);
 
-    double getCPUUtilization(String threadId);
-    double getMajorFault(String threadId);
-    double getMinorFault(String threadId);
-    double getResidentSetSize(String threadId);
-    void addSample();
+  double getCPUUtilization(String threadId);
+
+  double getMajorFault(String threadId);
+
+  double getMinorFault(String threadId);
+
+  double getResidentSetSize(String threadId);
+
+  void addSample();
 }

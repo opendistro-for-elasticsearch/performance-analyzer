@@ -39,6 +39,7 @@ public class PerformanceAnalyzerApp {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerApp.class);
 
     public static void main(String[] args) throws Exception {
+        PluginSettings settings = PluginSettings.instance();
         ESResources.INSTANCE.setPluginFileLocation(System.getProperty("es.path.home") +
                 File.separator + "plugins" + File.separator + PerformanceAnalyzerPlugin.PLUGIN_NAME + File.separator);
 
@@ -46,13 +47,16 @@ public class PerformanceAnalyzerApp {
             public void run() {
                 while(true) {
                     try {
-                        ReaderMetricsProcessor mp = new ReaderMetricsProcessor(PluginSettings.instance().getMetricsLocation());
-                        ReaderMetricsProcessor.current = mp;
+                        ReaderMetricsProcessor mp =
+                            new ReaderMetricsProcessor(settings.getMetricsLocation());
+                        ReaderMetricsProcessor.setCurrentInstance(mp);
                         mp.run();
                     } catch (Throwable e) {
                         if (TroubleshootingConfig.getEnableDevAssert()) {
                             break;
                         }
+                        LOG.error(e.getMessage());
+                        e.printStackTrace();
                         LOG.error("Error in ReaderMetricsProcessor...restarting");
                     }
                 }

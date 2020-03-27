@@ -15,26 +15,34 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class NodeStatsMetricsCollectorTests {
+@Ignore
+public class NodeStatsMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testNodeStatsMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1253722339;
+        
+        MetricsConfiguration.CONFIG_MAP.put(NodeStatsMetricsCollector.class, MetricsConfiguration.cdefault);
 
-        NodeStatsMetricsCollector nodeStatsMetricsCollector = new NodeStatsMetricsCollector();
+        NodeStatsMetricsCollector nodeStatsMetricsCollector = new NodeStatsMetricsCollector(null);
         nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation
+                PluginSettings.instance().getMetricsLocation()
                         + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("89123.23", fetchedValue);
 

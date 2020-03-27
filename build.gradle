@@ -114,6 +114,8 @@ dependencies {
         all*.exclude group: "org.elasticsearch", module: "securemock"
     }
 
+    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
     compile 'org.jooq:jooq:3.10.8'
     compile 'org.xerial:sqlite-jdbc:3.8.11.2'
     compile 'com.google.guava:guava:27.0.1-jre'

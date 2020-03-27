@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -18,77 +18,76 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generato
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.hwnet.Disks;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.hwnet.NetworkE2E;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.hwnet.NetworkInterface;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.CPUPagingActivityGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.DiskIOMetricsGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.DiskMetricsGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.IPMetricsGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.OSMetricsGenerator;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.CPUPagingActivityGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.SchedMetricsGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics_generator.TCPMetricsGenerator;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.OSGlobals;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.ThreadCPU;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.ThreadDiskIO;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.os.ThreadSched;
-
 import java.util.Set;
 
 public class LinuxOSMetricsGenerator implements OSMetricsGenerator {
 
-    private static OSMetricsGenerator osMetricsGenerator;
-    static {
-        osMetricsGenerator = new LinuxOSMetricsGenerator();
-    }
+  private static OSMetricsGenerator osMetricsGenerator;
 
-    public static OSMetricsGenerator getInstance() {
+  static {
+    osMetricsGenerator = new LinuxOSMetricsGenerator();
+  }
 
-        return osMetricsGenerator;
-    }
+  public static OSMetricsGenerator getInstance() {
 
-    @Override
-    public String getPid() {
+    return osMetricsGenerator;
+  }
 
-        return OSGlobals.getPid();
-    }
+  @Override
+  public String getPid() {
 
-    @Override
-    public CPUPagingActivityGenerator getPagingActivityGenerator() {
+    return OSGlobals.getPid();
+  }
 
-        return ThreadCPU.INSTANCE.getCPUPagingActivity();
-    }
+  @Override
+  public CPUPagingActivityGenerator getPagingActivityGenerator() {
 
-    @Override
-    public Set<String> getAllThreadIds() {
-        return ThreadCPU.INSTANCE.getCPUPagingActivity().getAllThreadIds();
-    }
+    return ThreadCPU.INSTANCE.getCPUPagingActivity();
+  }
 
-    @Override
-    public DiskIOMetricsGenerator getDiskIOMetricsGenerator() {
+  @Override
+  public Set<String> getAllThreadIds() {
+    return ThreadCPU.INSTANCE.getCPUPagingActivity().getAllThreadIds();
+  }
 
-        return ThreadDiskIO.getIOUtilization();
-    }
+  @Override
+  public DiskIOMetricsGenerator getDiskIOMetricsGenerator() {
 
-    @Override
-    public SchedMetricsGenerator getSchedMetricsGenerator() {
+    return ThreadDiskIO.getIOUtilization();
+  }
 
-        return ThreadSched.INSTANCE.getSchedLatency();
-    }
+  @Override
+  public SchedMetricsGenerator getSchedMetricsGenerator() {
 
-    @Override
-    public TCPMetricsGenerator getTCPMetricsGenerator() {
+    return ThreadSched.INSTANCE.getSchedLatency();
+  }
 
-        return NetworkE2E.getTCPMetricsHandler();
-    }
+  @Override
+  public TCPMetricsGenerator getTCPMetricsGenerator() {
 
-    @Override
-    public IPMetricsGenerator getIPMetricsGenerator() {
+    return NetworkE2E.getTCPMetricsHandler();
+  }
 
-        return NetworkInterface.getLinuxIPMetricsGenerator();
-    }
+  @Override
+  public IPMetricsGenerator getIPMetricsGenerator() {
 
-    @Override
-    public DiskMetricsGenerator getDiskMetricsGenerator() {
+    return NetworkInterface.getLinuxIPMetricsGenerator();
+  }
 
-        return Disks.getDiskMetricsHandler();
-    }
+  @Override
+  public DiskMetricsGenerator getDiskMetricsGenerator() {
 
+    return Disks.getDiskMetricsHandler();
+  }
 }

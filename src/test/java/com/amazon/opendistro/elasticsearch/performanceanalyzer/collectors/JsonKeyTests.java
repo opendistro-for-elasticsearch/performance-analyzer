@@ -168,6 +168,7 @@ public class JsonKeyTests {
 
     private void verifyNodeDetailJsonKeyNames() {
         Set<String> jsonKeySet = new HashSet<>();
+        Set<String> nodeDetailColumnSet = new HashSet<>();
         Method[] methods = NodeDetailsCollector.NodeDetailsStatus.class.getDeclaredMethods();
 
         for (Method method : methods) {
@@ -178,11 +179,19 @@ public class JsonKeyTests {
         }
 
         AllMetrics.NodeDetailColumns[] columns = AllMetrics.NodeDetailColumns.values();
-        assertTrue(columns.length == jsonKeySet.size());
-
         for (AllMetrics.NodeDetailColumns d : columns) {
-            assertTrue(String.format("We need %s", d.toString()),
-                    jsonKeySet.contains(d.toString()));
+            nodeDetailColumnSet.add(d.toString());
+        }
+
+        // The _cat/master fix might not be backport to all PA versions in brazil
+        // So not all domains has the IS_MASTER_NODE field in NodeDetailsStatus
+        // change this assert statement to support backward compatibility
+        assertTrue(nodeDetailColumnSet.size() == jsonKeySet.size()
+            || nodeDetailColumnSet.size() - 1 == jsonKeySet.size());
+
+        for (String key : jsonKeySet) {
+            assertTrue(String.format("We need %s", key),
+                nodeDetailColumnSet.contains(key));
         }
     }
 }
