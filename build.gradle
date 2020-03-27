@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "6.8.1")
+        es_version = System.getProperty("es.version", "6.8.3")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
