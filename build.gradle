@@ -31,7 +31,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'nebula.ospackage' version "8.0.1"
+    id 'nebula.ospackage' version "8.2.0"
 }
 
 ext {
