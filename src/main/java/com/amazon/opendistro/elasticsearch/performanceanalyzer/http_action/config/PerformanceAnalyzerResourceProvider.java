@@ -23,7 +23,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
@@ -48,6 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.singletonList;
+
+
 public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerResourceProvider.class);
 
@@ -60,9 +62,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   private static Set<String> SUPPORTED_REDIRECTIONS = ImmutableSet.of("rca", "metrics");
 
   @Inject
-  public PerformanceAnalyzerResourceProvider(Settings settings, RestController controller) {
-    super(settings);
-    controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, AGENT_PATH + "{redirectEndpoint}", this);
+  public PerformanceAnalyzerResourceProvider(RestController controller) {
     PluginSettings pluginSettings = PluginSettings.instance();
     portNumber = pluginSettings.getSettingValue("webservice-listener-port", DEFAULT_PORT_NUMBER);
     isHttpsEnabled = pluginSettings.getHttpsEnabled();
@@ -101,6 +101,12 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
       HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
     }
   }
+
+  @Override
+  public List<Route> routes() {
+    return singletonList(new Route(org.elasticsearch.rest.RestRequest.Method.GET, AGENT_PATH + "{redirectEndpoint}"));
+  }
+
 
   public String getName() {
     return "PerformanceAnalyzer_ResourceProvider";

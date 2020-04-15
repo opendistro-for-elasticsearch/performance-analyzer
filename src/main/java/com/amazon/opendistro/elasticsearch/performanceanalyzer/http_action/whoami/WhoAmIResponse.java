@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.elasticsearch.action.ActionResponse;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.io.stream.StreamOutput;
 
 public class WhoAmIResponse extends ActionResponse implements ToXContent {
     @Override
@@ -27,5 +28,10 @@ public class WhoAmIResponse extends ActionResponse implements ToXContent {
         builder.startObject("whoami");
         builder.endObject();
         return builder;
+    }
+
+    @Override
+    public void writeTo(StreamOutput out) {
+
     }
 }

@@ -16,13 +16,16 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -56,22 +59,22 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     }
 
     @Inject
-    public PerformanceAnalyzerConfigAction(final Settings settings,
-                                           final RestController controller,
+    public PerformanceAnalyzerConfigAction(final RestController controller,
                                            final PerformanceAnalyzerController performanceAnalyzerController) {
-        super(settings);
         this.performanceAnalyzerController = performanceAnalyzerController;
-        registerHandlers(controller);
         LOG.info("PerformanceAnalyzer Enabled: {}", performanceAnalyzerController::isPerformanceAnalyzerEnabled);
     }
 
-    private void registerHandlers(final RestController controller) {
-        controller.registerHandler(RestRequest.Method.GET, PA_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, PA_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, RCA_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, RCA_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, LOGGING_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, LOGGING_CONFIG_PATH, this);
+    @Override
+    public List<Route> routes() {
+        return unmodifiableList(asList(
+                new Route(RestRequest.Method.GET, PA_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, PA_CONFIG_PATH),
+                new Route(RestRequest.Method.GET, RCA_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, RCA_CONFIG_PATH),
+                new Route(RestRequest.Method.GET, LOGGING_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, LOGGING_CONFIG_PATH)
+        ));
     }
 
     @Override
