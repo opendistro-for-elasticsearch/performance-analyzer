@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.MutedRcasSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
@@ -83,8 +84,10 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ha
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerClusterConfigAction;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerGetClusterConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerGetConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerPostClusterConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerPostConfigAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.TransportWhoAmIAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoami.WhoAmIAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
@@ -103,6 +106,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     private static SecurityManager sm = null;
     private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
+    private final MutedRcasSettingHandler mutedRcasSettingHandler;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private final ClusterSettingsManager clusterSettingsManager;
 
@@ -172,19 +176,26 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
 
         clusterSettingsManager = new ClusterSettingsManager(
                 Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING));
+                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING),
+                Arrays.asList(PerformanceAnalyzerClusterSettings.MUTED_RCA_SETTING));
 
         perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(
                 performanceAnalyzerController,
                 clusterSettingsManager);
-        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+        clusterSettingsManager.addSubscriberForIntTypeSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
                 perfAnalyzerClusterSettingHandler);
 
         nodeStatsSettingHandler = new NodeStatsSettingHandler(
                 performanceAnalyzerController,
                 clusterSettingsManager);
-        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+        clusterSettingsManager.addSubscriberForIntTypeSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
                 nodeStatsSettingHandler);
+
+        mutedRcasSettingHandler = new MutedRcasSettingHandler(
+                performanceAnalyzerController,
+                clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForStringTypeSetting(PerformanceAnalyzerClusterSettings.MUTED_RCA_SETTING,
+                mutedRcasSettingHandler);
 
         EventLog eventLog = new EventLog();
         EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
@@ -229,13 +240,18 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                                                                     final SettingsFilter settingsFilter,
                                                                     final IndexNameExpressionResolver indexNameExpressionResolver,
                                                                     final Supplier<DiscoveryNodes> nodesInCluster) {
-        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings,
+        PerformanceAnalyzerGetConfigAction performanceanalyzerGetConfigAction = new PerformanceAnalyzerGetConfigAction(settings,
                 restController, performanceAnalyzerController);
-        PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
+        PerformanceAnalyzerPostConfigAction performanceanalyzerPostConfigAction = new PerformanceAnalyzerPostConfigAction(settings,
+                restController, performanceAnalyzerController);
+        PerformanceAnalyzerGetConfigAction.setInstance(performanceanalyzerGetConfigAction);
+        PerformanceAnalyzerPostConfigAction.setInstance(performanceanalyzerPostConfigAction);
         PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
-        PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
-                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
-        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp);
+        PerformanceAnalyzerPostClusterConfigAction paClusterPostConfigAction = new PerformanceAnalyzerPostClusterConfigAction(settings,
+                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler, mutedRcasSettingHandler);
+        PerformanceAnalyzerGetClusterConfigAction paClusterGetConfigAction = new PerformanceAnalyzerGetClusterConfigAction(settings,
+                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler, mutedRcasSettingHandler);
+        return Arrays.asList(performanceanalyzerGetConfigAction, paClusterPostConfigAction, paClusterGetConfigAction, performanceAnalyzerRp);
     }
 
     @Override
@@ -273,7 +289,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     @Override
     public List<Setting<?>> getSettings() {
         return Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING);
+                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+                             PerformanceAnalyzerClusterSettings.MUTED_RCA_SETTING);
     }
 
 }

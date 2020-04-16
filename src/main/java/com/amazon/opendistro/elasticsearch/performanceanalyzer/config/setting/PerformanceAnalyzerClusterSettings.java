@@ -33,4 +33,15 @@ public final class PerformanceAnalyzerClusterSettings {
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
     );
+
+    /**
+     * Muted RCAs
+     * Represents muted RCAs as a comma separated string
+     */
+    public static final Setting<String> MUTED_RCA_SETTING = Setting.simpleString(
+            "cluster.metadata.perf_analyzer.muted_rcas_setting",
+            "",
+            Setting.Property.NodeScope,
+            Setting.Property.Dynamic
+    );
 }

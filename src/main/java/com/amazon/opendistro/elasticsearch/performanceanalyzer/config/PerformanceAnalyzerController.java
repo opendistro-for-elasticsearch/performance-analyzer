@@ -19,6 +19,7 @@ public class PerformanceAnalyzerController {
     private static final String PERFORMANCE_ANALYZER_ENABLED_CONF = "performance_analyzer_enabled.conf";
     private static final String RCA_ENABLED_CONF = "rca_enabled.conf";
     private static final String LOGGING_ENABLED_CONF = "logging_enabled.conf";
+    private static final String MUTED_RCAS_CONF = "muted_rcas.conf";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
     public static final int DEFAULT_NUM_OF_SHARDS_PER_COLLECTION = 0;
 
@@ -26,9 +27,11 @@ public class PerformanceAnalyzerController {
     private boolean rcaEnabled;
     private boolean loggingEnabled;
     private volatile int shardsPerCollection;
+    private volatile String mutedRcas;
     private boolean paEnabledDefaultValue = false;
     private boolean rcaEnabledDefaultValue = false;
     private boolean loggingEnabledDefaultValue = false;
+    private String mutedRcasDefaultValue = "";
     private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
 
     public PerformanceAnalyzerController(final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
@@ -37,6 +40,7 @@ public class PerformanceAnalyzerController {
         initRcaStateFromConf();
         initLoggingStateFromConf();
         shardsPerCollection = DEFAULT_NUM_OF_SHARDS_PER_COLLECTION;
+        initMutedRcasStateFromConf();
     }
 
     /**
@@ -87,6 +91,16 @@ public class PerformanceAnalyzerController {
     }
 
     /**
+     * Reads the mutedRcas parameter
+     * mutedRcas represents the list of RCAs currently muted for the cluster
+     *
+     * @return String representing muted RCAs
+     */
+    public String getMutedRcas() {
+        return mutedRcas;
+    }
+
+    /**
      * Updates the state of performance analyzer(writer and engine).
      *
      * @param value The desired state of performance analyzer. False to disable, and true to enable.
@@ -131,6 +145,19 @@ public class PerformanceAnalyzerController {
         saveStateToConf(this.loggingEnabled, LOGGING_ENABLED_CONF);
     }
 
+    /**
+     * Updates the list of muted RCAs
+     *
+     * @param mutedRcas The desired RCAs to be muted.
+     */
+    public void updateMutedRcasState(final String mutedRcas) {
+        if (mutedRcas != null && !isPerformanceAnalyzerEnabled()) {
+            return;
+        }
+        this.mutedRcas = mutedRcas;
+        saveStateToConf(this.mutedRcas, MUTED_RCAS_CONF);
+    }
+
     private void initPerformanceAnalyzerStateFromConf() {
         Path filePath = Paths.get(getDataDirectory(), PERFORMANCE_ANALYZER_ENABLED_CONF);
         PerformanceAnalyzerPlugin.invokePrivileged(() -> {
@@ -156,7 +183,7 @@ public class PerformanceAnalyzerController {
             try {
                 rcaEnabledFromConf = readBooleanFromFile(filePath);
             } catch (Exception e) {
-                LOG.debug("Error reading Performance Analyzer state from Conf file", e);
+                LOG.debug("Error reading RCA state from Conf file", e);
                 if (e instanceof NoSuchFileException) {
                     saveStateToConf(rcaEnabledDefaultValue, RCA_ENABLED_CONF);
                 }
@@ -187,10 +214,38 @@ public class PerformanceAnalyzerController {
         });
     }
 
+    /**
+     * Initializes the Muted RCA state from Muted RCA Conf file
+     */
+    private void initMutedRcasStateFromConf() {
+        Path filePath = Paths.get(getDataDirectory(), MUTED_RCAS_CONF);
+        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
+            String mutedRcasFromConf;
+            try {
+                mutedRcasFromConf = readStringFromFile(filePath);
+            } catch (Exception e) {
+                LOG.debug("Error reading Muted RCA state from Conf file", e);
+                if (e instanceof NoSuchFileException) {
+                    saveStateToConf(rcaEnabledDefaultValue, RCA_ENABLED_CONF);
+                }
+                mutedRcasFromConf = mutedRcasDefaultValue;
+            }
+
+            updateMutedRcasState(mutedRcasFromConf);
+        });
+    }
+
     private boolean readBooleanFromFile(final Path filePath) throws Exception {
         try (Scanner sc = new Scanner(filePath)) {
             String nextLine = sc.nextLine();
             return Boolean.parseBoolean(nextLine);
+        }
+    }
+
+    private String readStringFromFile(final Path filePath) throws Exception {
+        try (Scanner sc = new Scanner(filePath)) {
+            String nextLine = sc.nextLine();
+            return nextLine;
         }
     }
 
@@ -211,6 +266,18 @@ public class PerformanceAnalyzerController {
                               .getBytes());
             } catch (Exception ex) {
                 LOG.error(ex.toString(), ex);
+            }
+        });
+    }
+
+    private void saveStateToConf(String featureValue, String fileName) {
+        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
+            try {
+                Files.write(
+                        Paths.get(getDataDirectory() + File.separator + fileName),
+                        featureValue.getBytes());
+            } catch (Exception ex) {
+                LOG.error("error saving to the file: {} -> {}", ex.toString(), ex);
             }
         });
     }

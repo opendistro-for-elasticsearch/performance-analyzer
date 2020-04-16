@@ -12,7 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerGetConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerPostConfigAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
@@ -68,7 +69,8 @@ public class EventLogQueueProcessor {
     // This executes every purgePeriodicityMillis interval.
     public void purgeQueueAndPersist() {
         // Return if the writer is not enabled.
-        if (PerformanceAnalyzerConfigAction.getInstance() == null) {
+        if (PerformanceAnalyzerGetConfigAction.getInstance() == null ||
+                PerformanceAnalyzerPostConfigAction.getInstance() == null) {
             return;
         } else if (!controller.isPerformanceAnalyzerEnabled()) {
             // If PA is disabled, then we return as we don't want to generate
