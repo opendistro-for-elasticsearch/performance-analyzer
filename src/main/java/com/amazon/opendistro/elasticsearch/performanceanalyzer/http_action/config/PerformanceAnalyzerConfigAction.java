@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 import org.apache.logging.log4j.LogManager;
@@ -36,6 +37,9 @@ import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
 
 @SuppressWarnings("deprecation")
 public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
@@ -58,10 +62,16 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     @Inject
     public PerformanceAnalyzerConfigAction(RestController controller) {
         super();
-        controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config", this);
-        controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config", this);
         this.featureEnabled = getFeatureEnabledFromConf();
         LOG.info("PerformanceAnalyzer Enabled: {}", this.featureEnabled);
+    }
+
+    @Override
+    public List<Route> routes() {
+        return  unmodifiableList(asList(
+                new Route(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config"),
+                new Route(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config")
+        ));
     }
 
     @Override
