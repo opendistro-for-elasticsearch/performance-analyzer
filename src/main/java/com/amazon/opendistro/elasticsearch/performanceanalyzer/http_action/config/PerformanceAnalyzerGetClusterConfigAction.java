@@ -25,12 +25,22 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentType;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.BytesRestResponse;
+import org.elasticsearch.rest.RestChannel;
+import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestStatus;
 
 import java.io.IOException;
 import java.util.Map;
 
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.*;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.CLUSTER_CONFIG_PATH;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.MUTED_RCAS;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.PA_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.PA_LOGGING_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.RCA_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.SHARDS_PER_COLLECTION;
 
 /**
  * GET Rest request handler for handling cluster-wide performance analyzer and RCA config settings, which include :
@@ -82,8 +92,6 @@ public class PerformanceAnalyzerGetClusterConfigAction extends BaseRestHandler {
      * @param request the request to execute
      * @param client  client for executing actions on the local node
      * @return the action to execute
-     * @throws IOException if an I/O exception occurred parsing the request and preparing for
-     *                     execution
      */
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) {

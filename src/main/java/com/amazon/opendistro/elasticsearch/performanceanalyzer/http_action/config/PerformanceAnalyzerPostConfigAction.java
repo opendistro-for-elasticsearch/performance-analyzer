@@ -19,16 +19,25 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.Performanc
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
-import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
-import org.elasticsearch.rest.*;
+import org.elasticsearch.rest.BaseRestHandler;
+import org.elasticsearch.rest.BytesRestResponse;
+import org.elasticsearch.rest.RestChannel;
+import org.elasticsearch.rest.RestController;
+import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestStatus;
 
 import java.util.Map;
 
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.*;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.MUTED_RCAS;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.NODE_CONFIG_PATH;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.PA_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.PA_LOGGING_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.RCA_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.SHARDS_PER_COLLECTION;
 
 /**
  * POST Rest request handler for handling node-level performance analyzer and RCA config settings, which include :
@@ -121,7 +130,7 @@ public class PerformanceAnalyzerPostConfigAction extends BaseRestHandler {
                 final boolean loggingEnabledValue = (boolean) paramMap.get(PA_LOGGING_ENABLED);
                 if (loggingEnabledValue && !performanceAnalyzerController.isPerformanceAnalyzerEnabled()) {
                     status = RestStatus.BAD_REQUEST;
-                    builder.field("error",builder.field("error") + " Error: PA not enabled. Enable PA before turning Logging on");
+                    builder.field("error", "Error: PA not enabled. Enable PA before turning Logging on");
                 }
                 performanceAnalyzerController.updateLoggingState(loggingEnabledValue);
             }
@@ -140,7 +149,7 @@ public class PerformanceAnalyzerPostConfigAction extends BaseRestHandler {
             if (mutedRcasPresent) {
                 if(!performanceAnalyzerController.isPerformanceAnalyzerEnabled() || !performanceAnalyzerController.isRcaEnabled()) {
                     status = RestStatus.BAD_REQUEST;
-                    builder.field("error", builder.field("error") + " Error: PA or RCA not enabled. Enable PA and RCA before setting Muted RCAs");
+                    builder.field("error", "Error: PA or RCA not enabled. Enable PA and RCA before setting Muted RCAs");
                 }
                 final String mutedRcasValue = (String) paramMap.get(MUTED_RCAS);
                 performanceAnalyzerController.updateMutedRcasState(mutedRcasValue);

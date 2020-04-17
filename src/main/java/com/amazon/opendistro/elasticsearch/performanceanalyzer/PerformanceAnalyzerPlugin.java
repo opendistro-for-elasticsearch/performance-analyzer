@@ -251,7 +251,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler, mutedRcasSettingHandler);
         PerformanceAnalyzerGetClusterConfigAction paClusterGetConfigAction = new PerformanceAnalyzerGetClusterConfigAction(settings,
                 restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler, mutedRcasSettingHandler);
-        return Arrays.asList(performanceanalyzerGetConfigAction, paClusterPostConfigAction, paClusterGetConfigAction, performanceAnalyzerRp);
+        return Arrays.asList(
+                performanceanalyzerGetConfigAction, paClusterPostConfigAction, paClusterGetConfigAction, performanceAnalyzerRp);
     }
 
     @Override
