@@ -32,12 +32,12 @@ import org.elasticsearch.rest.RestStatus;
 
 import java.util.Map;
 
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.MUTED_RCAS;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.NODE_CONFIG_PATH;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.PA_ENABLED;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.PA_LOGGING_ENABLED;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.RCA_ENABLED;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigParams.SHARDS_PER_COLLECTION;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.MUTED_RCAS;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.NODE_CONFIG_PATH;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.PA_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.PA_LOGGING_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.RCA_ENABLED;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.SHARDS_PER_COLLECTION;
 
 /**
  * POST Rest request handler for handling node-level performance analyzer and RCA config settings, which include :

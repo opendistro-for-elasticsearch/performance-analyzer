@@ -1,11 +1,21 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,11 +25,15 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.LOGGING_ENABLED_CONF;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.MUTED_RCAS_CONFIG;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.PERFORMANCE_ANALYZER_ENABLED_CONF;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.RCA_CONF_FILENAME;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.RCA_IDLE_MASTER_CONF_FILENAME;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.RCA_MASTER_CONF_FILENAME;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerConfigSettings.RCA_ENABLED_CONF;
+
 public class PerformanceAnalyzerController {
-    private static final String PERFORMANCE_ANALYZER_ENABLED_CONF = "performance_analyzer_enabled.conf";
-    private static final String RCA_ENABLED_CONF = "rca_enabled.conf";
-    private static final String LOGGING_ENABLED_CONF = "logging_enabled.conf";
-    private static final String MUTED_RCAS_CONF = "muted_rcas.conf";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
     public static final int DEFAULT_NUM_OF_SHARDS_PER_COLLECTION = 0;
 
@@ -151,11 +165,15 @@ public class PerformanceAnalyzerController {
      * @param mutedRcas The desired RCAs to be muted.
      */
     public void updateMutedRcasState(final String mutedRcas) {
-        if (mutedRcas != null && !isPerformanceAnalyzerEnabled()) {
+        if (mutedRcas != null && !isPerformanceAnalyzerEnabled() && !isRcaEnabled()) {
             return;
         }
         this.mutedRcas = mutedRcas;
-        saveStateToConf(this.mutedRcas, MUTED_RCAS_CONF);
+
+        // Save the config to all the rca conf files
+        saveMutedRcasToConf(this.mutedRcas, RCA_CONF_FILENAME);
+        saveMutedRcasToConf(this.mutedRcas, RCA_MASTER_CONF_FILENAME);
+        saveMutedRcasToConf(this.mutedRcas, RCA_IDLE_MASTER_CONF_FILENAME);
     }
 
     private void initPerformanceAnalyzerStateFromConf() {
@@ -218,21 +236,28 @@ public class PerformanceAnalyzerController {
      * Initializes the Muted RCA state from Muted RCA Conf file
      */
     private void initMutedRcasStateFromConf() {
-        Path filePath = Paths.get(getDataDirectory(), MUTED_RCAS_CONF);
-        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
-            String mutedRcasFromConf;
-            try {
-                mutedRcasFromConf = readStringFromFile(filePath);
-            } catch (Exception e) {
-                LOG.debug("Error reading Muted RCA state from Conf file", e);
-                if (e instanceof NoSuchFileException) {
-                    saveStateToConf(rcaEnabledDefaultValue, RCA_ENABLED_CONF);
-                }
-                mutedRcasFromConf = mutedRcasDefaultValue;
-            }
+        // `MUTED_RCAS_CONFIG` can be read from either of 3 rca config files
+        Path filePath = Paths.get(getPAConfigDirectory(), RCA_CONF_FILENAME);
+        String mutedRcasFromConf;
+        try{
+            // Read json object as string
+            Scanner scanner = new Scanner(new FileInputStream(filePath.toString()), StandardCharsets.UTF_8.name());
+            String jsonText = scanner.useDelimiter("\\A").next();
 
+            ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.ALLOW_COMMENTS);
+            mutedRcasFromConf = mapper.readTree(jsonText).
+                    get(MUTED_RCAS_CONFIG).asText(mutedRcasDefaultValue);
             updateMutedRcasState(mutedRcasFromConf);
-        });
+        } catch (Exception e) {
+            LOG.debug("Error reading Muted RCA state from Conf file", e);
+            if (e instanceof NullPointerException) {
+                LOG.info("'{}' not present in config file, setting the default value: {}",
+                        MUTED_RCAS_CONFIG, mutedRcasDefaultValue);
+                saveMutedRcasToConf(mutedRcasDefaultValue, RCA_CONF_FILENAME);
+                saveMutedRcasToConf(mutedRcasDefaultValue, RCA_MASTER_CONF_FILENAME);
+                saveMutedRcasToConf(mutedRcasDefaultValue, RCA_IDLE_MASTER_CONF_FILENAME);
+            }
+        }
     }
 
     private boolean readBooleanFromFile(final Path filePath) throws Exception {
@@ -242,19 +267,17 @@ public class PerformanceAnalyzerController {
         }
     }
 
-    private String readStringFromFile(final Path filePath) throws Exception {
-        try (Scanner sc = new Scanner(filePath)) {
-            String nextLine = sc.nextLine();
-            return nextLine;
-        }
-    }
-
     private String getDataDirectory() {
         return new org.elasticsearch.env.Environment(
             ESResources.INSTANCE.getSettings(), ESResources.INSTANCE.getConfigPath())
             .dataFiles()[0] // $ES_HOME/var/es/data
             .toFile()
             .getPath();
+    }
+
+    private String getPAConfigDirectory() {
+        return Paths.get(System.getProperty("es.path.home"),
+                "opendistro_performance_analyzer", "pa_config").toString();
     }
 
     private void saveStateToConf(boolean featureEnabled, String fileName) {
@@ -270,15 +293,22 @@ public class PerformanceAnalyzerController {
         });
     }
 
-    private void saveStateToConf(String featureValue, String fileName) {
-        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
-            try {
-                Files.write(
-                        Paths.get(getDataDirectory() + File.separator + fileName),
-                        featureValue.getBytes());
-            } catch (Exception ex) {
-                LOG.error("error saving to the file: {} -> {}", ex.toString(), ex);
-            }
-        });
+    private void saveMutedRcasToConf(String mutedRcas, String fileName) {
+        try {
+            // create the config json Object from rca config file
+            String rcaConfPath = Paths.get(getPAConfigDirectory(), fileName).toString();
+            Scanner scanner = new Scanner(new FileInputStream(rcaConfPath), StandardCharsets.UTF_8.name());
+            String jsonText = scanner.useDelimiter("\\A").next();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            JsonNode configObject = mapper.readTree(jsonText);
+
+            // update the `MUTED_RCAS_CONFIG` value in config Object
+            ((ObjectNode) configObject).put(MUTED_RCAS_CONFIG, mutedRcas);
+            mapper.writeValue(new FileOutputStream(rcaConfPath), configObject);
+        } catch (Exception ex) {
+            LOG.error(ex.toString(), ex);
+        }
     }
 }
