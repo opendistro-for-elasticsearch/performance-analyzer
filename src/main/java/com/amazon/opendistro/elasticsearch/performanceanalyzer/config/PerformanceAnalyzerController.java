@@ -282,15 +282,14 @@ public class PerformanceAnalyzerController {
             JsonNode configObject = mapper.readTree(jsonText);
 
             // To ensure consistency on read for rca.conf and back-up purpose, we will maintain 2 files,
-            // the (n) 'rca.conf' and the (n-1) 'rca_<timestamp_n1>.conf'. For updating the latest config, we will :
+            // the (n) 'rca.conf' and the (n-1) 'rca.conf.old'. For updating the latest config, we will :
             //
-            // 1. Back-up the current (n) 'rca.conf' as (n-1) 'rca_<timestamp_n1>.conf'
+            // 1. Back-up the current 'rca.conf' as 'rca.conf.backup'
             // 2. Update the config object, write to a temp file and atomically move the temp file to rca.conf
-            // 3. Delete the older (n-2) 'rca_<timestamp_n2>.conf' file to ensure we strictly maintain 2 files.
-            String seperator = "_";
+            // 3. Atomically move the 'rca.conf.backup' to 'rca.conf.old' to ensure we strictly maintain 2 files.
+            String seperator = ".";
 
-            String currTimeStamp = new SimpleDateFormat("yyyyMMddHHmm").format(new Date());
-            Path backupRcaConfPath = Paths.get(getPAConfigDirectory().toString(), fileName + seperator + currTimeStamp);
+            Path backupRcaConfPath = Paths.get(getPAConfigDirectory().toString(), fileName + seperator + "backup");
             Files.copy(rcaConfPath, backupRcaConfPath);
             LOG.debug("Created the back-up Conf file: {} for : {}", backupRcaConfPath.toString(), rcaConfPath.toString());
 
@@ -300,19 +299,9 @@ public class PerformanceAnalyzerController {
             Files.move(tmp, rcaConfPath, StandardCopyOption.ATOMIC_MOVE);
             LOG.debug("Updated the Conf File: {} for Muted RCAs: {}", rcaConfPath.toString(), mutedRcas);
 
-            // Get all files which begin with filename_, for example : rca.conf_202004291057 for filename 'rca.conf'
-            File rootFolder = new File(getPAConfigDirectory().toString());
-            String[] targetFiles = rootFolder.list((path, name) -> name.startsWith(fileName + seperator));
-            if(targetFiles != null && targetFiles.length > 1) {
-                // Since the filename contain timestamp, in the sorted array, the last file is the (n-1) file.
-                // Delete all file with exception of this (n-1) file
-                Arrays.sort(targetFiles);
-                for (int index = 0; index < (targetFiles.length - 1); index++) {
-                    String fileToDelete = targetFiles[index];
-                    Files.delete(Paths.get(getPAConfigDirectory().toString(), fileToDelete));
-                    LOG.debug("Deleted the older back-up Conf Files: {}", fileToDelete);
-                }
-            }
+            Path oldRcaConfPath = Paths.get(getPAConfigDirectory().toString(), fileName + seperator + "old");
+            Files.move(backupRcaConfPath, oldRcaConfPath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            LOG.debug("Replaced the older Conf File with the back-up Conf File ");
         } catch (Exception ex) {
             LOG.error(ex.toString(), ex);
         }
