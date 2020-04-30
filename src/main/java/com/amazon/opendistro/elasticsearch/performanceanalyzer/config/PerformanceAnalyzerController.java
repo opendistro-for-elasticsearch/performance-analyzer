@@ -1,11 +1,25 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Scanner;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,10 +36,18 @@ public class PerformanceAnalyzerController {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
     public static final int DEFAULT_NUM_OF_SHARDS_PER_COLLECTION = 0;
 
+    public static final String MUTED_RCAS_CONFIG = "muted-rcas";
+    public static final String DEFAULT_MUTED_RCAS = "";
+    // RCA specific configurations are located in below 3 files, depending on the node type
+    public static final String RCA_CONF_FILENAME = "rca.conf";
+    public static final String RCA_MASTER_CONF_FILENAME = "rca_master.conf";
+    public static final String RCA_IDLE_MASTER_CONF_FILENAME = "rca_idle_master.conf";
+
     private boolean paEnabled;
     private boolean rcaEnabled;
     private boolean loggingEnabled;
     private volatile int shardsPerCollection;
+    private volatile String mutedRcas;
     private boolean paEnabledDefaultValue = false;
     private boolean rcaEnabledDefaultValue = false;
     private boolean loggingEnabledDefaultValue = false;
@@ -37,6 +59,7 @@ public class PerformanceAnalyzerController {
         initRcaStateFromConf();
         initLoggingStateFromConf();
         shardsPerCollection = DEFAULT_NUM_OF_SHARDS_PER_COLLECTION;
+        mutedRcas = DEFAULT_MUTED_RCAS;
     }
 
     /**
@@ -76,6 +99,16 @@ public class PerformanceAnalyzerController {
      */
     public int getNodeStatsShardsPerCollection() {
         return shardsPerCollection;
+    }
+
+    /**
+     * Reads the mutedRcas parameter
+     * mutedRcas represents the list of RCAs currently muted for the cluster
+     *
+     * @return String representing muted RCAs
+     */
+    public String getMutedRcas() {
+        return mutedRcas;
     }
 
     /**
@@ -129,6 +162,23 @@ public class PerformanceAnalyzerController {
             PerformanceAnalyzerMetrics.setIsMetricsLogEnabled(this.loggingEnabled);
         }
         saveStateToConf(this.loggingEnabled, LOGGING_ENABLED_CONF);
+    }
+
+    /**
+     * Updates the list of muted RCAs
+     *
+     * @param mutedRcas The desired RCAs to be muted.
+     */
+    public void updateMutedRcasState(final String mutedRcas) {
+        if (mutedRcas != null && !isPerformanceAnalyzerEnabled() && !isRcaEnabled()) {
+            return;
+        }
+        this.mutedRcas = mutedRcas;
+
+        // Save the config to all the rca conf files
+        saveMutedRcasToConf(this.mutedRcas, RCA_CONF_FILENAME);
+        saveMutedRcasToConf(this.mutedRcas, RCA_MASTER_CONF_FILENAME);
+        saveMutedRcasToConf(this.mutedRcas, RCA_IDLE_MASTER_CONF_FILENAME);
     }
 
     private void initPerformanceAnalyzerStateFromConf() {
@@ -202,6 +252,11 @@ public class PerformanceAnalyzerController {
             .getPath();
     }
 
+    private Path getPAConfigDirectory() {
+        return Paths.get(System.getProperty("es.path.home"),
+                "opendistro_performance_analyzer", "pa_config");
+    }
+
     private void saveStateToConf(boolean featureEnabled, String fileName) {
         PerformanceAnalyzerPlugin.invokePrivileged(() -> {
             try {
@@ -213,5 +268,53 @@ public class PerformanceAnalyzerController {
                 LOG.error(ex.toString(), ex);
             }
         });
+    }
+
+    private synchronized void saveMutedRcasToConf(String mutedRcas, String fileName) {
+        try {
+            // create the config json Object from rca config file
+            Path rcaConfPath = Paths.get(getPAConfigDirectory().toString(), fileName);
+            Scanner scanner = new Scanner(new FileInputStream(rcaConfPath.toString()), StandardCharsets.UTF_8.name());
+            String jsonText = scanner.useDelimiter("\\A").next();
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+            mapper.enable(SerializationFeature.INDENT_OUTPUT);
+            JsonNode configObject = mapper.readTree(jsonText);
+
+            // To ensure consistency on read for rca.conf and back-up purpose, we will maintain 2 files,
+            // the (n) 'rca.conf' and the (n-1) 'rca_<timestamp_n1>.conf'. For updating the latest config, we will :
+            //
+            // 1. Back-up the current (n) 'rca.conf' as (n-1) 'rca_<timestamp_n1>.conf'
+            // 2. Update the config object, write to a temp file and atomically move the temp file to rca.conf
+            // 3. Delete the older (n-2) 'rca_<timestamp_n2>.conf' file to ensure we strictly maintain 2 files.
+            String seperator = "_";
+
+            String currTimeStamp = new SimpleDateFormat("yyyyMMddHHmm").format(new Date());
+            Path backupRcaConfPath = Paths.get(getPAConfigDirectory().toString(), fileName + seperator + currTimeStamp);
+            Files.copy(rcaConfPath, backupRcaConfPath);
+            LOG.debug("Created the back-up Conf file: {} for : {}", backupRcaConfPath.toString(), rcaConfPath.toString());
+
+            ((ObjectNode) configObject).put(MUTED_RCAS_CONFIG, mutedRcas);
+            Path tmp = Files.createTempFile(getPAConfigDirectory(), null, null);
+            mapper.writeValue(new FileOutputStream(tmp.toString()), configObject);
+            Files.move(tmp, rcaConfPath, StandardCopyOption.ATOMIC_MOVE);
+            LOG.debug("Updated the Conf File: {} for Muted RCAs: {}", rcaConfPath.toString(), mutedRcas);
+
+            // Get all files which begin with filename_, for example : rca.conf_202004291057 for filename 'rca.conf'
+            File rootFolder = new File(getPAConfigDirectory().toString());
+            String[] targetFiles = rootFolder.list((path, name) -> name.startsWith(fileName + seperator));
+            if(targetFiles != null && targetFiles.length > 1) {
+                // Since the filename contain timestamp, in the sorted array, the last file is the (n-1) file.
+                // Delete all file with exception of this (n-1) file
+                Arrays.sort(targetFiles);
+                for (int index = 0; index < (targetFiles.length - 1); index++) {
+                    String fileToDelete = targetFiles[index];
+                    Files.delete(Paths.get(getPAConfigDirectory().toString(), fileToDelete));
+                    LOG.debug("Deleted the older back-up Conf Files: {}", fileToDelete);
+                }
+            }
+        } catch (Exception ex) {
+            LOG.error(ex.toString(), ex);
+        }
     }
 }

@@ -27,18 +27,21 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 public class ClusterSettingsManager implements ClusterStateListener {
     private static final Logger LOG = LogManager.getLogger(ClusterSettingsManager.class);
     private Map<Setting<Integer>, List<ClusterSettingListener<Integer>>> listenerMap = new HashMap<>();
+    private Map<Setting<String>, List<ClusterSettingListener<String>>> stringTypeSettingslistenerMap = new HashMap<>();
     private final List<Setting<Integer>> managedSettings = new ArrayList<>();
+    private final List<Setting<String>> managedStringTypeSettings = new ArrayList<>();
     private final ClusterSettingsResponseHandler clusterSettingsResponseHandler;
 
     private boolean initialized = false;
 
-    public ClusterSettingsManager(List<Setting<Integer>> initialSettings) {
+    public ClusterSettingsManager(List<Setting<Integer>> initialSettings, List<Setting<String>> initialStringTypeSetting) {
         managedSettings.addAll(initialSettings);
+        managedStringTypeSettings.addAll(initialStringTypeSetting);
         this.clusterSettingsResponseHandler = new ClusterSettingsResponseHandler();
     }
 
     /**
-     * Adds a listener that will be called when the requested setting's value changes.
+     * Adds a listener that will be called when the requested Int type setting's value changes.
      *
      * @param setting  The setting that needs to be listened to.
      * @param listener The listener object that will be called when the setting changes.
@@ -52,6 +55,24 @@ public class ClusterSettingsManager implements ClusterStateListener {
             }
         } else {
             listenerMap.put(setting, Collections.singletonList(listener));
+        }
+    }
+
+    /**
+     * Adds a listener that will be called when the requested String type setting's value changes.
+     *
+     * @param setting  The setting that needs to be listened to.
+     * @param listener The listener object that will be called when the setting changes.
+     */
+    public void addSubscriberForStringTypeSetting(Setting<String> setting, ClusterSettingListener<String> listener) {
+        if (stringTypeSettingslistenerMap.containsKey(setting)) {
+            final List<ClusterSettingListener<String>> currentListeners = stringTypeSettingslistenerMap.get(setting);
+            if (!currentListeners.contains(listener)) {
+                currentListeners.add(listener);
+                stringTypeSettingslistenerMap.put(setting, currentListeners);
+            }
+        } else {
+            stringTypeSettingslistenerMap.put(setting, Collections.singletonList(listener));
         }
     }
 
@@ -76,7 +97,7 @@ public class ClusterSettingsManager implements ClusterStateListener {
     }
 
     /**
-     * Updates the requested setting with the requested value across the cluster.
+     * Updates the requested Int Type setting with the requested value across the cluster.
      *
      * @param setting  The setting that needs to be updated.
      * @param newValue The new value for the setting.
@@ -90,10 +111,31 @@ public class ClusterSettingsManager implements ClusterStateListener {
     }
 
     /**
+     * Updates the requested String type setting with the requested value across the cluster.
+     *
+     * @param setting  The setting that needs to be updated.
+     * @param newValue The new value for the setting.
+     */
+    public void updateSetting(final Setting<String> setting, final String newValue) {
+        final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
+        request.persistentSettings(Settings.builder()
+                .put(setting.getKey(), newValue)
+                .build());
+        ESResources.INSTANCE.getClient().admin().cluster().updateSettings(request);
+    }
+
+    /**
      * Registers a setting update listener for all the settings managed by this instance.
      */
     private void registerSettingUpdateListener() {
         for (Setting<Integer> setting : managedSettings) {
+            ESResources.INSTANCE.getClusterService()
+                                .getClusterSettings()
+                                .addSettingsUpdateConsumer(setting, updatedVal -> callListeners(setting, updatedVal));
+        }
+
+        // Currently, the managedStringTypeSettings consist of only Muted RCAs Setting
+        for (Setting<String> setting : managedStringTypeSettings) {
             ESResources.INSTANCE.getClusterService()
                                 .getClusterSettings()
                                 .addSettingsUpdateConsumer(setting, updatedVal -> callListeners(setting, updatedVal));
@@ -148,7 +190,7 @@ public class ClusterSettingsManager implements ClusterStateListener {
      */
     @Override
     public void clusterChanged(final ClusterChangedEvent event) {
-        // Check if cluster state is set, if set, remove the listener and try to read cluster settings.
+        // Check if cluster state is set; if set, remove the listener and try to read cluster settings.
         final ClusterState state = event.state();
 
         if (state != null) {
@@ -159,7 +201,7 @@ public class ClusterSettingsManager implements ClusterStateListener {
     }
 
     /**
-     * Calls all the listeners for the specified setting with the requested value.
+     * Calls all the listeners for the specified Int type setting with the requested value.
      *
      * @param setting      The setting whose listeners need to be notified.
      * @param settingValue The new value for the setting.
@@ -174,6 +216,21 @@ public class ClusterSettingsManager implements ClusterStateListener {
     }
 
     /**
+     * Calls all the listeners for the specified String type setting with the requested value.
+     *
+     * @param setting      The setting whose listeners need to be notified.
+     * @param settingValue The new value for the setting.
+     */
+    private void callListeners(final Setting<String> setting, String settingValue) {
+        final List<ClusterSettingListener<String>> listeners = stringTypeSettingslistenerMap.get(setting);
+        if (listeners != null) {
+            for (ClusterSettingListener<String> listener : listeners) {
+                listener.onSettingUpdate(settingValue);
+            }
+        }
+    }
+
+    /**
      * Class that handles response to GET /_cluster/settings
      */
     private class ClusterSettingsResponseHandler implements ActionListener<ClusterStateResponse> {
@@ -181,7 +238,7 @@ public class ClusterSettingsManager implements ClusterStateListener {
          * Handle action response. This response may constitute a failure or a
          * success but it is up to the listener to make that decision.
          *
-         * @param clusterStateResponse
+         * @param clusterStateResponse  ClusterStateResponse object
          */
         @Override
         public void onResponse(final ClusterStateResponse clusterStateResponse) {
@@ -195,12 +252,19 @@ public class ClusterSettingsManager implements ClusterStateListener {
                     callListeners(setting, settingValue);
                 }
             }
+
+            for (final Setting<String> setting : managedStringTypeSettings) {
+                String settingValue = clusterSettings.get(setting.getKey(), null);
+                if (settingValue != null) {
+                    callListeners(setting, settingValue);
+                }
+            }
         }
 
         /**
          * A failure caused by an exception at some phase of the task.
          *
-         * @param e
+         * @param e Exception
          */
         @Override
         public void onFailure(final Exception e) {

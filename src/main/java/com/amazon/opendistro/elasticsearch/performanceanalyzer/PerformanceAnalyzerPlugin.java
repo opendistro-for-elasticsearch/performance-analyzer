@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.MutedRcasSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
@@ -103,6 +104,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     private static SecurityManager sm = null;
     private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
+    private final MutedRcasSettingHandler mutedRcasSettingHandler;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private final ClusterSettingsManager clusterSettingsManager;
 
@@ -172,7 +174,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
 
         clusterSettingsManager = new ClusterSettingsManager(
                 Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING));
+                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING),
+                Arrays.asList(PerformanceAnalyzerClusterSettings.MUTED_RCA_SETTING));
 
         perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(
                 performanceAnalyzerController,
@@ -185,6 +188,10 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 clusterSettingsManager);
         clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
                 nodeStatsSettingHandler);
+
+        mutedRcasSettingHandler = new MutedRcasSettingHandler(performanceAnalyzerController, clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForStringTypeSetting(PerformanceAnalyzerClusterSettings.MUTED_RCA_SETTING,
+                mutedRcasSettingHandler);
 
         EventLog eventLog = new EventLog();
         EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
@@ -234,7 +241,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
         PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
         PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
-                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
+                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler, mutedRcasSettingHandler);
         return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp);
     }
 
@@ -273,8 +280,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     @Override
     public List<Setting<?>> getSettings() {
         return Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING);
+                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+                             PerformanceAnalyzerClusterSettings.MUTED_RCA_SETTING);
     }
 
 }
-

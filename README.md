@@ -24,6 +24,25 @@ Then you provide parameters for metrics, aggregations, dimensions, and nodes (op
 ### SAMPLE REQUEST
 GET `_opendistro/_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all`
 
+## MUTE RCA API
+
+### GET API
+Fetches the list of currently muted RCAs for the cluster
+GET `<endpoint>/_opendistro/_performanceanalyzer/mute_rca/cluster/config`
+
+#### SAMPLE REQUEST
+GET `<endpoint>/_opendistro/_performanceanalyzer/mute_rca/cluster/config`
+
+### POST API
+Mutes the list of RCAs(nodes) within the framework.
+
+POST `<endpoint>/_opendistro/_performanceanalyzer/mute_rca/cluster/config` -H 'Content-Type: application/json' -d '{"muted_rcas": "rca1"}'
+
+* rca1 : valid node within the analysis graph
+
+#### SAMPLE REQUEST
+POST `<endpoint>/_opendistro/_performanceanalyzer/mute_rca/cluster/config` -H 'Content-Type: application/json' -d '{"muted_rcas": "HotNodeRca, HighHeapUsageClusterRca"}'
+
 
 ## Documentation
 

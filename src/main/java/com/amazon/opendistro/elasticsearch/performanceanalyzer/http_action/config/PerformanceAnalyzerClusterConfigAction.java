@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.MutedRcasSettingHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -27,20 +28,25 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final String PA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/cluster/config";
     private static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
     private static final String LOGGING_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/cluster/config";
+    private static final String MUTE_RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/mute_rca/cluster/config";
     private static final String ENABLED = "enabled";
     private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
+    private static final String MUTED_RCAS = "muted_rcas";
     private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
 
     private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
+    private final MutedRcasSettingHandler mutedRcasSettingHandler;
 
     public PerformanceAnalyzerClusterConfigAction(final Settings settings, final RestController restController,
                                                   final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler,
-                                                  final NodeStatsSettingHandler nodeStatsSettingHandler) {
+                                                  final NodeStatsSettingHandler nodeStatsSettingHandler,
+                                                  final MutedRcasSettingHandler mutedRcasSettingHandler) {
         super(settings);
         this.clusterSettingHandler = clusterSettingHandler;
         this.nodeStatsSettingHandler = nodeStatsSettingHandler;
+        this.mutedRcasSettingHandler = mutedRcasSettingHandler;
         registerHandlers(restController);
     }
 
@@ -51,6 +57,8 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
         controller.registerHandler(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.GET, LOGGING_CLUSTER_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.POST, LOGGING_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, MUTE_RCA_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, MUTE_RCA_CLUSTER_CONFIG_PATH, this);
     }
 
     /**
@@ -100,6 +108,14 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
                     nodeStatsSettingHandler.updateNodeStatsSetting((Integer)shardPerCollectionValue);
                 }
             }
+
+            // update mute rcas setting if exists
+            if (map.containsKey(MUTED_RCAS)) {
+                Object mutedRcasValue = map.get(MUTED_RCAS);
+                if (mutedRcasValue instanceof String) {
+                    mutedRcasSettingHandler.updateMutedRcasSetting((String)mutedRcasValue);
+                }
+            }
         }
 
         return channel -> {
@@ -108,6 +124,7 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
                 builder.startObject();
                 builder.field(CURRENT, clusterSettingHandler.getCurrentClusterSettingValue());
                 builder.field(SHARDS_PER_COLLECTION, nodeStatsSettingHandler.getNodeStatsSetting());
+                builder.field(MUTED_RCAS, mutedRcasSettingHandler.getMutedRcasSetting());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {

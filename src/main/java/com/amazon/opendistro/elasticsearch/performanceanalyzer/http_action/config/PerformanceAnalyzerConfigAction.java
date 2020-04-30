@@ -38,6 +38,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerConfigAction.class);
     private static final String ENABLED = "enabled";
     private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
+    private static final String MUTED_RCAS = "muted_rcas";
     private static final String PA_ENABLED = "performanceAnalyzerEnabled";
     private static final String RCA_ENABLED = "rcaEnabled";
     private static final String PA_LOGGING_ENABLED = "loggingEnabled";
@@ -46,6 +47,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
     private static final String PA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/config";
     private static final String LOGGING_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/config";
+    private static final String MUTE_RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/mute_rca/config";
 
     public static PerformanceAnalyzerConfigAction getInstance() {
         return instance;
@@ -72,6 +74,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
         controller.registerHandler(RestRequest.Method.POST, RCA_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.GET, LOGGING_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.POST, LOGGING_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, MUTE_RCA_CLUSTER_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, MUTE_RCA_CLUSTER_CONFIG_PATH, this);
     }
 
     @Override
@@ -114,6 +118,14 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                     performanceAnalyzerController.updateNodeStatsShardsPerCollection((Integer)shardPerCollectionValue);
                 }
             }
+
+            // update mute rcas setting if exists
+            if (map.containsKey(MUTED_RCAS)) {
+                Object mutedRcasValue = map.get(MUTED_RCAS);
+                if (mutedRcasValue instanceof String) {
+                    performanceAnalyzerController.updateMutedRcasState((String)mutedRcasValue);
+                }
+            }
         }
 
         return channel -> {
@@ -124,6 +136,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 builder.field(RCA_ENABLED, performanceAnalyzerController.isRcaEnabled());
                 builder.field(PA_LOGGING_ENABLED, performanceAnalyzerController.isLoggingEnabled());
                 builder.field(SHARDS_PER_COLLECTION, performanceAnalyzerController.getNodeStatsShardsPerCollection());
+                builder.field(MUTED_RCAS, performanceAnalyzerController.getMutedRcas());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
