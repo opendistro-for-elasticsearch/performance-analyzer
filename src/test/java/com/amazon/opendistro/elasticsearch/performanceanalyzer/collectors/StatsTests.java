@@ -89,6 +89,7 @@ public class StatsTests {
 
     private static void runInSerial(int iterateSize,  LinkedList<StatExceptionCode> exceptionCodeList, StatsCollector sc) {
         int i = 0;
+        sc.getCounters().clear();
         for(; i < EXEC_COUNT-1; i++) {
             iterate(exceptionCodeList, i * iterateSize, iterateSize, sc);
         }
