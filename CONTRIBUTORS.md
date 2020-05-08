@@ -6,6 +6,8 @@ Kiran Dinakurthi
 
 Ruizhen Guo
 
+Aditya Jindal
+
 Anna Jung
 
 Balaji Kannan
