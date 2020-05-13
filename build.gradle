@@ -26,6 +26,7 @@ buildscript {
 
     dependencies {
         classpath "org.elasticsearch.gradle:build-tools:${es_version}"
+        classpath 'org.ajoberstar:gradle-git:0.2.3'
     }
 }
 
@@ -146,11 +147,6 @@ dependencyLicenses.doFirst {
     updateShas.updateShas()
 }
 
-integTestRunner {
-    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
-    systemProperty 'tests.security.manager', 'false'
-}
-
 bundlePlugin {
     from ("pa_config") {
         into "pa_config"
@@ -170,13 +166,43 @@ bundlePlugin {
     from ("config/opendistro_performance_analyzer") {
         into "config"
     }
-
 }
 
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
                                              "thirdPartyAudit",
                                              "testingConventions"]
+
+import java.nio.file.Paths
+import org.ajoberstar.gradle.git.tasks.GitClone
+
+String rcaDir
+
+// The following Gradle tasks are used to create a PA/RCA enabled Elasticsearch cluster
+task cloneGitRepo(type: GitClone) {
+    rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
+    def destination = file(rcaDir)
+    uri = "https://github.com/sidheart/performance-analyzer-rca.git"
+    destinationPath = destination
+    bare = false
+    enabled = !destination.exists() // to clone only once
+}
+
+task setupEsCluster(type: Exec) {
+    dependsOn(cloneGitRepo)
+    workingDir(rcaDir)
+    commandLine './gradlew', 'enablePaAndRca'
+    doLast {
+        sleep(5000)
+    }
+}
+
+integTestRunner {
+    if (System.getProperty("tests.useDockerCluster") != null) {
+        dependsOn(setupEsCluster)
+    }
+    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
+}
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {
@@ -240,3 +266,5 @@ afterEvaluate {
          tasks = ['build', 'buildRpm', 'buildDeb']
     }
 }
+
+check.dependsOn integTest
