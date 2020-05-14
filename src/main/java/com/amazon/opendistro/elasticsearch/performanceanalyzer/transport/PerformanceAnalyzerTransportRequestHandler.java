@@ -15,6 +15,8 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkShardRequest;
@@ -43,7 +45,12 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
     @Override
     public void messageReceived(T request, TransportChannel channel, Task task) throws Exception {
-        actualHandler.messageReceived(request, getChannel(request, channel, task) , task);
+        try {
+            actualHandler.messageReceived(request, getChannel(request, channel, task), task);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     private TransportChannel getChannel(T request, TransportChannel channel, Task task) {
