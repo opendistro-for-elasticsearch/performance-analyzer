@@ -42,9 +42,9 @@ jobs:
       run: ./gradlew updateShas
     - name: Link docker-compose
       run: |
+        echo "::set-env name=DOCKER_COMPOSE_LOCATION::$(which docker-compose)"
         echo DOCKER COMPOSE IS HERE: $(which docker-compose)
         echo IS DOCKER COMPOSE ACTUALLY HERE? $(ls -l /home/runner/work/performance-analyzer/performance-analyzer/tmp/pa/build/performance-analyzer-rca/build/docker-build/rca-docker/)
-        export DOCKER_COMPOSE_LOCATION=$(which docker-compose)
         echo DOCKER_COMPOSE_LOCATION variable is set to ${DOCKER_COMPOSE_LOCATION}
         echo docker-compose version is $(docker-compose -v)
     - name: Start Build
