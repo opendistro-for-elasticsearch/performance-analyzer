@@ -40,6 +40,11 @@ jobs:
     - name: Update SHA
       working-directory: ./tmp/pa
       run: ./gradlew updateShas
+    - name: Link docker-compose
+      run: |
+        echo DOCKER COMPOSE IS HERE: $(which docker-compose)
+        ln -s $(which docker-compose) /home/runner/work/performance-analyzer/performance-analyzer/tmp/pa/build/performance-analyzer-rca/build/docker-build/rca-docker/docker-compose
+        echo IS DOCKER COMPOSE ACTUALLY HERE? $(ls -l /home/runner/work/performance-analyzer/performance-analyzer/tmp/pa/build/performance-analyzer-rca/build/docker-build/rca-docker/)
     - name: Start Build
       working-directory: ./tmp/pa
-      run: ./gradlew build
+      run: ./gradlew build --info
