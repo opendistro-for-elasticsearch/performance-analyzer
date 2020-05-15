@@ -15,6 +15,8 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkShardRequest;
@@ -43,7 +45,7 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
     @Override
     public void messageReceived(T request, TransportChannel channel, Task task) throws Exception {
-        actualHandler.messageReceived(request, getChannel(request, channel, task) , task);
+        actualHandler.messageReceived(request, getChannel(request, channel, task), task);
     }
 
     private TransportChannel getChannel(T request, TransportChannel channel, Task task) {
@@ -78,7 +80,19 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
         BulkShardRequest bsr = (BulkShardRequest) transportRequest;
         PerformanceAnalyzerTransportChannel performanceanalyzerChannel = new PerformanceAnalyzerTransportChannel();
-        performanceanalyzerChannel.set(channel, System.currentTimeMillis(), bsr.index(), bsr.shardId().id(), bsr.items().length, bPrimary);
+
+        try {
+            performanceanalyzerChannel.set(
+                    channel,
+                    System.currentTimeMillis(),
+                    bsr.index(),
+                    bsr.shardId().id(),
+                    bsr.items().length,
+                    bPrimary);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
 
         return performanceanalyzerChannel;
     }

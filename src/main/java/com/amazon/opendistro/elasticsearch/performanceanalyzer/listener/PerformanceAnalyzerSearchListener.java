@@ -15,6 +15,8 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.index.shard.SearchOperationListener;
@@ -51,32 +53,62 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
     @Override
     public void onPreQueryPhase(SearchContext searchContext) {
-        getSearchListener().preQueryPhase(searchContext);
+        try {
+            getSearchListener().preQueryPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onQueryPhase(SearchContext searchContext, long tookInNanos) {
-        getSearchListener().queryPhase(searchContext, tookInNanos);
+        try {
+            getSearchListener().queryPhase(searchContext, tookInNanos);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onFailedQueryPhase(SearchContext searchContext) {
-        getSearchListener().failedQueryPhase(searchContext);
+        try {
+            getSearchListener().failedQueryPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onPreFetchPhase(SearchContext searchContext) {
-        getSearchListener().preFetchPhase(searchContext);
+        try {
+            getSearchListener().preFetchPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onFetchPhase(SearchContext searchContext, long tookInNanos) {
-        getSearchListener().fetchPhase(searchContext, tookInNanos);
+        try {
+            getSearchListener().fetchPhase(searchContext, tookInNanos);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onFailedFetchPhase(SearchContext searchContext) {
-        getSearchListener().failedFetchPhase(searchContext);
+        try {
+            getSearchListener().failedFetchPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
