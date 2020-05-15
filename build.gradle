@@ -30,11 +30,11 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'nebula.ospackage' version "8.2.0"
+    id 'nebula.ospackage' version "8.3.0"
 }
 
 ext {
-    opendistroVersion = '1.7.0'
+    opendistroVersion = '1.8.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
