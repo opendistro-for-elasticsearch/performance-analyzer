@@ -82,7 +82,13 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
         PerformanceAnalyzerTransportChannel performanceanalyzerChannel = new PerformanceAnalyzerTransportChannel();
 
         try {
-            performanceanalyzerChannel.set(channel, System.currentTimeMillis(), bsr.index(), bsr.shardId().id(), bsr.items().length, bPrimary);
+            performanceanalyzerChannel.set(
+                    channel,
+                    System.currentTimeMillis(),
+                    bsr.index(),
+                    bsr.shardId().id(),
+                    bsr.items().length,
+                    bPrimary);
         } catch (Exception ex) {
             LOG.error(ex);
             StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
