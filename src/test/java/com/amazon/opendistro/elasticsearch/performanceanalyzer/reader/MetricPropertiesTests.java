@@ -152,8 +152,8 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                 storedFieldsMemory, termVectorsMemory,
                 normsMemory, pointsMemory, docValuesMemory,
                 indexWriterMemory, versionMapMemory,
-                bitsetMemory,
-                FailureCondition.NONE, shardSizeInBytes);
+                bitsetMemory, shardSizeInBytes,
+                FailureCondition.NONE);
     }
 
     @Test

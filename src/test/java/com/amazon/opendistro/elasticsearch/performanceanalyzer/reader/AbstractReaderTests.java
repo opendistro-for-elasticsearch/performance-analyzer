@@ -122,7 +122,7 @@ public class AbstractReaderTests extends AbstractTests {
             long storedFieldsMemory, long termVectorsMemory,
             long normsMemory, long pointsMemory, long docValuesMemory,
             long indexWriterMemory, long versionMapMemory,
-            long bitsetMemory, FailureCondition condition, long shardSizeInBytes) {
+            long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
         NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
         String str = (dummyCollector.new NodeStatsMetricsStatus(
