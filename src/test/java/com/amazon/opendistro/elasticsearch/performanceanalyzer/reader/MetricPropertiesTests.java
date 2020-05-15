@@ -334,7 +334,7 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                         createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
-                                0L, condition, 0L));
+                                0L, 0L, condition));
             }
             else {
                 write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
