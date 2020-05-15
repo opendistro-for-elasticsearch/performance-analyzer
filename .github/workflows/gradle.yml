@@ -43,11 +43,10 @@ jobs:
     - name: Link docker-compose
       run: |
         echo DOCKER COMPOSE IS HERE: $(which docker-compose)
-        ln -s $(which docker-compose) /home/runner/work/performance-analyzer/performance-analyzer/tmp/pa/build/performance-analyzer-rca/build/docker-build/rca-docker/docker-compose
         echo IS DOCKER COMPOSE ACTUALLY HERE? $(ls -l /home/runner/work/performance-analyzer/performance-analyzer/tmp/pa/build/performance-analyzer-rca/build/docker-build/rca-docker/)
         export DOCKER_COMPOSE_LOCATION=$(which docker-compose)
         echo DOCKER_COMPOSE_LOCATION variable is set to ${DOCKER_COMPOSE_LOCATION}
         echo docker-compose version is $(docker-compose -v)
     - name: Start Build
       working-directory: ./tmp/pa
-      run: ./gradlew build --info
+      run: ./gradlew build --info --stacktrace
