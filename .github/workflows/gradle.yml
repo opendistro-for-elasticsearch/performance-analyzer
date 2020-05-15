@@ -20,7 +20,6 @@ jobs:
       with:
         repository: opendistro-for-elasticsearch/performance-analyzer-rca
         path: ./tmp/rca
-      run: echo ::set-env name=DOCKER_COMPOSE_LOCATION::$(which docker-compose)
     - name: Checkout Performance Analyzer package
       uses: actions/checkout@v2
       with:
@@ -41,6 +40,8 @@ jobs:
     - name: Update SHA
       working-directory: ./tmp/pa
       run: ./gradlew updateShas
+    - name: Set DOCKER_COMPOSE_LOCATION
+      run: echo ::set-env name=DOCKER_COMPOSE_LOCATION::$(which docker-compose)
     - name: Link docker-compose
       run: |
         echo DOCKER COMPOSE IS HERE: $(which docker-compose)
