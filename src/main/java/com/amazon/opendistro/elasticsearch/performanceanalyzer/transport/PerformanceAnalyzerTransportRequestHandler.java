@@ -45,12 +45,7 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
     @Override
     public void messageReceived(T request, TransportChannel channel, Task task) throws Exception {
-        try {
-            actualHandler.messageReceived(request, getChannel(request, channel, task), task);
-        } catch (Exception ex) {
-            LOG.error(ex);
-            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
-        }
+        actualHandler.messageReceived(request, getChannel(request, channel, task), task);
     }
 
     private TransportChannel getChannel(T request, TransportChannel channel, Task task) {
@@ -85,7 +80,13 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
         BulkShardRequest bsr = (BulkShardRequest) transportRequest;
         PerformanceAnalyzerTransportChannel performanceanalyzerChannel = new PerformanceAnalyzerTransportChannel();
-        performanceanalyzerChannel.set(channel, System.currentTimeMillis(), bsr.index(), bsr.shardId().id(), bsr.items().length, bPrimary);
+
+        try {
+            performanceanalyzerChannel.set(channel, System.currentTimeMillis(), bsr.index(), bsr.shardId().id(), bsr.items().length, bPrimary);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
 
         return performanceanalyzerChannel;
     }
