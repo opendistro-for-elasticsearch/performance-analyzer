@@ -1,5 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -165,11 +167,16 @@ public class ClusterSettingsManager implements ClusterStateListener {
      * @param settingValue The new value for the setting.
      */
     private void callListeners(final Setting<Integer> setting, int settingValue) {
-        final List<ClusterSettingListener<Integer>> listeners = listenerMap.get(setting);
-        if (listeners != null) {
-            for (ClusterSettingListener<Integer> listener : listeners) {
-                listener.onSettingUpdate(settingValue);
+        try {
+            final List<ClusterSettingListener<Integer>> listeners = listenerMap.get(setting);
+            if (listeners != null) {
+                for (ClusterSettingListener<Integer> listener : listeners) {
+                    listener.onSettingUpdate(settingValue);
+                }
             }
+        } catch(Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
         }
     }
 
