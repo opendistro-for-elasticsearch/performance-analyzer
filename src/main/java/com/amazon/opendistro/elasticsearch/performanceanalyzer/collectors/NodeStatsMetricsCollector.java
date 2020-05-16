@@ -40,8 +40,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -150,6 +148,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             put(ShardStatsValue.BITSET_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getBitsetMemoryInBytes());
 
         put(ShardStatsValue.INDEXING_BUFFER.toString(), (shardStats) -> getIndexBufferBytes(shardStats));
+        put(ShardStatsValue.SHARD_SIZE_IN_BYTES.toString(), (shardStats) -> shardStats.getStats().getStore().getSizeInBytes());
 
     } };
 
@@ -254,6 +253,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         private final long indexWriterMemory;
         private final long versionMapMemory;
         private final long bitsetMemory;
+        private final long shardSizeInBytes;
 
         public NodeStatsMetricsStatus(ShardStats shardStats) {
             super();
@@ -299,6 +299,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                     ShardStatsValue.INDEX_WRITER_MEMORY);
             this.versionMapMemory = calculate(ShardStatsValue.VERSION_MAP_MEMORY);
             this.bitsetMemory = calculate(ShardStatsValue.BITSET_MEMORY);
+            this.shardSizeInBytes = calculate(ShardStatsValue.SHARD_SIZE_IN_BYTES);
         }
 
         @SuppressWarnings("checkstyle:parameternumber")
@@ -314,7 +315,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                 long storedFieldsMemory, long termVectorsMemory,
                 long normsMemory, long pointsMemory, long docValuesMemory,
                 long indexWriterMemory, long versionMapMemory,
-                long bitsetMemory) {
+                long bitsetMemory, long shardSizeInBytes) {
             super();
             this.shardStats = null;
             this.indexingThrottleTime = indexingThrottleTime;
@@ -346,6 +347,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.indexWriterMemory = indexWriterMemory;
             this.versionMapMemory = versionMapMemory;
             this.bitsetMemory = bitsetMemory;
+            this.shardSizeInBytes = shardSizeInBytes;
         }
 
 
@@ -501,6 +503,11 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonProperty(ShardStatsValue.Constants.BITSET_MEMORY_VALUE)
         public long getBitsetMemory() {
             return bitsetMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES_VALUE )
+        public long getShardSizeInBytes() {
+            return shardSizeInBytes;
         }
     }
 }
