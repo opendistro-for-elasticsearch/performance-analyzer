@@ -505,7 +505,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             return bitsetMemory;
         }
 
-        @JsonProperty(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES )
+        @JsonProperty(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES_VALUE )
         public long getShardSizeInBytes() {
             return shardSizeInBytes;
         }
