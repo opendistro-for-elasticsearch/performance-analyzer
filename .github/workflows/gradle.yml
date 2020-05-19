@@ -8,7 +8,6 @@ on:
   pull_request:
     branches: 
       - master
-  
 
 jobs:
   build_rca_pkg:
@@ -40,14 +39,8 @@ jobs:
     - name: Update SHA
       working-directory: ./tmp/pa
       run: ./gradlew updateShas
-    - name: Set DOCKER_COMPOSE_LOCATION
+    - name: Set docker-compose path
       run: echo ::set-env name=DOCKER_COMPOSE_LOCATION::$(which docker-compose)
-    - name: Link docker-compose
-      run: |
-        echo DOCKER COMPOSE IS HERE: $(which docker-compose)
-        echo IS DOCKER COMPOSE ACTUALLY HERE? $(ls -l /home/runner/work/performance-analyzer/performance-analyzer/tmp/pa/build/performance-analyzer-rca/build/docker-build/rca-docker/)
-        echo DOCKER_COMPOSE_LOCATION variable is set to ${DOCKER_COMPOSE_LOCATION}
-        echo docker-compose version is $(docker-compose -v)
     - name: Set vm.max_map_count
       run: sudo sysctl -w vm.max_map_count=262144
     - name: Start Build

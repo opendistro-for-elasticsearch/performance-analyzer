@@ -198,10 +198,11 @@ task setupEsCluster(type: Exec) {
 }
 
 integTestRunner {
-    if (System.getProperty("tests.useDockerCluster") != null) {
+    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
+    systemProperty 'tests.security.manager', 'false'
+    if (System.getProperty("tests.useDockerCluster").equals("true")) {
         dependsOn(setupEsCluster)
     }
-    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
 }
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
