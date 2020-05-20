@@ -34,25 +34,14 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
             throw new RuntimeException("Must specify [tests.rest.cluster] system property with a comma delimited list of [host:port] "
                     + "to which to send REST requests");
         }
-        String[] stringUrls = cluster.split(",");
-        List<HttpHost> hosts = Collections.singletonList(buildHttpHost("localhost", PORT));
+        List<HttpHost> hosts = Collections.singletonList(
+                buildHttpHost(cluster.substring(0, cluster.lastIndexOf(":")), PORT));
         logger.info("initializing PerformanceAnalyzer client against {}", hosts);
         paClient = buildClient(restClientSettings(), hosts.toArray(new HttpHost[0]));
     }
 
 
     public static void ensurePaAndRcaEnabled() throws Exception {
-        /*
-        Request request = new Request("POST", "_opendistro/_performanceanalyzer/cluster/config");
-        request.setJsonEntity("{\"enabled\": true}");
-        Response resp = client().performRequest(request);
-        assert resp.getStatusLine().getStatusCode() == 200;
-        request = new Request("POST", "_opendistro/_performanceanalyzer/rca/cluster/config");
-        request.setJsonEntity("{\"enabled\": true}");
-        resp = client().performRequest(request);
-        assert resp.getStatusLine().getStatusCode() == 200;
-        LOG.info("PA INITIAL STATUS {}", EntityUtils.toString(resp.getEntity(), "UTF-8"));
-        */
         // TODO replace with waitFor with a 1min timeout
         for (int i = 0; i < 60; i++) {
             Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
@@ -79,13 +68,13 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         Response resp = paClient.performRequest(request);
         assert resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         LOG.info("PA is emitting metrics!! {}", EntityUtils.toString(resp.getEntity(), "UTF-8"));
-        paClient.close();
+        System.out.println("WASSUP");
     }
 
     @AfterClass
     public static void closePaClient() throws Exception {
         ESRestTestCase.closeClients();
         paClient.close();
-        LOG.info("AfterClass has run");
+        LOG.debug("AfterClass has run");
     }
 }

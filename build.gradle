@@ -182,7 +182,7 @@ String rcaDir
 task cloneGitRepo(type: GitClone) {
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
-    uri = "https://github.com/sidheart/performance-analyzer-rca.git"
+    uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
     destinationPath = destination
     bare = false
     enabled = !destination.exists() // to clone only once
@@ -191,7 +191,7 @@ task cloneGitRepo(type: GitClone) {
 task setupEsCluster(type: Exec) {
     dependsOn(cloneGitRepo)
     workingDir(rcaDir)
-    commandLine './gradlew', 'enablePaAndRca'
+    commandLine './gradlew', 'enableRca'
     doLast {
         sleep(5000)
     }
