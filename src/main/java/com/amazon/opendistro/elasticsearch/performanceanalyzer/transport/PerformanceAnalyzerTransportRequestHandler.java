@@ -90,8 +90,13 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
                     bsr.items().length,
                     bPrimary);
         } catch (Exception ex) {
+            // This exception should not get triggered. An exception would only get triggered here if shardId is null,
+            // but this will not happen because the shardId is resolved "at request creation time for shard-level bulk,
+            // refresh and flush requests".
+            // https://github.com/elastic/elasticsearch/blob/7.3/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationRequest.java
             LOG.error(ex);
             StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+            return channel;
         }
 
         return performanceanalyzerChannel;
