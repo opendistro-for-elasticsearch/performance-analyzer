@@ -15,8 +15,6 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkShardRequest;
@@ -80,19 +78,13 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
         BulkShardRequest bsr = (BulkShardRequest) transportRequest;
         PerformanceAnalyzerTransportChannel performanceanalyzerChannel = new PerformanceAnalyzerTransportChannel();
-
-        try {
-            performanceanalyzerChannel.set(
-                    channel,
-                    System.currentTimeMillis(),
-                    bsr.index(),
-                    bsr.shardId().id(),
-                    bsr.items().length,
-                    bPrimary);
-        } catch (Exception ex) {
-            LOG.error(ex);
-            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
-        }
+        /*
+         * Note, an exception will not get triggered here. An exception would only get triggered here if the shardId
+         * were null, but this would not happen because the shardId is resolved "at request creation time for
+         * shard-level bulk, refresh and flush requests".
+         * https://github.com/elastic/elasticsearch/blob/7.3/server/src/main/java/org/elasticsearch/action/support/replication/ReplicationRequest.java
+         */
+        performanceanalyzerChannel.set(channel, System.currentTimeMillis(), bsr.index(), bsr.shardId().id(), bsr.items().length, bPrimary);
 
         return performanceanalyzerChannel;
     }
