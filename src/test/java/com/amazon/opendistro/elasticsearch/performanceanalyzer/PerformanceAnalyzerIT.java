@@ -1,6 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -12,6 +13,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,15 +62,40 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         }
     }
 
+    private static class TestUtils {
+        public static final String DATA = "data";
+        public static final String RECORDS = "records";
+
+        // Field related strings
+        public static final String FIELDS = "fields";
+        public static final String FIELD_NAME = "name";
+        public static final String FIELD_TYPE = "type";
+        public static final String DOUBLE_TYPE = "DOUBLE";
+
+        // Metrics related strings
+        public static final String M_DISKUTIL = "Disk_Utilization";
+    }
+
     @Test
     public void checkMetrics() throws Exception {
         ensurePaAndRcaEnabled();
         Request request = new Request("GET",
                 "/_opendistro/_performanceanalyzer/metrics/?metrics=Disk_Utilization&agg=max&dim=&nodes=all");
         Response resp = paClient.performRequest(request);
-        assert resp.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
-        LOG.info("PA is emitting metrics!! {}", EntityUtils.toString(resp.getEntity(), "UTF-8"));
-        System.out.println("WASSUP");
+        Assert.assertEquals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonString = EntityUtils.toString(resp.getEntity());
+        JsonNode root = mapper.readTree(jsonString);
+        root.forEach( entry -> {
+            JsonNode data = entry.get(TestUtils.DATA);
+            Assert.assertEquals(1, data.get(TestUtils.FIELDS).size());
+            JsonNode field = data.get(TestUtils.FIELDS).get(0);
+            Assert.assertEquals(TestUtils.M_DISKUTIL, field.get(TestUtils.FIELD_NAME).asText());
+            Assert.assertEquals(TestUtils.DOUBLE_TYPE, field.get(TestUtils.FIELD_TYPE).asText());
+            JsonNode records = data.get(TestUtils.RECORDS);
+            Assert.assertEquals(1, records.size());
+            records.get(0).forEach(record -> Assert.assertTrue(record.asDouble() >= 0));
+        });
     }
 
     @AfterClass
