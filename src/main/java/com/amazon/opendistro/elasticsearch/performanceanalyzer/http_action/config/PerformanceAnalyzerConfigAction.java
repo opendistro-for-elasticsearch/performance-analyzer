@@ -49,6 +49,10 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static PerformanceAnalyzerConfigAction instance = null;
     private boolean isInitialized = false;
     private boolean featureEanbledDefaultValue = true;
+    private static final List<Route> ROUTES = unmodifiableList(asList(
+            new Route(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config"),
+            new Route(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config")
+    ));
 
     public static PerformanceAnalyzerConfigAction getInstance() {
         return instance;
@@ -68,10 +72,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
 
     @Override
     public List<Route> routes() {
-        return  unmodifiableList(asList(
-                new Route(org.elasticsearch.rest.RestRequest.Method.GET, "/_opendistro/_performanceanalyzer/config"),
-                new Route(org.elasticsearch.rest.RestRequest.Method.POST, "/_opendistro/_performanceanalyzer/config")
-        ));
+        return ROUTES;
     }
 
     @Override
