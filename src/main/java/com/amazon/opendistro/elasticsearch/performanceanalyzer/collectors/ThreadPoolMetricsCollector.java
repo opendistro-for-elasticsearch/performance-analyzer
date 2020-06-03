@@ -15,17 +15,20 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import java.util.Iterator;
-
-import org.elasticsearch.threadpool.ThreadPoolStats.Stats;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ThreadPoolDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ThreadPoolValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Iterator;
+import org.elasticsearch.threadpool.ThreadPoolStats.Stats;
 
 public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ThreadPoolMetricsCollector.class).samplingInterval;
@@ -49,12 +52,26 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
 
         while (statsIterator.hasNext()) {
             Stats stats = statsIterator.next();
+            ThreadPoolStatus threadPoolStatus = AccessController.doPrivileged((PrivilegedAction<ThreadPoolStatus>) () -> {
+                try {
+                    //This is for backward compatibility. core ES may or may not emit latency metric
+                    // (depending on whether the patch has been applied or not)
+                    // so we need to use reflection to check whether getLatency() method exist in ThreadPoolStats.java.
+                    Method getLantencyMethod = Stats.class.getMethod("getLatency");
+                    double latency = (Double) getLantencyMethod.invoke(stats);
+                    return new ThreadPoolStatus(stats.getName(),
+                        stats.getQueue(), stats.getRejected(),
+                        stats.getThreads(), stats.getActive(), latency);
+                } catch (Exception e) {
+                    //core ES does not have the latency patch. send the threadpool metrics without adding latency.
+                    return new ThreadPoolStatus(stats.getName(),
+                        stats.getQueue(), stats.getRejected(),
+                        stats.getThreads(), stats.getActive());
+                }
+            });
             value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
-                    .append(new ThreadPoolStatus(stats.getName(),
-                            stats.getQueue(), stats.getRejected(),
-                            stats.getThreads(), stats.getActive()).serialize());
+                    .append(threadPoolStatus.serialize());
         }
-
         saveMetricValues(value.toString(), startTime);
     }
 
@@ -74,17 +91,34 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         public final long rejected;
         public final int threadsCount;
         public final int threadsActive;
+        @JsonInclude(Include.NON_NULL)
+        public final Double queueLatency;
 
-        public ThreadPoolStatus(String type,
-                                int queueSize,
-                                long rejected,
-                                int threadsCount,
-                                int threadsActive) {
+          public ThreadPoolStatus(String type,
+            int queueSize,
+            long rejected,
+            int threadsCount,
+            int threadsActive) {
             this.type = type;
             this.queueSize = queueSize;
             this.rejected = rejected;
             this.threadsCount = threadsCount;
             this.threadsActive = threadsActive;
+            this.queueLatency = null;
+        }
+
+        public ThreadPoolStatus(String type,
+            int queueSize,
+            long rejected,
+            int threadsCount,
+            int threadsActive,
+            double queueLatency) {
+            this.type = type;
+            this.queueSize = queueSize;
+            this.rejected = rejected;
+            this.threadsCount = threadsCount;
+            this.threadsActive = threadsActive;
+            this.queueLatency = queueLatency;
         }
 
         @JsonProperty(ThreadPoolDimension.Constants.TYPE_VALUE)
@@ -110,6 +144,11 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         @JsonProperty(ThreadPoolValue.Constants.THREADS_ACTIVE_VALUE)
         public int getThreadsActive() {
             return threadsActive;
+        }
+
+        @JsonProperty(ThreadPoolValue.Constants.QUEUE_LATENCY_VALUE)
+        public Double getQueueLatency() {
+            return queueLatency;
         }
     }
 }
