@@ -195,7 +195,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
 
     // Add Handler whenever add new redirectAgent path
     if (SUPPORTED_REDIRECTIONS.contains(redirectEndpoint)) {
-      String uri = String.format(redirectBasePath + request.uri().split(AGENT_PATH)[1]);
+      String uri = redirectBasePath + request.uri().split(AGENT_PATH)[1];
       return new URL(uri);
     }
     return null;
