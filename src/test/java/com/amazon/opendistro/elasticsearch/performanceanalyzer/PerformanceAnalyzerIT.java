@@ -62,20 +62,6 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         }
     }
 
-    private static class TestUtils {
-        public static final String DATA = "data";
-        public static final String RECORDS = "records";
-
-        // Field related strings
-        public static final String FIELDS = "fields";
-        public static final String FIELD_NAME = "name";
-        public static final String FIELD_TYPE = "type";
-        public static final String DOUBLE_TYPE = "DOUBLE";
-
-        // Metrics related strings
-        public static final String M_DISKUTIL = "Disk_Utilization";
-    }
-
     @Test
     public void checkMetrics() throws Exception {
         ensurePaAndRcaEnabled();
@@ -83,7 +69,6 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
                 "/_opendistro/_performanceanalyzer/metrics/?metrics=Disk_Utilization&agg=max&dim=&nodes=all");
         Response resp = paClient.performRequest(request);
         Assert.assertEquals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
-        ObjectMapper mapper = new ObjectMapper();
         String jsonString = EntityUtils.toString(resp.getEntity());
         JsonNode root = mapper.readTree(jsonString);
         root.forEach( entry -> {
@@ -103,5 +88,19 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         ESRestTestCase.closeClients();
         paClient.close();
         LOG.debug("AfterClass has run");
+    }
+
+    private static class TestUtils {
+        public static final String DATA = "data";
+        public static final String RECORDS = "records";
+
+        // Field related strings
+        public static final String FIELDS = "fields";
+        public static final String FIELD_NAME = "name";
+        public static final String FIELD_TYPE = "type";
+        public static final String DOUBLE_TYPE = "DOUBLE";
+
+        // Metrics related strings
+        public static final String M_DISKUTIL = "Disk_Utilization";
     }
 }
