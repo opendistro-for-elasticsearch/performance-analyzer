@@ -4,7 +4,6 @@ on:
   push: 
     branches: 
       - master
-
   pull_request:
     branches: 
       - master
@@ -49,3 +48,6 @@ jobs:
     - name: Start Build
       working-directory: ./tmp/pa
       run: ./gradlew build
+    - name: Run Integration Tests
+      working-directory: ./tmp/pa
+      run: ./gradlew integTest
