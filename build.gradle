@@ -267,5 +267,3 @@ afterEvaluate {
          tasks = ['build', 'buildRpm', 'buildDeb']
     }
 }
-
-check.dependsOn integTest
