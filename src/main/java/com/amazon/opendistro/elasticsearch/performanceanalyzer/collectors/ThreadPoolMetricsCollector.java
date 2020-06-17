@@ -57,11 +57,16 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                     //This is for backward compatibility. core ES may or may not emit latency metric
                     // (depending on whether the patch has been applied or not)
                     // so we need to use reflection to check whether getLatency() method exist in ThreadPoolStats.java.
+                    // call stats.getLatency()
                     Method getLantencyMethod = Stats.class.getMethod("getLatency");
                     double latency = (Double) getLantencyMethod.invoke(stats);
+                    // call stats.getCapacity()
+                    Method getCapacityMethod = Stats.class.getMethod("getCapacity");
+                    int capacity = (Integer) getCapacityMethod.invoke(stats);
                     return new ThreadPoolStatus(stats.getName(),
                         stats.getQueue(), stats.getRejected(),
-                        stats.getThreads(), stats.getActive(), latency);
+                        stats.getThreads(), stats.getActive(),
+                        latency, capacity);
                 } catch (Exception e) {
                     //core ES does not have the latency patch. send the threadpool metrics without adding latency.
                     return new ThreadPoolStatus(stats.getName(),
@@ -93,6 +98,8 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         public final int threadsActive;
         @JsonInclude(Include.NON_NULL)
         public final Double queueLatency;
+        @JsonInclude(Include.NON_NULL)
+        public final Integer queueCapacity;
 
           public ThreadPoolStatus(String type,
             int queueSize,
@@ -105,6 +112,7 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             this.threadsCount = threadsCount;
             this.threadsActive = threadsActive;
             this.queueLatency = null;
+            this.queueCapacity = null;
         }
 
         public ThreadPoolStatus(String type,
@@ -112,13 +120,15 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             long rejected,
             int threadsCount,
             int threadsActive,
-            double queueLatency) {
+            double queueLatency,
+            int queueCapacity) {
             this.type = type;
             this.queueSize = queueSize;
             this.rejected = rejected;
             this.threadsCount = threadsCount;
             this.threadsActive = threadsActive;
             this.queueLatency = queueLatency;
+            this.queueCapacity = queueCapacity;
         }
 
         @JsonProperty(ThreadPoolDimension.Constants.TYPE_VALUE)
@@ -149,6 +159,11 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         @JsonProperty(ThreadPoolValue.Constants.QUEUE_LATENCY_VALUE)
         public Double getQueueLatency() {
             return queueLatency;
+        }
+
+        @JsonProperty(ThreadPoolValue.Constants.QUEUE_CAPACITY_VALUE)
+        public Integer getQueueCapacity() {
+            return queueCapacity;
         }
     }
 }
