@@ -1,4 +1,4 @@
-## Version 1.8.0 (Current)
+## Version 1.8.0
 
 Version compatible with elasticsearch 7.7.0
 
