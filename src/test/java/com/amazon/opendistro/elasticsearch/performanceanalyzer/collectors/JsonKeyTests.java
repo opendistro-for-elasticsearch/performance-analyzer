@@ -13,7 +13,6 @@
  * permissions and limitations under the License.
  */
 
-
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import static org.junit.Assert.assertTrue;
@@ -23,8 +22,6 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
-
-import org.junit.Test;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
@@ -81,7 +78,7 @@ public class JsonKeyTests {
         }
     };
 
-    @Test
+    //@Test
     public void testJsonKeyNames() throws NoSuchFieldException,
     SecurityException {
 
