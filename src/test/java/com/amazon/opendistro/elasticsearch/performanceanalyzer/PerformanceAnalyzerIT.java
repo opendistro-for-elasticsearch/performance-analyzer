@@ -49,7 +49,7 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
                 try {
                     restClientArr[0] = super.buildClient(settings, hosts);
                 } catch (Exception e) {
-                    logger.debug("Error building RestClient against hosts {}", hosts, e);
+                    logger.debug("Error building RestClient against hosts {}: {}", hosts, e);
                     return false;
                 }
                 return true;
