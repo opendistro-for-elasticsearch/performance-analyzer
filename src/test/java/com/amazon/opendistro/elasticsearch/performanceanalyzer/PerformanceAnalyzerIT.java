@@ -1,5 +1,6 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,22 +12,50 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.rest.ESRestTestCase;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class PerformanceAnalyzerIT extends ESRestTestCase {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIT.class);
     private static final int PORT = 9600;
     private static final ObjectMapper mapper = new ObjectMapper();
     private static RestClient paClient;
+
+    // Don't wipe the cluster after test completion
+    @Override
+    protected boolean preserveClusterUponCompletion() {
+        return true;
+    }
+
+    // This method is the same as ESRestTestCase#buildClient, but it attempts to connect
+    // to the provided cluster for 1 minute before giving up. This is useful when we spin up
+    // our own Docker cluster on the local node for Integration Testing
+    @Override
+    protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
+        final RestClient[] restClientArr = new RestClient[1];
+        try {
+            WaitFor.waitFor(() -> {
+                try {
+                    restClientArr[0] = super.buildClient(settings, hosts);
+                } catch (Exception e) {
+                    logger.debug("Error building RestClient against hosts {}", hosts, e);
+                    return false;
+                }
+                return true;
+            }, 1, TimeUnit.MINUTES);
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+        return restClientArr[0];
+    }
 
     @Before
     public void initPaClient() throws IOException {
@@ -65,12 +94,25 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
     @Test
     public void checkMetrics() throws Exception {
         ensurePaAndRcaEnabled();
-        Request request = new Request("GET",
-                "/_opendistro/_performanceanalyzer/metrics/?metrics=Disk_Utilization&agg=max&dim=&nodes=all");
-        Response resp = paClient.performRequest(request);
-        Assert.assertEquals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
-        String jsonString = EntityUtils.toString(resp.getEntity());
-        JsonNode root = mapper.readTree(jsonString);
+        final String[] jsonString = new String[1];
+        WaitFor.waitFor(() -> {
+            Request request = new Request("GET",
+                    "/_opendistro/_performanceanalyzer/metrics/?metrics=Disk_Utilization&agg=max&dim=&nodes=all");
+            Response resp = paClient.performRequest(request);
+            Assert.assertEquals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
+            jsonString[0] = EntityUtils.toString(resp.getEntity());
+            JsonNode root = mapper.readTree(jsonString[0]);
+            for (Iterator<JsonNode> it = root.elements(); it.hasNext(); ) {
+                JsonNode entry = it.next();
+                JsonNode data = entry.get(TestUtils.DATA);
+                if (data.get(TestUtils.FIELDS) == null) {
+                    return false;
+                }
+            }
+            return jsonString[0] != null && !jsonString[0].isEmpty();
+        }, 1, TimeUnit.MINUTES);
+        logger.info("jsonString is {}", jsonString[0]);
+        JsonNode root = mapper.readTree(jsonString[0]);
         root.forEach( entry -> {
             JsonNode data = entry.get(TestUtils.DATA);
             Assert.assertEquals(1, data.get(TestUtils.FIELDS).size());

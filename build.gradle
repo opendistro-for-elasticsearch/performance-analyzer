@@ -178,8 +178,16 @@ import org.ajoberstar.gradle.git.tasks.GitClone
 
 String rcaDir
 
+static def propEnabled(property) {
+    return System.getProperty(property) != null
+}
+
 // The following Gradle tasks are used to create a PA/RCA enabled Elasticsearch cluster
+// Pass the -Dtests.enableIT property to Gradle to run ITs
 task cloneGitRepo(type: GitClone) {
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
     uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
@@ -188,19 +196,31 @@ task cloneGitRepo(type: GitClone) {
     enabled = !destination.exists() // to clone only once
 }
 
-task setupEsCluster(type: Exec) {
+task setupEsCluster() {
     dependsOn(cloneGitRepo)
-    workingDir(rcaDir)
-    commandLine './gradlew', 'enableRca'
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
     doLast {
+        exec {
+            workingDir(rcaDir)
+            commandLine 'sed', '-i', '""', 's|#webservice-bind-host =|webservice-bind-host = 0.0.0.0|g', 'pa_config/performance-analyzer.properties'
+        }
+        exec {
+            workingDir(rcaDir)
+            commandLine './gradlew', 'enableRca'
+        }
         sleep(5000)
     }
 }
 
 integTestRunner {
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
     // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
     systemProperty 'tests.security.manager', 'false'
-    if (System.getProperty("tests.useDockerCluster").equals("true")) {
+    if (propEnabled("tests.useDockerCluster")) {
         dependsOn(setupEsCluster)
     }
 }

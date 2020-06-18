@@ -45,9 +45,9 @@ jobs:
       # Set the vm.max_map_count system property to the minimum required to run Elasticsearch
     - name: Set vm.max_map_count
       run: sudo sysctl -w vm.max_map_count=262144
-    - name: Start Build
+    - name: Build PA and run Unit Tests
       working-directory: ./tmp/pa
       run: ./gradlew build
     - name: Run Integration Tests
       working-directory: ./tmp/pa
-      run: ./gradlew integTest
+      run: ./gradlew integTest -Dtests.enableIT -Dtests.useDockerCluster
