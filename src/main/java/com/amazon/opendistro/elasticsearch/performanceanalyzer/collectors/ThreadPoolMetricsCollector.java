@@ -27,17 +27,24 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.threadpool.ThreadPoolStats.Stats;
 
 public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
+    private static final Logger LOG = LogManager.getLogger(ThreadPoolMetricsCollector.class);
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ThreadPoolMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 0;
     private StringBuilder value;
+    private final Map<String, ThreadPoolStatsRecord> statsRecordMap;
 
     public ThreadPoolMetricsCollector() {
         super(SAMPLING_TIME_INTERVAL, "ThreadPoolMetrics");
         value = new StringBuilder();
+        statsRecordMap = new HashMap<>();
     }
 
     @Override
@@ -52,6 +59,25 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
 
         while (statsIterator.hasNext()) {
             Stats stats = statsIterator.next();
+            final long rejectionDelta;
+            String name = stats.getName();
+            if (statsRecordMap.containsKey(name)) {
+                ThreadPoolStatsRecord lastRecord = statsRecordMap.get(name);
+                // if the timestamp in previous record is greater than 15s (3 * intervals),
+                // then the scheduler might hang or freeze due to long GC etc. We simply drop
+                // previous record here and set rejectionDelta to 0.
+                if (startTime - lastRecord.getTimestamp() <= SAMPLING_TIME_INTERVAL * 3) {
+                    rejectionDelta = stats.getRejected() - lastRecord.getRejected();
+                }
+                else {
+                    rejectionDelta = 0;
+                }
+            }
+            // no previous record
+            else {
+                rejectionDelta = 0;
+            }
+            statsRecordMap.put(name, new ThreadPoolStatsRecord(startTime, stats.getRejected()));
             ThreadPoolStatus threadPoolStatus = AccessController.doPrivileged((PrivilegedAction<ThreadPoolStatus>) () -> {
                 try {
                     //This is for backward compatibility. core ES may or may not emit latency metric
@@ -64,13 +90,13 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                     Method getCapacityMethod = Stats.class.getMethod("getCapacity");
                     int capacity = (Integer) getCapacityMethod.invoke(stats);
                     return new ThreadPoolStatus(stats.getName(),
-                        stats.getQueue(), stats.getRejected(),
+                        stats.getQueue(), rejectionDelta,
                         stats.getThreads(), stats.getActive(),
                         latency, capacity);
                 } catch (Exception e) {
                     //core ES does not have the latency patch. send the threadpool metrics without adding latency.
                     return new ThreadPoolStatus(stats.getName(),
-                        stats.getQueue(), stats.getRejected(),
+                        stats.getQueue(), rejectionDelta,
                         stats.getThreads(), stats.getActive());
                 }
             });
@@ -88,6 +114,24 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         }
 
         return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sThreadPoolPath);
+    }
+
+    private static class ThreadPoolStatsRecord {
+        private final long timestamp;
+        private final long rejected;
+
+        ThreadPoolStatsRecord(long timestamp, long rejected) {
+            this.timestamp = timestamp;
+            this.rejected = rejected;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+
+        public long getRejected() {
+            return rejected;
+        }
     }
 
     public static class ThreadPoolStatus extends MetricStatus {
