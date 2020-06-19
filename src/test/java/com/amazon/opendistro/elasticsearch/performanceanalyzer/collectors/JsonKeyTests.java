@@ -13,7 +13,6 @@
  * permissions and limitations under the License.
  */
 
-
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import static org.junit.Assert.assertTrue;
@@ -23,8 +22,6 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
-
-import org.junit.Test;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
@@ -50,6 +47,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDim
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.junit.Test;
 
 /**
  * Writer serialize a java bean to a /dev/shm/performanceanalyzer file using a collector's

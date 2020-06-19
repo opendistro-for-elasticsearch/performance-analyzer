@@ -204,10 +204,6 @@ task setupEsCluster() {
     doLast {
         exec {
             workingDir(rcaDir)
-            commandLine 'sed', '-i', '""', 's|#webservice-bind-host =|webservice-bind-host = 0.0.0.0|g', 'pa_config/performance-analyzer.properties'
-        }
-        exec {
-            workingDir(rcaDir)
             commandLine './gradlew', 'enableRca'
         }
         sleep(5000)
