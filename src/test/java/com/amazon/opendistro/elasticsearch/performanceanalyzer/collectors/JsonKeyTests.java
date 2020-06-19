@@ -47,6 +47,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDim
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.junit.Test;
 
 /**
  * Writer serialize a java bean to a /dev/shm/performanceanalyzer file using a collector's
@@ -78,7 +79,7 @@ public class JsonKeyTests {
         }
     };
 
-    //@Test
+    @Test
     public void testJsonKeyNames() throws NoSuchFieldException,
     SecurityException {
 
