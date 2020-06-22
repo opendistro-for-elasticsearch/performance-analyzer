@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
@@ -44,13 +43,8 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
 
     @Before
     public void init() {
-        Settings settings = Settings.builder()
-            .put("node.name", ThreadPoolMetricsCollectorTests.class.getSimpleName())
-            .build();
-        //mockThreadPool = new ThreadPool(settings);
         mockThreadPool = Mockito.mock(ThreadPool.class);
         ESResources.INSTANCE.setThreadPool(mockThreadPool);
-
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, MetricsConfiguration.cdefault);
         threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
