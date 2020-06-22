@@ -15,35 +15,54 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 
-@Ignore
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector.ThreadPoolStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.threadpool.ThreadPool;
+import org.elasticsearch.threadpool.ThreadPoolStats;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
+
+    private ThreadPoolMetricsCollector threadPoolMetricsCollector;
+
+    @Mock
+    private ThreadPool mockThreadPool;
+
+    @Before
+    public void init() {
+        Settings settings = Settings.builder()
+            .put("node.name", ThreadPoolMetricsCollectorTests.class.getSimpleName())
+            .build();
+        //mockThreadPool = new ThreadPool(settings);
+        mockThreadPool = Mockito.mock(ThreadPool.class);
+        ESResources.INSTANCE.setThreadPool(mockThreadPool);
+
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+        MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, MetricsConfiguration.cdefault);
+        threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
+    }
 
     @Test
     public void testThreadPoolMetrics() {
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1453724339;
-        
-        MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, MetricsConfiguration.cdefault);
-        
-        ThreadPoolMetricsCollector threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
         threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
-
-
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/thread_pool/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("12321.5464", fetchedValue);
+        List<Event> metrics = readEvents();
+        assertEquals(1, metrics.size());
+        assertEquals("12321.5464", metrics.get(0).value);
 
         try {
             threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills, "123");
@@ -58,5 +77,65 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         } catch (RuntimeException ex) {
             //- expecting exception...2 values passed; 0 expected
         }
+    }
+
+    @Test
+    public void testCollectMetrics() throws IOException {
+        long startTimeInMills = 1453724339;
+        Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(2));
+        threadPoolMetricsCollector.collectMetrics(startTimeInMills);
+        ThreadPoolStatus threadPoolStatus = readMetrics();
+        assertEquals(0, threadPoolStatus.getRejected());
+
+        startTimeInMills += 5000;
+        Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(4));
+        threadPoolMetricsCollector.collectMetrics(startTimeInMills);
+        threadPoolStatus = readMetrics();
+        assertEquals(2, threadPoolStatus.getRejected());
+
+        startTimeInMills += 12000;
+        Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(9));
+        threadPoolMetricsCollector.collectMetrics(startTimeInMills);
+        threadPoolStatus = readMetrics();
+        assertEquals(5, threadPoolStatus.getRejected());
+
+        startTimeInMills += 16000;
+        Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(20));
+        threadPoolMetricsCollector.collectMetrics(startTimeInMills);
+        threadPoolStatus = readMetrics();
+        assertEquals(0, threadPoolStatus.getRejected());
+
+        startTimeInMills += 3000;
+        Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(21));
+        threadPoolMetricsCollector.collectMetrics(startTimeInMills);
+        threadPoolStatus = readMetrics();
+        assertEquals(1, threadPoolStatus.getRejected());
+
+        startTimeInMills += 3000;
+        Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(19));
+        threadPoolMetricsCollector.collectMetrics(startTimeInMills);
+        threadPoolStatus = readMetrics();
+        assertEquals(0, threadPoolStatus.getRejected());
+    }
+
+    private ThreadPoolStats generateThreadPoolStat(long rejected) {
+        List<ThreadPoolStats.Stats> stats = new ArrayList<>();
+        stats.add(new ThreadPoolStats.Stats("write", 0, 0, 0, rejected, 0, 0));
+        return new ThreadPoolStats(stats);
+    }
+
+    private List<Event> readEvents() {
+        List<Event> metrics = new ArrayList<>();
+        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
+        return metrics;
+    }
+
+    private ThreadPoolStatus readMetrics() throws IOException {
+        List<Event> metrics = readEvents();
+        assert metrics.size() == 1;
+        ObjectMapper objectMapper = new ObjectMapper();
+        String[] jsonStrs = metrics.get(0).value.split("\n");
+        assert jsonStrs.length == 2;
+        return objectMapper.readValue(jsonStrs[1], ThreadPoolStatus.class);
     }
 }

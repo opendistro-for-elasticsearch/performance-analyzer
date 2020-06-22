@@ -24,6 +24,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.annotations.VisibleForTesting;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -169,6 +170,19 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             this.threadsActive = threadsActive;
             this.queueLatency = queueLatency;
             this.queueCapacity = queueCapacity;
+        }
+
+        // default constructor for jackson to de-serialize this class
+        // from json string in unit test
+        @VisibleForTesting
+        public ThreadPoolStatus() {
+            this.type = "testing";
+            this.queueSize = -1;
+            this.rejected = -1;
+            this.threadsCount = -1;
+            this.threadsActive = -1;
+            this.queueLatency = null;
+            this.queueCapacity = null;
         }
 
         @JsonProperty(ThreadPoolDimension.Constants.TYPE_VALUE)
