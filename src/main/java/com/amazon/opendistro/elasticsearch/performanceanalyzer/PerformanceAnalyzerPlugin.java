@@ -69,6 +69,7 @@ import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.NetworkPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
+import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -197,7 +198,8 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
                                                ResourceWatcherService resourceWatcherService, ScriptService scriptService,
                                                NamedXContentRegistry xContentRegistry, Environment environment,
                                                NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
-                                               IndexNameExpressionResolver indexNameExpressionResolver) {
+                                               IndexNameExpressionResolver indexNameExpressionResolver,
+                                               Supplier<RepositoriesService> repositoriesServiceSupplier) {
         ESResources.INSTANCE.setClusterService(clusterService);
         ESResources.INSTANCE.setThreadPool(threadPool);
         ESResources.INSTANCE.setEnvironment(environment);
@@ -217,4 +219,5 @@ public class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, N
 
 
 }
+
 
