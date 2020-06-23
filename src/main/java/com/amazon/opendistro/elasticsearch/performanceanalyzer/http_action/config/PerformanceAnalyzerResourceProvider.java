@@ -41,8 +41,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.security.AccessControlException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -89,16 +88,22 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
         SSLContext sc = SSLContext.getInstance("SSL");
         sc.init(null, trustAllCerts, new java.security.SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-      } catch (NoSuchAlgorithmException e) {
-        LOG.error("Error encountered while initializing SSLContext", e);
-      } catch (KeyManagementException e) {
-        LOG.error("Error encountered while initializing SSLContext", e);
+      } catch (AccessControlException e) {
+        LOG.warn("SecurityManager forbids setting default SSL Socket Factory...using default settings", e);
+      } catch (Exception e) {
+        LOG.warn("Error encountered while initializing SSLContext...using default settings", e);
       }
 
       // Create all-trusting host name verifier
       HostnameVerifier allHostsValid = (hostname, session) -> true;
-      // Install the all-trusting host verifier
-      HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+      // Attempt to install the all-trusting host verifier
+      try {
+        HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
+      } catch (AccessControlException e) {
+        LOG.warn("SecurityManager forbids setting default hostname verifier...using default settings", e);
+      } catch (Exception e) {
+        LOG.warn("Error encountered while initializing hostname verifier...using default settings", e);
+      }
     }
   }
 
