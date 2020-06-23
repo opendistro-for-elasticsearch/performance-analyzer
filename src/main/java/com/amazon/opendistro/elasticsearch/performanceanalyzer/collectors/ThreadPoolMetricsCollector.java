@@ -58,9 +58,9 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         while (statsIterator.hasNext()) {
             Stats stats = statsIterator.next();
             long rejectionDelta = 0;
-            String name = stats.getName();
-            if (statsRecordMap.containsKey(name)) {
-                ThreadPoolStatsRecord lastRecord = statsRecordMap.get(name);
+            String threadPoolName = stats.getName();
+            if (statsRecordMap.containsKey(threadPoolName)) {
+                ThreadPoolStatsRecord lastRecord = statsRecordMap.get(threadPoolName);
                 // if the timestamp in previous record is greater than 15s (3 * intervals),
                 // then the scheduler might hang or freeze due to long GC etc. We simply drop
                 // previous record here and set rejectionDelta to 0.
@@ -73,7 +73,7 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                     }
                 }
             }
-            statsRecordMap.put(name, new ThreadPoolStatsRecord(startTime, stats.getRejected()));
+            statsRecordMap.put(threadPoolName, new ThreadPoolStatsRecord(startTime, stats.getRejected()));
             final long finalRejectionDelta = rejectionDelta;
             ThreadPoolStatus threadPoolStatus = AccessController.doPrivileged((PrivilegedAction<ThreadPoolStatus>) () -> {
                 try {
