@@ -89,9 +89,9 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
         sc.init(null, trustAllCerts, new java.security.SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
       } catch (AccessControlException e) {
-        LOG.info("SecurityManager forbids setting default SSL Socket Factory...using default settings", e);
+        LOG.warn("SecurityManager forbids setting default SSL Socket Factory...using default settings", e);
       } catch (Exception e) {
-        LOG.info("Error encountered while initializing SSLContext...using default settings", e);
+        LOG.warn("Error encountered while initializing SSLContext...using default settings", e);
       }
 
       // Create all-trusting host name verifier
@@ -100,9 +100,9 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
       try {
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
       } catch (AccessControlException e) {
-        LOG.info("SecurityManager forbids setting default SSL Socket Factory...using default settings", e);
+        LOG.warn("SecurityManager forbids setting default hostname verifier...using default settings", e);
       } catch (Exception e) {
-        LOG.info("Error encountered while initializing SSLContext...using default settings", e);
+        LOG.warn("Error encountered while initializing hostname verifier...using default settings", e);
       }
     }
   }
