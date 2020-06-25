@@ -33,6 +33,22 @@ buildscript {
 plugins {
     id 'java'
     id 'nebula.ospackage' version "8.2.0"
+    id 'com.github.spotbugs' version '4.0.0'
+}
+
+spotbugsMain {
+    excludeFilter = file("checkstyle/findbugs-exclude.xml")
+    effort = 'max'
+    ignoreFailures = false
+
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+spotbugsTest {
+    ignoreFailures = true
 }
 
 ext {
