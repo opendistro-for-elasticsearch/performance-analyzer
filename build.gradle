@@ -221,11 +221,15 @@ bundlePlugin {
         into "extensions"
         include "performance-analyzer-agent"
     }
-    from ("$rcaArtifactsDir/lib") {
+    from("$rcaArtifactsDir/lib") {
         into "lib"
     }
-    from ("$rcaArtifactsDir") {
+    from("$rcaArtifactsDir") {
         into "performance-analyzer-rca"
+    }
+    from("packaging") {
+        include "performance-analyzer-agent-cli"
+        into "bin"
     }
     from('build/resources/main/') {
         include "plugin-security.policy"
