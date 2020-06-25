@@ -206,28 +206,6 @@ task unpackRca(type: Copy) {
     }
     into "$rcaDir/build/distributions"
     rcaArtifactsDir = "$rcaDir/build/distributions/performance-analyzer-rca/"
-    doLast {
-        mkdir "$rcaArtifactsDir/rca_bits"
-        mkdir "$rcaArtifactsDir/rca_bits/performance-analyzer-rca"
-    }
-}
-
-task preparePaBin(type: Copy) {
-    dependsOn(unpackRca)
-    from "$rcaArtifactsDir/bin"
-    include "*"
-    into "$rcaArtifactsDir/pa_bin"
-}
-
-task deleteRcaBin(type: Delete) {
-    dependsOn(preparePaBin)
-    delete "$rcaArtifactsDir/bin"
-}
-
-task prepRcaBits(type: Copy) {
-    dependsOn(deleteRcaBin)
-    from "$rcaArtifactsDir/pa_config"
-    into "$rcaArtifactsDir/rca_bits/performance-analyzer-rca"
 }
 
 bundlePlugin {
@@ -246,8 +224,8 @@ bundlePlugin {
     from ("$rcaArtifactsDir/lib") {
         into "lib"
     }
-    from ("$rcaArtifactsDir/rca_bits") {
-        into "rca_bits"
+    from ("$rcaArtifactsDir") {
+        into "performance-analyzer-rca"
     }
     from('build/resources/main/') {
         include "plugin-security.policy"
@@ -346,5 +324,5 @@ afterEvaluate {
     }
 }
 
-bundlePlugin.mustRunAfter prepRcaBits
-build.dependsOn prepRcaBits
+bundlePlugin.mustRunAfter unpackRca
+build.dependsOn unpackRca
