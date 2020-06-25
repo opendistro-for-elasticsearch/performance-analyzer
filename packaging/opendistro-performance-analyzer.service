@@ -3,7 +3,7 @@ Description=Opendistro for Elasticsearch Performance Analyzer
 PartOf=elasticsearch.service
 
 [Service]
-ExecStart=/usr/share/elasticsearch/bin/performance-analyzer-agent-cli
+ExecStart=/usr/share/elasticsearch/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli
 Restart=on-failure
 User=elasticsearch
 Group=elasticsearch
