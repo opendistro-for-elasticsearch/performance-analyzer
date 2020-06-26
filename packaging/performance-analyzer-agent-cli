@@ -5,7 +5,7 @@ PA_AGENT_JAVA_OPTS="-Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_perfor
               -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m"
 
 ES_MAIN_CLASS="com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp" \
-ES_ADDITIONAL_CLASSPATH_DIRECTORIES=plugins/opendistro_performance_analyzer/lib \
+ES_ADDITIONAL_CLASSPATH_DIRECTORIES=performance-analyzer-rca/lib \
 ES_JAVA_OPTS=$PA_AGENT_JAVA_OPTS \
  "`dirname "$0"`"/elasticsearch-cli \
    "$@"

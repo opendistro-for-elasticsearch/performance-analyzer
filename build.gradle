@@ -221,9 +221,6 @@ bundlePlugin {
         into "extensions"
         include "performance-analyzer-agent"
     }
-    from("$rcaArtifactsDir/lib") {
-        into "lib"
-    }
     from("$rcaArtifactsDir") {
         into "performance-analyzer-rca"
     }
