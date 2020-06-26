@@ -15,11 +15,16 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import static org.junit.Assert.assertEquals;
 
-public class PerformanceAnalyzerTransportChannelTests {
+@Ignore
+public class PerformanceAnalyzerTransportChannelTests extends CustomMetricsLocationTestBase {
     @Test
     public void testShardBulkMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
@@ -27,9 +32,9 @@ public class PerformanceAnalyzerTransportChannelTests {
         PerformanceAnalyzerTransportChannel performanceanalyzerTransportChannel = new PerformanceAnalyzerTransportChannel();
         performanceanalyzerTransportChannel.saveMetricValues("ABCDEF", startTimeInMills, "BulkThread", "ShardBulkId", "start");
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PerformanceAnalyzerMetrics.sDevShmLocation +
+                PluginSettings.instance().getMetricsLocation() +
                         PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/BulkThread/shardbulk/ShardBulkId/start");
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("ABCDEF", fetchedValue);
     }

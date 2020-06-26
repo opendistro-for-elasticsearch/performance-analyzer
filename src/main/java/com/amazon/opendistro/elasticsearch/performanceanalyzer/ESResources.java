@@ -14,6 +14,7 @@
  */
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
+import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -32,6 +33,7 @@ public final class ESResources {
     private Environment environment;
     private java.nio.file.Path configPath;
     private String pluginFileLocation;
+    private Client client;
 
     private ESResources() {
         threadPool = null;
@@ -106,5 +108,13 @@ public final class ESResources {
 
     public void setIndicesService(IndicesService indicesService) {
         this.indicesService = indicesService;
+    }
+
+    public void setClient(final Client client) {
+        this.client = client;
+    }
+
+    public Client getClient() {
+        return client;
     }
 }

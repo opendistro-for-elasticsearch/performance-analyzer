@@ -1,3 +1,9 @@
+[![Java CI](https://github.com/opendistro-for-elasticsearch/performance-analyzer/workflows/Java%20CI/badge.svg)](https://github.com/opendistro-for-elasticsearch/performance-analyzer/actions?query=workflow%3A%22Java+CI%22)
+[![CD](https://github.com/opendistro-for-elasticsearch/performance-analyzer/workflows/CD/badge.svg)](https://github.com/opendistro-for-elasticsearch/performance-analyzer/actions?query=workflow%3ACD)
+[![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/pa/)
+[![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://discuss.opendistrocommunity.dev/c/performance-analyzer/)
+![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
+
 # Performance Analyzer
 Performance Analyzer exposes a REST API that allows you to query numerous performance metrics for your cluster, including aggregations of those metrics, independent of the Java Virtual Machine (JVM). PerfTop is the default command line interface (CLI) for displaying those metrics.
 

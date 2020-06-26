@@ -13,7 +13,6 @@
  * permissions and limitations under the License.
  */
 
-
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import static org.junit.Assert.assertTrue;
@@ -23,8 +22,6 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
-
-import org.junit.Test;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
@@ -50,6 +47,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDim
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.junit.Test;
 
 /**
  * Writer serialize a java bean to a /dev/shm/performanceanalyzer file using a collector's
@@ -168,6 +166,7 @@ public class JsonKeyTests {
 
     private void verifyNodeDetailJsonKeyNames() {
         Set<String> jsonKeySet = new HashSet<>();
+        Set<String> nodeDetailColumnSet = new HashSet<>();
         Method[] methods = NodeDetailsCollector.NodeDetailsStatus.class.getDeclaredMethods();
 
         for (Method method : methods) {
@@ -178,11 +177,19 @@ public class JsonKeyTests {
         }
 
         AllMetrics.NodeDetailColumns[] columns = AllMetrics.NodeDetailColumns.values();
-        assertTrue(columns.length == jsonKeySet.size());
-
         for (AllMetrics.NodeDetailColumns d : columns) {
-            assertTrue(String.format("We need %s", d.toString()),
-                    jsonKeySet.contains(d.toString()));
+            nodeDetailColumnSet.add(d.toString());
+        }
+
+        // The _cat/master fix might not be backport to all PA versions in brazil
+        // So not all domains has the IS_MASTER_NODE field in NodeDetailsStatus
+        // change this assert statement to support backward compatibility
+        assertTrue(nodeDetailColumnSet.size() == jsonKeySet.size()
+            || nodeDetailColumnSet.size() - 1 == jsonKeySet.size());
+
+        for (String key : jsonKeySet) {
+            assertTrue(String.format("We need %s", key),
+                nodeDetailColumnSet.contains(key));
         }
     }
 }

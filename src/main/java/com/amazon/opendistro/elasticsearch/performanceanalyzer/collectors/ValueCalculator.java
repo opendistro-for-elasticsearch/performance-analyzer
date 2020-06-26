@@ -20,14 +20,4 @@ import org.elasticsearch.action.admin.indices.stats.ShardStats;
 @FunctionalInterface
 interface ValueCalculator {
     long calculateValue(ShardStats shardStats);
-
-    default long calculate(ShardStats shardStats, CachedStats cachedStats, String statsName) {
-        long calculatedVal = calculateValue(shardStats);
-        long cachedValue = 0;
-        if (CachedStats.getCachableValues().contains(statsName)) {
-            cachedValue = cachedStats.getValue(statsName);
-            cachedStats.putValue(statsName, calculatedVal);
-        }
-        return calculatedVal - cachedValue;
-    }
 }

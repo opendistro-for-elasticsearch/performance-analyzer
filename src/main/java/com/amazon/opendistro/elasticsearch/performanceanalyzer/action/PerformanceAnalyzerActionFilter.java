@@ -17,6 +17,8 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.action;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.ActionRequest;
 import org.elasticsearch.action.ActionResponse;
@@ -24,19 +26,29 @@ import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.support.ActionFilter;
 import org.elasticsearch.action.support.ActionFilterChain;
+import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.tasks.Task;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 
 public class PerformanceAnalyzerActionFilter implements ActionFilter {
+    private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerActionFilter.class);
     private static AtomicLong uniqueID = new AtomicLong(0);
+
+    private final PerformanceAnalyzerController controller;
+
+    @Inject
+    public PerformanceAnalyzerActionFilter(final PerformanceAnalyzerController controller) {
+        this.controller = controller;
+    }
 
     @Override
     public <Request extends ActionRequest, Response extends ActionResponse> void apply(Task task, final String action, Request request,
                                                                                        ActionListener<Response> listener,
                                                                                        ActionFilterChain<Request, Response> chain) {
-        if (PerformanceAnalyzerConfigAction.getInstance() != null && PerformanceAnalyzerConfigAction.getInstance().isFeatureEnabled()) {
+
+        if (controller.isPerformanceAnalyzerEnabled()) {
             if (request instanceof BulkRequest) {
                 PerformanceAnalyzerActionListener<Response> newListener = new PerformanceAnalyzerActionListener<>();
                 String id = String.valueOf(uniqueID.getAndIncrement());

@@ -16,6 +16,17 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.AbstractTests;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DiskMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.MetricPropertiesTests.FailureCondition;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,17 +41,6 @@ import java.sql.SQLException;
 import org.jooq.Condition;
 import org.jooq.impl.DSL;
 import org.junit.Ignore;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.AbstractTests;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DiskMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader.MetricPropertiesTests.FailureCondition;
 
 @Ignore
 public class AbstractReaderTests extends AbstractTests {
@@ -122,9 +122,9 @@ public class AbstractReaderTests extends AbstractTests {
             long storedFieldsMemory, long termVectorsMemory,
             long normsMemory, long pointsMemory, long docValuesMemory,
             long indexWriterMemory, long versionMapMemory,
-            long bitsetMemory, FailureCondition condition) {
+            long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
-        NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector();
+        NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
         String str = (dummyCollector.new NodeStatsMetricsStatus(
                 indexingThrottleTime,
                  queryCacheHitCount,
@@ -154,7 +154,7 @@ public class AbstractReaderTests extends AbstractTests {
                  docValuesMemory,
                  indexWriterMemory,
                  versionMapMemory,
-                 bitsetMemory)).serialize();
+                 bitsetMemory, shardSizeInBytes)).serialize();
 
         if (condition == FailureCondition.INVALID_JSON_METRIC) {
             str = str.substring(1);
@@ -178,7 +178,7 @@ public class AbstractReaderTests extends AbstractTests {
     protected String createNodeDetailsMetrics(String id, String ipAddress) {
         StringBuffer value = new StringBuffer();
 
-        value.append(new NodeDetailsStatus(id, ipAddress)
+        value.append(new NodeDetailsStatus(id, ipAddress, NodeRole.UNKNOWN.toString(), false)
                 .serialize());
 
         return value.toString();

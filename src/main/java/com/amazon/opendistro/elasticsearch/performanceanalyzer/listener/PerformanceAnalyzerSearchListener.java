@@ -15,12 +15,14 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.index.shard.SearchOperationListener;
 import org.elasticsearch.search.internal.SearchContext;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CommonDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CommonMetric;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
@@ -32,7 +34,12 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
     private static final SearchListener NO_OP_SEARCH_LISTENER = new NoOpSearchListener();
     private static final int KEYS_PATH_LENGTH = 4;
+    private final PerformanceAnalyzerController controller;
     private SearchListener searchListener;
+
+    public PerformanceAnalyzerSearchListener(final PerformanceAnalyzerController controller) {
+        this.controller = controller;
+    }
 
     @Override
     public String toString() {
@@ -41,38 +48,67 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
 
     private SearchListener getSearchListener() {
-        return PerformanceAnalyzerConfigAction.getInstance() != null
-                && PerformanceAnalyzerConfigAction.getInstance().isFeatureEnabled() ? this : NO_OP_SEARCH_LISTENER;
+        return controller.isPerformanceAnalyzerEnabled() ? this : NO_OP_SEARCH_LISTENER;
     }
 
     @Override
     public void onPreQueryPhase(SearchContext searchContext) {
-        getSearchListener().preQueryPhase(searchContext);
+        try {
+            getSearchListener().preQueryPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onQueryPhase(SearchContext searchContext, long tookInNanos) {
-        getSearchListener().queryPhase(searchContext, tookInNanos);
+        try {
+            getSearchListener().queryPhase(searchContext, tookInNanos);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onFailedQueryPhase(SearchContext searchContext) {
-        getSearchListener().failedQueryPhase(searchContext);
+        try {
+            getSearchListener().failedQueryPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onPreFetchPhase(SearchContext searchContext) {
-        getSearchListener().preFetchPhase(searchContext);
+        try {
+            getSearchListener().preFetchPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onFetchPhase(SearchContext searchContext, long tookInNanos) {
-        getSearchListener().fetchPhase(searchContext, tookInNanos);
+        try {
+            getSearchListener().fetchPhase(searchContext, tookInNanos);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
     public void onFailedFetchPhase(SearchContext searchContext) {
-        getSearchListener().failedFetchPhase(searchContext);
+        try {
+            getSearchListener().failedFetchPhase(searchContext);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
     }
 
     @Override
