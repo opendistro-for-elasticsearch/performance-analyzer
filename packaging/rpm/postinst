@@ -1,6 +1,29 @@
-
+#!/bin/sh
+set -e
 
 # Post install script for Redhat like distros. Tested on CentOS 7.
+
+# Make sure the ES_HOME environment variable is set
+if [ -z "$ES_HOME" ]; then
+  echo "ES_HOME must be properly set before running this script"
+  echo 'Try running export ES_HOME=/path/to/ES_HOME'
+  echo 'ES_HOME is usually located in /usr/share/elasticsearch'
+  exit 1
+fi
+
+# Prepare the RCA reader process for execution
+cp -r "$ES_HOME"/plugins/opendistro_performance_analyzer/performance-analyzer-rca $ES_HOME
+cp "$ES_HOME"/bin/opendistro_performance_analyzer/opendistro-performance-analyzer.service /usr/lib/systemd/system/opendistro-performance-analyzer.service
+mkdir -p "$ES_HOME"/data
+mkdir -p "/var/lib/elasticsearch"
+touch "$ES_HOME"/data/rca_enabled.conf
+echo 'true' > "$ES_HOME"/data/rca_enabled.conf
+echo 'true' > /var/lib/elasticsearch/performance_analyzer_enabled.conf
+echo 'true' > /var/lib/elasticsearch/rca_enabled.conf
+chown elasticsearch /var/lib/elasticsearch/performance_analyzer_enabled.conf
+chown elasticsearch /var/lib/elasticsearch/rca_enabled.conf
+chown -R elasticsearch "$ES_HOME/performance-analyzer-rca"
+chmod a+rw /tmp
 
 if ! grep -q '## OpenDistro Performance Analyzer' /etc/elasticsearch/jvm.options; then
    CLK_TCK=`/usr/bin/getconf CLK_TCK`

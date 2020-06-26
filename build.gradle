@@ -69,6 +69,7 @@ ext {
     licenseFile = rootProject.file('LICENSE.txt')
     noticeFile = rootProject.file('NOTICE.txt')
 }
+
 test {
     enabled = true
 }
@@ -164,27 +165,6 @@ dependencyLicenses.doFirst {
     updateShas.updateShas()
 }
 
-bundlePlugin {
-    from ("pa_config") {
-        into "pa_config"
-    }
-    from ("pa_bin") {
-        into "pa_bin"
-        include "performance-analyzer-agent"
-    }
-    from ("pa_bin") {
-        into "extensions"
-        include "performance-analyzer-agent"
-    }
-    from ('build/resources/main/') {
-        include "plugin-security.policy"
-    }
-    exclude ('tools.jar')
-    from ("config/opendistro_performance_analyzer") {
-        into "config"
-    }
-}
-
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
                                              "thirdPartyAudit",
@@ -193,6 +173,7 @@ import java.nio.file.Paths
 import org.ajoberstar.gradle.git.tasks.GitClone
 
 String rcaDir
+String rcaArtifactsDir
 
 static def propEnabled(property) {
     return System.getProperty(property) != null
@@ -201,15 +182,63 @@ static def propEnabled(property) {
 // The following Gradle tasks are used to create a PA/RCA enabled Elasticsearch cluster
 // Pass the -Dtests.enableIT property to Gradle to run ITs
 task cloneGitRepo(type: GitClone) {
-    onlyIf = {
-        propEnabled("tests.enableIT")
-    }
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
     uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
     destinationPath = destination
     bare = false
     enabled = !destination.exists() // to clone only once
+}
+
+task buildRca() {
+    dependsOn(cloneGitRepo)
+    doLast {
+        exec {
+            workingDir("$rcaDir")
+            commandLine './gradlew', 'build', '-x', 'test'
+        }
+    }
+}
+
+task unpackRca(type: Copy) {
+    dependsOn(buildRca)
+    from(zipTree("$rcaDir/build/distributions/performance-analyzer-rca.zip")) {
+    }
+    into "$rcaDir/build/distributions"
+    rcaArtifactsDir = "$rcaDir/build/distributions/performance-analyzer-rca/"
+}
+
+bundlePlugin {
+    dependsOn 'cloneGitRepo'
+    from("$rcaArtifactsDir/pa_config") {
+        into "pa_config"
+    }
+    from("$rcaArtifactsDir/pa_bin") {
+        into "pa_bin"
+        include "performance-analyzer-agent"
+    }
+    from("$rcaArtifactsDir/pa_bin") {
+        into "extensions"
+        include "performance-analyzer-agent"
+    }
+    from("$rcaArtifactsDir") {
+        into "performance-analyzer-rca"
+    }
+    from("packaging") {
+        include "performance-analyzer-agent-cli", "opendistro-performance-analyzer.service"
+        into "bin"
+    }
+    from("packaging") {
+        include "deb/**", "rpm/**"
+        into "install"
+    }
+    from('build/resources/main/') {
+        include "plugin-security.policy"
+    }
+    exclude('tools.jar')
+    from("config/opendistro_performance_analyzer") {
+        into "config"
+    }
 }
 
 task setupEsCluster() {
@@ -299,3 +328,6 @@ afterEvaluate {
          tasks = ['build', 'buildRpm', 'buildDeb']
     }
 }
+
+bundlePlugin.mustRunAfter unpackRca
+build.dependsOn unpackRca
