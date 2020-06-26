@@ -225,8 +225,12 @@ bundlePlugin {
         into "performance-analyzer-rca"
     }
     from("packaging") {
-        include "performance-analyzer-agent-cli"
+        include "performance-analyzer-agent-cli", "opendistro-performance-analyzer.service"
         into "bin"
+    }
+    from("packaging") {
+        include "deb/**", "rpm/**"
+        into "install"
     }
     from('build/resources/main/') {
         include "plugin-security.policy"

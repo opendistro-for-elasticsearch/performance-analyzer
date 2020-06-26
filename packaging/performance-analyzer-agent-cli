@@ -7,5 +7,5 @@ PA_AGENT_JAVA_OPTS="-Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_perfor
 ES_MAIN_CLASS="com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp" \
 ES_ADDITIONAL_CLASSPATH_DIRECTORIES=performance-analyzer-rca/lib \
 ES_JAVA_OPTS=$PA_AGENT_JAVA_OPTS \
- "`dirname "$0"`"/elasticsearch-cli \
+ /usr/share/elasticsearch/bin/elasticsearch-cli \
    "$@"
