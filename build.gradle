@@ -39,7 +39,7 @@ plugins {
 spotbugsMain {
     excludeFilter = file("checkstyle/findbugs-exclude.xml")
     effort = 'max'
-    ignoreFailures = false
+    ignoreFailures = true
 
     reports {
         xml.enabled = false

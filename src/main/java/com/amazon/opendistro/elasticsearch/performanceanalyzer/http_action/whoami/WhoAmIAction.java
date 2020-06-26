@@ -20,6 +20,7 @@ import org.elasticsearch.common.io.stream.Writeable;
 
 public class WhoAmIAction extends ActionType<WhoAmIResponse> {
 
+    public static final WhoAmIAction INSTANCE = new WhoAmIAction();
     public static final String NAME = "cluster:admin/performanceanalyzer/whoami";
     public static final Writeable.Reader<WhoAmIResponse> responseReader = null;
 

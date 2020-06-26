@@ -1,6 +1,10 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
@@ -32,25 +36,29 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
 
+    private static final List<Route> ROUTES = unmodifiableList(asList(
+        new Route(RestRequest.Method.GET, PA_CLUSTER_CONFIG_PATH),
+        new Route(RestRequest.Method.POST, PA_CLUSTER_CONFIG_PATH),
+        new Route(RestRequest.Method.GET, RCA_CLUSTER_CONFIG_PATH),
+        new Route(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH),
+        new Route(RestRequest.Method.GET, LOGGING_CLUSTER_CONFIG_PATH),
+        new Route(RestRequest.Method.POST, LOGGING_CLUSTER_CONFIG_PATH)
+    ));
+
     private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
 
     public PerformanceAnalyzerClusterConfigAction(final Settings settings, final RestController restController,
                                                   final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler,
                                                   final NodeStatsSettingHandler nodeStatsSettingHandler) {
-        super(settings);
+        super();
         this.clusterSettingHandler = clusterSettingHandler;
         this.nodeStatsSettingHandler = nodeStatsSettingHandler;
-        registerHandlers(restController);
     }
 
-    private void registerHandlers(final RestController controller) {
-        controller.registerHandler(RestRequest.Method.GET, PA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, PA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, RCA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, LOGGING_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, LOGGING_CLUSTER_CONFIG_PATH, this);
+    @Override
+    public List<Route> routes() {
+        return ROUTES;
     }
 
     /**

@@ -193,7 +193,7 @@ public class ClusterSettingsManager implements ClusterStateListener {
         @Override
         public void onResponse(final ClusterStateResponse clusterStateResponse) {
             final Settings clusterSettings = clusterStateResponse.getState()
-                                                                 .getMetaData()
+                                                                 .getMetadata()
                                                                  .persistentSettings();
 
             for (final Setting<Integer> setting : managedSettings) {
