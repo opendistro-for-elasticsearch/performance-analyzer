@@ -197,6 +197,19 @@ task buildRca() {
             workingDir("$rcaDir")
             commandLine './gradlew', 'build', '-x', 'test'
         }
+        exec {
+            workingDir("$rcaDir")
+            commandLine './gradlew', 'publishToMavenLocal'
+        }
+        exec {
+            def licenseDir = "$projectDir/licenses"
+            workingDir("$licenseDir")
+            commandLine 'rm', "performanceanalyzer-rca-1.3.jar.sha1"
+        }
+        exec {
+            workingDir("$projectDir")
+            commandLine './gradlew', 'updateShas'
+        }
     }
 }
 
