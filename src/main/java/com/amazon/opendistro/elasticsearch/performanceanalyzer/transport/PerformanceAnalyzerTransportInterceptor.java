@@ -22,15 +22,22 @@ import org.elasticsearch.transport.TransportRequestHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+
 public class PerformanceAnalyzerTransportInterceptor implements TransportInterceptor {
 
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerTransportInterceptor.class);
+    private final PerformanceAnalyzerController controller;
+
+    public PerformanceAnalyzerTransportInterceptor(final PerformanceAnalyzerController controller) {
+        this.controller = controller;
+    }
 
     @Override
     public <T extends TransportRequest> TransportRequestHandler<T> interceptHandler(String action,
                                                                                     String executor,
                                                                                     boolean forceExecution,
                                                                                     TransportRequestHandler<T> actualHandler) {
-        return new PerformanceAnalyzerTransportRequestHandler<>(actualHandler);
+        return new PerformanceAnalyzerTransportRequestHandler<>(actualHandler, controller);
     }
 }

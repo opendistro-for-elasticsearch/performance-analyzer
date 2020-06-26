@@ -1,49 +1,48 @@
 #!/bin/bash
 
 if [ "$START_PERF_ANALYZER" = "false" ]; then
-    echo "Not starting performance-analyzer-agent"
-    exit 0
+  echo "Not starting performance-analyzer-agent"
+  exit 0
 fi
 
 if [ -z "$1" ]; then
-    if [ -z "$ES_HOME" ]; then
-        echo "ES_HOME needs to be set or passed in as the first parameter."
-        exit 1
-    fi
+  if [ -z "$ES_HOME" ]; then
+    echo "ES_HOME needs to be set or passed in as the first parameter."
+    exit 1
+  fi
 else
-    ES_HOME=$1
+  ES_HOME=$1
 fi
 
 if [ -z "$2" ]; then
-    if [ -z "$JAVA_HOME" ]; then
-        echo "JAVA_HOME needs to be set or passed in as the second parameter."
-        exit 1
-    fi
+  if [ -z "$JAVA_HOME" ]; then
+    echo "JAVA_HOME needs to be set or passed in as the second parameter."
+    exit 1
+  fi
 else
-    JAVA_HOME=$2
+  JAVA_HOME=$2
 fi
 
-if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' > /dev/null; then
-    exec $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
-    -DconfigFilePath=$3 \
-    -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
-    -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
-    -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp
+# Instead of the supervisor executing peformance-analyzer-agent from the plugin location,
+# we should move this to the reader. The entry-point script should be executing
+# performance-analyzer-agent from the reader location.
+# We need to change this file: https://github.com/opendistro-for-elasticsearch/elasticsearch-build/blob/6d6230e180c86c3249c7fa0786d685e48772d454/docker/build/elasticsearch/bin/docker-entrypoint.sh#L94
+
+if ! echo $* | grep -E '(^-d |-d$| -d |--daemonize$|--daemonize )' >/dev/null; then
+  export JAVA_OPTS=-Des.path.home=$ES_HOME\ -Dlog4j.configurationFile=$ES_HOME/performance-analyzer-rca-1.3.0-SNAPSHOT/pa_config/log4j2.xml
+  exec $ES_HOME/performance-analyzer-rca-1.3.0-SNAPSHOT/bin/performance-analyzer-rca
 else
-    echo 'Starting deamon'
-    exec $JAVA_HOME/bin/java -Des.path.home=$ES_HOME -Dlog4j.configurationFile=$ES_HOME/plugins/opendistro_performance_analyzer/pa_config/log4j2.xml \
-        -DconfigFilePath=$3 \
-        -Xms64M -Xmx64M -XX:+UseSerialGC -XX:CICompilerCount=1 -XX:-TieredCompilation -XX:InitialCodeCacheSize=4096 \
-        -XX:InitialBootClassLoaderMetaspaceSize=30720 -XX:MaxRAM=400m \
-        -cp $ES_HOME/lib/*:$ES_HOME/plugins/opendistro_performance_analyzer/* com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp &
+  echo 'Starting deamon'
+  export JAVA_OPTS=-Des.path.home=$ES_HOME\ -Dlog4j.configurationFile=$ES_HOME/performance-analyzer-rca-1.3.0-SNAPSHOT/pa_config/log4j2.xml
+  exec $ES_HOME/performance-analyzer-rca-1.3.0-SNAPSHOT/bin/performance-analyzer-rca &
 
-    pid=$!
-    PID_LOC=/tmp/performance-analyzer-agent
-    if [ -n "$4" ]; then
-        PID_LOC=$4
-    fi
+  pid=$!
+  PID_LOC=/tmp/performance-analyzer-agent
+  if [ -n "$4" ]; then
+    PID_LOC=$4
+  fi
 
-    if ! ps -p $pid > $PID_LOC ; then
-        exit 1
-    fi
+  if ! ps -p $pid >$PID_LOC; then
+    exit 1
+  fi
 fi

@@ -21,16 +21,34 @@ buildscript {
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
         mavenCentral()
+        mavenLocal()
     }
 
     dependencies {
         classpath "org.elasticsearch.gradle:build-tools:${es_version}"
+        classpath 'org.ajoberstar:gradle-git:0.2.3'
     }
 }
 
 plugins {
     id 'java'
     id 'nebula.ospackage' version "8.3.0"
+    id 'com.github.spotbugs' version '4.0.0'
+}
+
+spotbugsMain {
+    excludeFilter = file("checkstyle/findbugs-exclude.xml")
+    effort = 'max'
+    ignoreFailures = true
+
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+}
+
+spotbugsTest {
+    ignoreFailures = true
 }
 
 ext {
@@ -93,6 +111,7 @@ project.afterEvaluate {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 
@@ -115,12 +134,13 @@ dependencies {
         all*.exclude group: "org.elasticsearch", module: "securemock"
     }
 
+    compile 'com.google.guava:guava:27.0.1-jre'
     compile 'org.jooq:jooq:3.10.8'
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
-    compile 'org.xerial:sqlite-jdbc:3.8.11.2'
-    compile 'com.google.guava:guava:27.0.1-jre'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.3'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
 
     // JDK9+ has to run powermock 2+. https://github.com/powermock/powermock/issues/888
@@ -144,11 +164,6 @@ dependencyLicenses.doFirst {
     updateShas.updateShas()
 }
 
-integTestRunner {
-    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
-    systemProperty 'tests.security.manager', 'false'
-}
-
 bundlePlugin {
     from ("pa_config") {
         into "pa_config"
@@ -168,12 +183,59 @@ bundlePlugin {
     from ("config/opendistro_performance_analyzer") {
         into "config"
     }
-
 }
 
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
-                                             "thirdPartyAudit", "testingConventions"]
+                                             "thirdPartyAudit",
+                                             "testingConventions"] 
+import java.nio.file.Paths
+import org.ajoberstar.gradle.git.tasks.GitClone
+
+String rcaDir
+
+static def propEnabled(property) {
+    return System.getProperty(property) != null
+}
+
+// The following Gradle tasks are used to create a PA/RCA enabled Elasticsearch cluster
+// Pass the -Dtests.enableIT property to Gradle to run ITs
+task cloneGitRepo(type: GitClone) {
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
+    rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
+    def destination = file(rcaDir)
+    uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
+    destinationPath = destination
+    bare = false
+    enabled = !destination.exists() // to clone only once
+}
+
+task setupEsCluster() {
+    dependsOn(cloneGitRepo)
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
+    doLast {
+        exec {
+            workingDir(rcaDir)
+            commandLine './gradlew', 'enableRca'
+        }
+        sleep(5000)
+    }
+}
+
+integTestRunner {
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
+    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
+    systemProperty 'tests.security.manager', 'false'
+    if (propEnabled("tests.useDockerCluster")) {
+        dependsOn(setupEsCluster)
+    }
+}
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {
@@ -214,7 +276,7 @@ afterEvaluate {
         maintainer 'OpenDistro for Elasticsearch Team <opendistro@amazon.com>'
         url 'https://opendistro.github.io/elasticsearch/downloads'
         summary '''
-         Performance Analyzer plugin for OpenDistro for Elasticsearch. 
+         Performance Analyzer plugin for OpenDistro for Elasticsearch.
          Reference documentation can be found at https://opendistro.github.io/elasticsearch/docs.
     '''.stripIndent().replace('\n', ' ').trim()
     }
@@ -232,7 +294,7 @@ afterEvaluate {
         archiveName "${packageName}-${version}.deb"
         dependsOn 'assemble'
     }
-    
+
     task buildPackages(type: GradleBuild) {
          tasks = ['build', 'buildRpm', 'buildDeb']
     }

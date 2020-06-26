@@ -15,43 +15,55 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import org.junit.Ignore;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
+import org.mockito.Mock;
 
-public class SearchListenerTests {
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.MockitoAnnotations.initMocks;
+
+@Ignore
+public class SearchListenerTests extends CustomMetricsLocationTestBase {
+    @Mock
+    private PerformanceAnalyzerController mockController;
+
     @Test
     public void testShardSearchMetrics() {
+        initMocks(this);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1053720339;
-        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener();
+        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener = new PerformanceAnalyzerSearchListener(mockController);
         performanceanalyzerSearchListener.saveMetricValues("dewrjcve", startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID", "start");
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID/start");
         assertEquals("dewrjcve", fetchedValue);
 
         String startMetricsValue = performanceanalyzerSearchListener.generateStartMetrics(100, "index1", 1).toString();
         performanceanalyzerSearchListener.saveMetricValues(startMetricsValue, startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID1", "start");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID1/start");
         assertEquals(startMetricsValue, fetchedValue);
 
         String finishMetricsValue = performanceanalyzerSearchListener.generateFinishMetrics(123, false, "index1", 10).toString();
         performanceanalyzerSearchListener.saveMetricValues(finishMetricsValue, startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID1", "finish");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID1/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
         performanceanalyzerSearchListener.saveMetricValues(finishMetricsValue, startTimeInMills,
                 "SearchThread", "shardquery", "ShardSearchID2", "finish");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PerformanceAnalyzerMetrics.sDevShmLocation +
+        fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
                 PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/SearchThread/shardquery/ShardSearchID2/finish");
         assertEquals(finishMetricsValue, fetchedValue);
 
-        PerformanceAnalyzerMetrics.removeMetrics(PerformanceAnalyzerMetrics.sDevShmLocation
+        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
                  + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
     }
 }

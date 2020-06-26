@@ -15,22 +15,27 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.transport.TransportRequest;
-import org.elasticsearch.transport.TransportRequestHandler;
+import org.elasticsearch.action.bulk.BulkShardRequest;
+import org.elasticsearch.action.support.replication.TransportReplicationAction.ConcreteShardRequest;
 import org.elasticsearch.tasks.Task;
 import org.elasticsearch.transport.TransportChannel;
-import org.elasticsearch.action.support.replication.TransportReplicationAction.ConcreteShardRequest;
-import org.elasticsearch.action.bulk.BulkShardRequest;
+import org.elasticsearch.transport.TransportRequest;
+import org.elasticsearch.transport.TransportRequestHandler;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 
 public class PerformanceAnalyzerTransportRequestHandler<T extends TransportRequest> implements TransportRequestHandler<T> {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerTransportRequestHandler.class);
+    private final PerformanceAnalyzerController controller;
     private TransportRequestHandler<T> actualHandler;
 
-    PerformanceAnalyzerTransportRequestHandler(TransportRequestHandler<T> actualHandler) {
+    PerformanceAnalyzerTransportRequestHandler(TransportRequestHandler<T> actualHandler, PerformanceAnalyzerController controller) {
         this.actualHandler = actualHandler;
+        this.controller = controller;
     }
 
     PerformanceAnalyzerTransportRequestHandler<T> set(TransportRequestHandler<T> actualHandler) {
@@ -40,11 +45,11 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
     @Override
     public void messageReceived(T request, TransportChannel channel, Task task) throws Exception {
-        actualHandler.messageReceived(request, getChannel(request, channel, task) , task);
+        actualHandler.messageReceived(request, getChannel(request, channel, task), task);
     }
 
     private TransportChannel getChannel(T request, TransportChannel channel, Task task) {
-        if (PerformanceAnalyzerConfigAction.getInstance() == null || !PerformanceAnalyzerConfigAction.getInstance().isFeatureEnabled()) {
+        if (!controller.isPerformanceAnalyzerEnabled()) {
             return channel;
         }
 
@@ -75,7 +80,19 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
 
         BulkShardRequest bsr = (BulkShardRequest) transportRequest;
         PerformanceAnalyzerTransportChannel performanceanalyzerChannel = new PerformanceAnalyzerTransportChannel();
-        performanceanalyzerChannel.set(channel, System.currentTimeMillis(), bsr.index(), bsr.shardId().id(), bsr.items().length, bPrimary);
+
+        try {
+            performanceanalyzerChannel.set(
+                    channel,
+                    System.currentTimeMillis(),
+                    bsr.index(),
+                    bsr.shardId().id(),
+                    bsr.items().length,
+                    bPrimary);
+        } catch (Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
 
         return performanceanalyzerChannel;
     }

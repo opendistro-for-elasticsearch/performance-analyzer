@@ -16,9 +16,6 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -27,9 +24,11 @@ import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Result;
 import org.jooq.impl.DSL;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.HeapDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.HeapValue;
@@ -37,7 +36,10 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsDerivedDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+@Ignore
 public class MetricPropertiesTests extends AbstractReaderTests {
 
     public MetricPropertiesTests() throws SQLException, ClassNotFoundException {
@@ -136,7 +138,7 @@ public class MetricPropertiesTests extends AbstractReaderTests {
             long storedFieldsMemory, long termVectorsMemory,
             long normsMemory, long pointsMemory, long docValuesMemory,
             long indexWriterMemory, long versionMapMemory,
-            long bitsetMemory) {
+            long bitsetMemory, long shardSizeInBytes) {
         return createShardStatMetrics(
                 indexingThrottleTime,
                 queryCacheHitCount, queryCacheMissCount,
@@ -150,7 +152,7 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                 storedFieldsMemory, termVectorsMemory,
                 normsMemory, pointsMemory, docValuesMemory,
                 indexWriterMemory, versionMapMemory,
-                bitsetMemory,
+                bitsetMemory, shardSizeInBytes,
                 FailureCondition.NONE);
     }
 
@@ -182,12 +184,12 @@ public class MetricPropertiesTests extends AbstractReaderTests {
         write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
                 createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L, 8145L, 6565L,
-                        672L, 0L, 384L, 28L, 496L, 0L, 0L, 0L));
+                        672L, 0L, 384L, 28L, 496L, 0L, 0L, 0L, 0L));
 
         write(moviesShard1, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
                 createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L, 8019L, 6445L,
-                        664L, 0L, 384L, 6L, 520L, 0L, 0L, 0L));
+                        664L, 0L, 384L, 6L, 520L, 0L, 0L, 0L, 0L));
 
         File taxisShard0 = temporaryFolder
                 .newFile(createRelativePath(taxisIndexeRelativePath, "0"));
@@ -195,7 +197,7 @@ public class MetricPropertiesTests extends AbstractReaderTests {
         write(taxisShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
                 createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
-                        0L, 0L, 0L, 0L, 0L, 0L, 0L));
+                        0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L));
 
         long lastSnapTimestamp = System.currentTimeMillis() - 1000;
 
@@ -326,20 +328,20 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                         createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
-                                0L));
+                                0L, 0L));
             } else if (condition == FailureCondition.INVALID_JSON_METRIC) {
                 write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
                         createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
-                                0L, condition));
+                                0L, 0L, condition));
             }
             else {
                 write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
                         createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
-                                0L));
+                                0L, 0L));
             }
         }
 
@@ -377,7 +379,8 @@ public class MetricPropertiesTests extends AbstractReaderTests {
 
     @Test
     public void testDefaultRootLocation() {
-        assertEquals(PerformanceAnalyzerMetrics.sDevShmLocation,
+        assertEquals(
+                PluginSettings.instance().getMetricsLocation(),
                 MetricPropertiesConfig
                         .createFileHandler(PerformanceAnalyzerMetrics.sCircuitBreakerPath)
                         .getRootLocation());

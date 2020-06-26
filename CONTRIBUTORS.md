@@ -4,12 +4,28 @@ Adithya Chandra
 
 Kiran Dinakurthi
 
+Ruizhen Guo
+
+Aditya Jindal
+
 Anna Jung
 
+Balaji Kannan
+
 Partha Kanuparthy
+
+Karthik Kumarguru
 
 Kaituo Li
 
 Shibai Li
 
+Sid Narayan
+
 Guoping Peng
+
+Khushboo Rajput
+
+Joydeep Sinha 
+
+Ricardo Stephen
