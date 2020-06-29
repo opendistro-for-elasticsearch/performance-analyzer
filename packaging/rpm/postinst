@@ -1,4 +1,8 @@
 #!/bin/sh
+# We ignore errors in the rpm context because the package will be considered "installed"
+# even if the postinst script fails. Therefore, the postinst script must be written such
+# that it cannot fail
+
 # set -e
 
 # Post install script for Redhat like distros. Tested on CentOS 7.
