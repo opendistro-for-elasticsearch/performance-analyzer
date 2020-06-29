@@ -7,7 +7,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.Pe
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING;
 
 public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingListener<Integer> {
-    private static final int UNSET_CLUSTER_SETTING_VALUE = -1;
     private static final int BIT_ONE = 1;
     private static final int CLUSTER_SETTING_DISABLED_VALUE = 0;
     private static final int ENABLED_VALUE = 1;
@@ -19,12 +18,17 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     private final PerformanceAnalyzerController controller;
     private final ClusterSettingsManager clusterSettingsManager;
 
-    private Integer currentClusterSetting = UNSET_CLUSTER_SETTING_VALUE;
+    private Integer currentClusterSetting;
 
     public PerformanceAnalyzerClusterSettingHandler(final PerformanceAnalyzerController controller,
-                                                    final ClusterSettingsManager clusterSettingsManager) {
+                                                     final ClusterSettingsManager clusterSettingsManager) {
         this.controller = controller;
         this.clusterSettingsManager = clusterSettingsManager;
+        this.currentClusterSetting =
+            initializeClusterSettingValue(
+                controller.isPerformanceAnalyzerEnabled(),
+                controller.isRcaEnabled(),
+                controller.isLoggingEnabled());
     }
 
     /**
@@ -76,10 +80,30 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     /**
      * Gets the current(last seen) cluster setting value.
      *
-     * @return the current cluster setting value if exists. -1 otherwise.
+     * @return the current cluster setting value if exists. Initial cluster setting otherwise.
      */
     public int getCurrentClusterSettingValue() {
         return currentClusterSetting;
+    }
+
+    /**
+    * Gets the cluster settings from the controller.
+    *
+    * @param paEnabled If performance analyzer is enabled/disabled.
+    * @param rcaEnabled If rca is enabled/disabled.
+    * @param loggingEnabled If logging is enabled/disabled.
+    * @return the cluster setting value
+    */
+    private Integer initializeClusterSettingValue(
+            final boolean paEnabled, final boolean rcaEnabled, final boolean loggingEnabled) {
+        int clusterSetting = CLUSTER_SETTING_DISABLED_VALUE;
+
+        clusterSetting = paEnabled ? setBit(clusterSetting, PA_ENABLED_BIT_POS) : clusterSetting;
+        if (paEnabled) {
+            clusterSetting = rcaEnabled ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
+            clusterSetting = loggingEnabled ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
+        }
+        return clusterSetting;
     }
 
     /**
@@ -101,7 +125,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      * @return composite cluster setting as an integer.
      */
     private Integer getPASettingValueFromState(final boolean state) {
-        int clusterSetting = currentClusterSetting != UNSET_CLUSTER_SETTING_VALUE ? currentClusterSetting : CLUSTER_SETTING_DISABLED_VALUE;
+        int clusterSetting = currentClusterSetting;
 
         if (state) {
             return setBit(clusterSetting, PA_ENABLED_BIT_POS);
@@ -138,7 +162,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      * @return composite cluster setting as an integer.
      */
     private Integer getRcaSettingValueFromState(final boolean shouldEnable) {
-        int clusterSetting = currentClusterSetting != UNSET_CLUSTER_SETTING_VALUE ? currentClusterSetting : CLUSTER_SETTING_DISABLED_VALUE;
+        int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
             return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
@@ -155,7 +179,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      * @return composite cluster setting as an integer.
      */
     private Integer getLoggingSettingValueFromState(final boolean shouldEnable) {
-        int clusterSetting = currentClusterSetting != UNSET_CLUSTER_SETTING_VALUE ? currentClusterSetting : CLUSTER_SETTING_DISABLED_VALUE;
+        int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
             return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
