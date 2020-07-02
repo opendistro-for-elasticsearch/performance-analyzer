@@ -1,5 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import java.io.IOException;
 import java.util.Map;
 
@@ -7,6 +9,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ha
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
+import org.elasticsearch.common.breaker.CircuitBreakingException;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -78,28 +81,35 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
      */
     @Override
     protected RestChannelConsumer prepareRequest(final RestRequest request, final NodeClient client) throws IOException {
-        if (request.method() == RestRequest.Method.POST && request.content().length() > 0) {
-            Map<String, Object> map = XContentHelper.convertToMap(request.content(), false, XContentType.JSON).v2();
-            Object value = map.get(ENABLED);
-            LOG.debug("PerformanceAnalyzer:Value (Object) Received as Part of Request: {} current value: {}", value,
-                    clusterSettingHandler.getCurrentClusterSettingValue());
+        try {
+            if (request.method() == RestRequest.Method.POST && request.content().length() > 0) {
+                Map<String, Object> map = XContentHelper.convertToMap(request.content(), false, XContentType.JSON).v2();
+                Object value = map.get(ENABLED);
+                LOG.debug("PerformanceAnalyzer:Value (Object) Received as Part of Request: {} current value: {}", value,
+                        clusterSettingHandler.getCurrentClusterSettingValue());
 
-            if (value instanceof Boolean) {
-                if (request.path().contains(RCA_CLUSTER_CONFIG_PATH)) {
-                    clusterSettingHandler.updateRcaSetting((Boolean) value);
-                } else if (request.path().contains(LOGGING_CLUSTER_CONFIG_PATH)) {
-                    clusterSettingHandler.updateLoggingSetting((Boolean) value);
-                } else {
-                    clusterSettingHandler.updatePerformanceAnalyzerSetting((Boolean) value);
+                if (value instanceof Boolean) {
+                    if (request.path().contains(RCA_CLUSTER_CONFIG_PATH)) {
+                        clusterSettingHandler.updateRcaSetting((Boolean) value);
+                    } else if (request.path().contains(LOGGING_CLUSTER_CONFIG_PATH)) {
+                        clusterSettingHandler.updateLoggingSetting((Boolean) value);
+                    } else {
+                        clusterSettingHandler.updatePerformanceAnalyzerSetting((Boolean) value);
+                    }
+                }
+                // update node stats setting if exists
+                if (map.containsKey(SHARDS_PER_COLLECTION)) {
+                    Object shardPerCollectionValue = map.get(SHARDS_PER_COLLECTION);
+                    if (shardPerCollectionValue instanceof Integer) {
+                        nodeStatsSettingHandler.updateNodeStatsSetting((Integer)shardPerCollectionValue);
+                    }
                 }
             }
-            // update node stats setting if exists
-            if (map.containsKey(SHARDS_PER_COLLECTION)) {
-                Object shardPerCollectionValue = map.get(SHARDS_PER_COLLECTION);
-                if (shardPerCollectionValue instanceof Integer) {
-                    nodeStatsSettingHandler.updateNodeStatsSetting((Integer)shardPerCollectionValue);
-                }
-            }
+        } catch (final CircuitBreakingException e) {
+            StatsCollector.instance().logException(StatExceptionCode.CIRCUIT_BREAKING_ERROR);
+            LOG.error(
+                "Exception processing the request with ExceptionCode: {}",
+                StatExceptionCode.CIRCUIT_BREAKING_ERROR.toString());
         }
 
         return channel -> {
