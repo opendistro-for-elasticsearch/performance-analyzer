@@ -326,6 +326,7 @@ afterEvaluate {
     buildRpm {
         arch = 'NOARCH'
         postInstall file('packaging/rpm/postinst')
+        postUninstall file('packaging/rpm/postrm')
         archiveName "${packageName}-${version}.rpm"
         dependsOn 'assemble'
     }
@@ -333,6 +334,7 @@ afterEvaluate {
     buildDeb {
         arch = 'amd64'
         postInstall file('packaging/deb/postinst')
+        postUninstall file('packaging/deb/postrm')
         archiveName "${packageName}-${version}.deb"
         dependsOn 'assemble'
     }

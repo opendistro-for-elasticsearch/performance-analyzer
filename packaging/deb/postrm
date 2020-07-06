@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Make sure the ES_HOME environment variable is set
+if [ -z "$ES_HOME" ]; then
+    ES_HOME=/usr/share/elasticsearch
+fi
+
+echo "ES_HOME is $ES_HOME"
+
+# Cleanup files
+if [ -d $ES_HOME/performance-analyzer-rca ]; then
+  rm -rf $ES_HOME/performance-analyzer-rca
+fi
+
+if [ -f $ES_HOME/bin/performance-analyzer-agent-cli ]; then
+  rm $ES_HOME/bin/performance-analyzer-agent-cli
+fi
+
+if [ -f "$ES_HOME"/data/rca_enabled.conf ]; then
+  rm "$ES_HOME"/data/rca_enabled.conf
+fi
+
+if [ -f /var/lib/elasticsearch/performance_analyzer_enabled.conf ]; then
+  rm /var/lib/elasticsearch/performance_analyzer_enabled.conf
+fi
+
+if [ -f /var/lib/elasticsearch/rca_enabled.conf ]; then
+  rm /var/lib/elasticsearch/rca_enabled.conf
+fi
+
+if [ -f /usr/lib/systemd/system/opendistro-elasticsearch.service ]; then
+  rm /usr/lib/systemd/system/opendistro-elasticsearch.service
+fi
