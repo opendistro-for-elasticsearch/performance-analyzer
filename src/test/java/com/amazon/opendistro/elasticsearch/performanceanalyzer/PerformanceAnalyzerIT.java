@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PerformanceAnalyzerIT extends ESRestTestCase {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIT.class);
-    private static final int PORT = 9600;
+    private static final int PORT = Integer.parseInt(System.getProperty("tests.pa.port"));
     private static final ObjectMapper mapper = new ObjectMapper();
     private static RestClient paClient;
 
