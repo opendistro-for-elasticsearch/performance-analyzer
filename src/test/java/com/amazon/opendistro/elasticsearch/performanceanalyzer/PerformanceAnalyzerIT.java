@@ -81,7 +81,8 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
             Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
             Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
                     new TypeReference<Map<String, Object>>(){});
-            if (respMap.get("currentPerformanceAnalyzerClusterState").equals(3)) {
+            if (respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
+                    !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
                 break;
             }
             Thread.sleep(1000L);
@@ -89,7 +90,8 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
         Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
                 new TypeReference<Map<String, Object>>(){});
-        if (!respMap.get("currentPerformanceAnalyzerClusterState").equals(3)) {
+        if (!respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
+                !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
             throw new Exception("PA and RCA are not enabled on the target cluster!");
         }
     }
