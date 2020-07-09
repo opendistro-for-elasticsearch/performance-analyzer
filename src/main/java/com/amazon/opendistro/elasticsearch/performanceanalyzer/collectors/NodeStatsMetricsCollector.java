@@ -217,14 +217,23 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
     }
 
     public void populateMetricValues(IndicesService indicesService, IndexShard currentIndexShard,
-                                long startTime, boolean allShards) {
-        IndexShardStats currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, CommonStatsFlags.ALL);
+                                long startTime, boolean allMetrics) {
+        IndexShardStats currentIndexShardStats;
+        if (allMetrics) {
+            currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, new CommonStatsFlags(
+                    CommonStatsFlags.Flag.Store, CommonStatsFlags.Flag.Indexing, CommonStatsFlags.Flag.Merge,
+                    CommonStatsFlags.Flag.Flush, CommonStatsFlags.Flag.Refresh, CommonStatsFlags.Flag.QueryCache,
+                    CommonStatsFlags.Flag.FieldData, CommonStatsFlags.Flag.RequestCache, CommonStatsFlags.Flag.Recovery));
+        } else {
+            currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, new CommonStatsFlags(
+                    CommonStatsFlags.Flag.Segments));
+        }
         for (ShardStats shardStats : currentIndexShardStats.getShards()) {
             StringBuilder value = new StringBuilder();
 
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
             //- go through the list of metrics to be collected and emit
-            if (allShards) {
+            if (allMetrics) {
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                         .append(new NodeStatsMetricsAllShardsPerCollectionStatus(shardStats).serialize());
             } else {
