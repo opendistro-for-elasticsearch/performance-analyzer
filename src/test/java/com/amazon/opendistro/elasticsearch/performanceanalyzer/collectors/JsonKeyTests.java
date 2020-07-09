@@ -26,7 +26,6 @@ import java.util.function.Function;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector.NodeStatsMetricsStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector.ThreadPoolStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
@@ -99,9 +98,6 @@ public class JsonKeyTests {
                 IPDimension.values(), IPValue.values(), getMethodJsonProperty);
         verifyMethodWithJsonKeyNames(ThreadPoolStatus.class,
                 ThreadPoolDimension.values(), ThreadPoolValue.values(),
-                getMethodJsonProperty);
-        verifyMethodWithJsonKeyNames(NodeStatsMetricsStatus.class,
-                new MetricDimension[] {}, ShardStatsValue.values(),
                 getMethodJsonProperty);
         verifyMethodWithJsonKeyNames(MasterPendingStatus.class,
                 new MetricDimension[] {},

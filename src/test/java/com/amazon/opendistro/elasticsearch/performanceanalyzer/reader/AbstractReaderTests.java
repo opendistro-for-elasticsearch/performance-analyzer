@@ -125,24 +125,7 @@ public class AbstractReaderTests extends AbstractTests {
             long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
         NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
-        String str = (dummyCollector.new NodeStatsMetricsStatus(
-                indexingThrottleTime,
-                 queryCacheHitCount,
-                 queryCacheMissCount,
-                 queryCacheInBytes,
-                 fieldDataEvictions,
-                 fieldDataInBytes,
-                 requestCacheHitCount,
-                 requestCacheMissCount,
-                 requestCacheEvictions,
-                 requestCacheInBytes,
-                 refreshCount,
-                 refreshTime,
-                 flushCount,
-                 flushTime,
-                 mergeCount,
-                 mergeTime,
-                 mergeCurrent,
+        String str = (dummyCollector.new NodeStatsMetricsFewShardsPerCollectionStatus(
                  indexBufferBytes,
                  segmentCount,
                  segmentsMemory,
@@ -155,6 +138,25 @@ public class AbstractReaderTests extends AbstractTests {
                  indexWriterMemory,
                  versionMapMemory,
                  bitsetMemory, shardSizeInBytes)).serialize();
+
+        str += (dummyCollector.new NodeStatsMetricsAllShardsPerCollectionStatus(
+                indexingThrottleTime,
+                queryCacheHitCount,
+                queryCacheMissCount,
+                queryCacheInBytes,
+                fieldDataEvictions,
+                fieldDataInBytes,
+                requestCacheHitCount,
+                requestCacheMissCount,
+                requestCacheEvictions,
+                requestCacheInBytes,
+                refreshCount,
+                refreshTime,
+                flushCount,
+                flushTime,
+                mergeCount,
+                mergeTime,
+                mergeCurrent)).serialize();
 
         if (condition == FailureCondition.INVALID_JSON_METRIC) {
             str = str.substring(1);

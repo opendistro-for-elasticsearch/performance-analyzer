@@ -20,7 +20,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,6 @@ import org.elasticsearch.index.shard.IndexShardState;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.NodeIndicesStats;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
@@ -187,23 +185,22 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             if (!currentShardsIter.hasNext()) {
                 populateCurrentShards();
             }
+            // Metrics populated with a few shards per collection.
+            // The number is set via Cluster Settings API.
             for(int i = 0; i < controller.getNodeStatsShardsPerCollection(); i++){
                 if (!currentShardsIter.hasNext()) {
                     break;
                 }
                 IndexShard currentIndexShard = currentShardsIter.next().getValue();
-                IndexShardStats currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, CommonStatsFlags.ALL);
-                for (ShardStats shardStats : currentIndexShardStats.getShards()) {
-                    StringBuilder value = new StringBuilder();
+                populateMetricValues(indicesService, currentIndexShard, startTime, false);
+            }
 
-                    value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
-                    //- go through the list of metrics to be collected and emit
-                    value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
-                            .append(new NodeStatsMetricsStatus(shardStats).serialize());
-
-                    saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
-                            String.valueOf(currentIndexShardStats.getShardId().id()));
-                }
+            // Metrics populated for all shards in every collection.
+            // These metrics dont cause any performance impact while getting populated
+            // in a single revision.
+            for (HashMap.Entry currentShard : currentShards.entrySet() ){
+                IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
+                populateMetricValues(indicesService, currentIndexShard, startTime, true);
             }
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting NodesStats Metrics: {} for startTime {} with ExceptionCode: {}",
@@ -219,7 +216,168 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         return field;
     }
 
-    public class NodeStatsMetricsStatus extends MetricStatus {
+    public void populateMetricValues(IndicesService indicesService, IndexShard currentIndexShard,
+                                long startTime, boolean allShards) {
+        IndexShardStats currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, CommonStatsFlags.ALL);
+        for (ShardStats shardStats : currentIndexShardStats.getShards()) {
+            StringBuilder value = new StringBuilder();
+
+            value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
+            //- go through the list of metrics to be collected and emit
+            if (allShards) {
+                value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
+                        .append(new NodeStatsMetricsAllShardsPerCollectionStatus(shardStats).serialize());
+            } else {
+                value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
+                        .append(new NodeStatsMetricsFewShardsPerCollectionStatus(shardStats).serialize());
+            }
+
+            saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
+                    String.valueOf(currentIndexShardStats.getShardId().id()));
+        }
+    }
+
+    public class NodeStatsMetricsFewShardsPerCollectionStatus extends MetricStatus {
+
+        @JsonIgnore
+        private ShardStats shardStats;
+
+        private final long indexBufferBytes;
+        private final long segmentCount;
+        private final long segmentsMemory;
+        private final long termsMemory;
+        private final long storedFieldsMemory;
+        private final long termVectorsMemory;
+        private final long normsMemory;
+        private final long pointsMemory;
+        private final long docValuesMemory;
+        private final long indexWriterMemory;
+        private final long versionMapMemory;
+        private final long bitsetMemory;
+        private final long shardSizeInBytes;
+
+        public NodeStatsMetricsFewShardsPerCollectionStatus(ShardStats shardStats) {
+            super();
+            this.shardStats = shardStats;
+
+            this.indexBufferBytes = calculate(ShardStatsValue.INDEXING_BUFFER);
+            this.segmentCount = calculate(ShardStatsValue.SEGMENTS_TOTAL);
+            this.segmentsMemory = calculate(ShardStatsValue.SEGMENTS_MEMORY);
+            this.termsMemory = calculate(ShardStatsValue.TERMS_MEMORY);
+            this.storedFieldsMemory = calculate(
+                    ShardStatsValue.STORED_FIELDS_MEMORY);
+            this.termVectorsMemory = calculate(ShardStatsValue.TERMS_MEMORY);
+            this.normsMemory = calculate(ShardStatsValue.NORMS_MEMORY);
+            this.pointsMemory = calculate(ShardStatsValue.POINTS_MEMORY);
+            this.docValuesMemory = calculate(ShardStatsValue.DOC_VALUES_MEMORY);
+            this.indexWriterMemory = calculate(
+                    ShardStatsValue.INDEX_WRITER_MEMORY);
+            this.versionMapMemory = calculate(ShardStatsValue.VERSION_MAP_MEMORY);
+            this.bitsetMemory = calculate(ShardStatsValue.BITSET_MEMORY);
+            this.shardSizeInBytes = calculate(ShardStatsValue.SHARD_SIZE_IN_BYTES);
+        }
+
+        @SuppressWarnings("checkstyle:parameternumber")
+        public NodeStatsMetricsFewShardsPerCollectionStatus(long indexBufferBytes,
+                long segmentCount, long segmentsMemory, long termsMemory,
+                long storedFieldsMemory, long termVectorsMemory,
+                long normsMemory, long pointsMemory, long docValuesMemory,
+                long indexWriterMemory, long versionMapMemory,
+                long bitsetMemory, long shardSizeInBytes) {
+            super();
+            this.shardStats = null;
+            this.indexBufferBytes = indexBufferBytes;
+            this.segmentCount = segmentCount;
+            this.segmentsMemory = segmentsMemory;
+            this.termsMemory = termsMemory;
+            this.storedFieldsMemory = storedFieldsMemory;
+            this.termVectorsMemory = termVectorsMemory;
+            this.normsMemory = normsMemory;
+            this.pointsMemory = pointsMemory;
+            this.docValuesMemory = docValuesMemory;
+            this.indexWriterMemory = indexWriterMemory;
+            this.versionMapMemory = versionMapMemory;
+            this.bitsetMemory = bitsetMemory;
+            this.shardSizeInBytes = shardSizeInBytes;
+        }
+
+
+        private long calculate(ShardStatsValue nodeMetric) {
+            return valueCalculators.get(nodeMetric.toString()).calculateValue(shardStats);
+        }
+
+        @JsonIgnore
+        public ShardStats getShardStats() {
+            return shardStats;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.INDEX_BUFFER_BYTES_VALUE)
+        public long getIndexBufferBytes() {
+            return indexBufferBytes;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.SEGMENTS_COUNT_VALUE)
+        public long getSegmentCount() {
+            return segmentCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.SEGMENTS_MEMORY_VALUE)
+        public long getSegmentsMemory() {
+            return segmentsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.TERMS_MEMORY_VALUE)
+        public long getTermsMemory() {
+            return termsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.STORED_FIELDS_MEMORY_VALUE)
+        public long getStoredFieldsMemory() {
+            return storedFieldsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.TERM_VECTOR_MEMORY_VALUE)
+        public long getTermVectorsMemory() {
+            return termVectorsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.NORMS_MEMORY_VALUE)
+        public long getNormsMemory() {
+            return normsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.POINTS_MEMORY_VALUE)
+        public long getPointsMemory() {
+            return pointsMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.DOC_VALUES_MEMORY_VALUE)
+        public long getDocValuesMemory() {
+            return docValuesMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.INDEX_WRITER_MEMORY_VALUE)
+        public long getIndexWriterMemory() {
+            return indexWriterMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.VERSION_MAP_MEMORY_VALUE)
+        public long getVersionMapMemory() {
+            return versionMapMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.BITSET_MEMORY_VALUE)
+        public long getBitsetMemory() {
+            return bitsetMemory;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES_VALUE )
+        public long getShardSizeInBytes() {
+            return shardSizeInBytes;
+        }
+    }
+
+    public class NodeStatsMetricsAllShardsPerCollectionStatus extends MetricStatus {
 
         @JsonIgnore
         private ShardStats shardStats;
@@ -241,21 +399,8 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         private final long mergeCount;
         private final long mergeTime;
         private final long mergeCurrent;
-        private final long indexBufferBytes;
-        private final long segmentCount;
-        private final long segmentsMemory;
-        private final long termsMemory;
-        private final long storedFieldsMemory;
-        private final long termVectorsMemory;
-        private final long normsMemory;
-        private final long pointsMemory;
-        private final long docValuesMemory;
-        private final long indexWriterMemory;
-        private final long versionMapMemory;
-        private final long bitsetMemory;
-        private final long shardSizeInBytes;
 
-        public NodeStatsMetricsStatus(ShardStats shardStats) {
+        public NodeStatsMetricsAllShardsPerCollectionStatus(ShardStats shardStats) {
             super();
             this.shardStats = shardStats;
 
@@ -285,37 +430,17 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.mergeCount = calculate(ShardStatsValue.MERGE_EVENT);
             this.mergeTime = calculate(ShardStatsValue.MERGE_TIME);
             this.mergeCurrent = calculate(ShardStatsValue.MERGE_CURRENT_EVENT);
-            this.indexBufferBytes = calculate(ShardStatsValue.INDEXING_BUFFER);
-            this.segmentCount = calculate(ShardStatsValue.SEGMENTS_TOTAL);
-            this.segmentsMemory = calculate(ShardStatsValue.SEGMENTS_MEMORY);
-            this.termsMemory = calculate(ShardStatsValue.TERMS_MEMORY);
-            this.storedFieldsMemory = calculate(
-                    ShardStatsValue.STORED_FIELDS_MEMORY);
-            this.termVectorsMemory = calculate(ShardStatsValue.TERMS_MEMORY);
-            this.normsMemory = calculate(ShardStatsValue.NORMS_MEMORY);
-            this.pointsMemory = calculate(ShardStatsValue.POINTS_MEMORY);
-            this.docValuesMemory = calculate(ShardStatsValue.DOC_VALUES_MEMORY);
-            this.indexWriterMemory = calculate(
-                    ShardStatsValue.INDEX_WRITER_MEMORY);
-            this.versionMapMemory = calculate(ShardStatsValue.VERSION_MAP_MEMORY);
-            this.bitsetMemory = calculate(ShardStatsValue.BITSET_MEMORY);
-            this.shardSizeInBytes = calculate(ShardStatsValue.SHARD_SIZE_IN_BYTES);
         }
 
         @SuppressWarnings("checkstyle:parameternumber")
-        public NodeStatsMetricsStatus(long indexingThrottleTime,
-                long queryCacheHitCount, long queryCacheMissCount,
-                long queryCacheInBytes, long fieldDataEvictions,
-                long fieldDataInBytes, long requestCacheHitCount,
-                long requestCacheMissCount, long requestCacheEvictions,
-                long requestCacheInBytes, long refreshCount, long refreshTime,
-                long flushCount, long flushTime, long mergeCount,
-                long mergeTime, long mergeCurrent, long indexBufferBytes,
-                long segmentCount, long segmentsMemory, long termsMemory,
-                long storedFieldsMemory, long termVectorsMemory,
-                long normsMemory, long pointsMemory, long docValuesMemory,
-                long indexWriterMemory, long versionMapMemory,
-                long bitsetMemory, long shardSizeInBytes) {
+        public NodeStatsMetricsAllShardsPerCollectionStatus(long indexingThrottleTime,
+                                                            long queryCacheHitCount, long queryCacheMissCount,
+                                                            long queryCacheInBytes, long fieldDataEvictions,
+                                                            long fieldDataInBytes, long requestCacheHitCount,
+                                                            long requestCacheMissCount, long requestCacheEvictions,
+                                                            long requestCacheInBytes, long refreshCount, long refreshTime,
+                                                            long flushCount, long flushTime, long mergeCount,
+                                                            long mergeTime, long mergeCurrent) {
             super();
             this.shardStats = null;
             this.indexingThrottleTime = indexingThrottleTime;
@@ -335,19 +460,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.mergeCount = mergeCount;
             this.mergeTime = mergeTime;
             this.mergeCurrent = mergeCurrent;
-            this.indexBufferBytes = indexBufferBytes;
-            this.segmentCount = segmentCount;
-            this.segmentsMemory = segmentsMemory;
-            this.termsMemory = termsMemory;
-            this.storedFieldsMemory = storedFieldsMemory;
-            this.termVectorsMemory = termVectorsMemory;
-            this.normsMemory = normsMemory;
-            this.pointsMemory = pointsMemory;
-            this.docValuesMemory = docValuesMemory;
-            this.indexWriterMemory = indexWriterMemory;
-            this.versionMapMemory = versionMapMemory;
-            this.bitsetMemory = bitsetMemory;
-            this.shardSizeInBytes = shardSizeInBytes;
         }
 
 
@@ -443,71 +555,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonProperty(ShardStatsValue.Constants.MERGE_CURRENT_VALUE)
         public long getMergeCurrent() {
             return mergeCurrent;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.INDEX_BUFFER_BYTES_VALUE)
-        public long getIndexBufferBytes() {
-            return indexBufferBytes;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.SEGMENTS_COUNT_VALUE)
-        public long getSegmentCount() {
-            return segmentCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.SEGMENTS_MEMORY_VALUE)
-        public long getSegmentsMemory() {
-            return segmentsMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.TERMS_MEMORY_VALUE)
-        public long getTermsMemory() {
-            return termsMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.STORED_FIELDS_MEMORY_VALUE)
-        public long getStoredFieldsMemory() {
-            return storedFieldsMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.TERM_VECTOR_MEMORY_VALUE)
-        public long getTermVectorsMemory() {
-            return termVectorsMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.NORMS_MEMORY_VALUE)
-        public long getNormsMemory() {
-            return normsMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.POINTS_MEMORY_VALUE)
-        public long getPointsMemory() {
-            return pointsMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.DOC_VALUES_MEMORY_VALUE)
-        public long getDocValuesMemory() {
-            return docValuesMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.INDEX_WRITER_MEMORY_VALUE)
-        public long getIndexWriterMemory() {
-            return indexWriterMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.VERSION_MAP_MEMORY_VALUE)
-        public long getVersionMapMemory() {
-            return versionMapMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.BITSET_MEMORY_VALUE)
-        public long getBitsetMemory() {
-            return bitsetMemory;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES_VALUE )
-        public long getShardSizeInBytes() {
-            return shardSizeInBytes;
         }
     }
 }
