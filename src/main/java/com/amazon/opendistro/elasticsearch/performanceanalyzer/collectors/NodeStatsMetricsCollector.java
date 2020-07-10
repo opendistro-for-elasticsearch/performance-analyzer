@@ -16,13 +16,13 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import org.elasticsearch.common.cache.Cache;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -33,9 +33,6 @@ import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.index.IndexService;
-import org.elasticsearch.index.cache.query.QueryCacheStats;
-import org.elasticsearch.index.cache.request.RequestCacheStats;
-import org.elasticsearch.index.fielddata.FieldDataStats;
 import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.IndexShardState;
 import org.elasticsearch.index.shard.ShardId;
@@ -203,6 +200,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                 for (ShardStats shardStats : currentIndexShardStats.getShards()) {
                     StringBuilder value = new StringBuilder();
 
+                    LOG.info("\nMOCHI, insider the for loop for collectMetrics()!!");
                     value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
                     NodeStatsMetricsStatus nodeStatsMetricsStatus = AccessController.doPrivileged(
                             (PrivilegedAction<NodeStatsMetricsStatus>) () -> {
@@ -210,19 +208,24 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                             // This is for backward compatibility. Core ES may or may not emit custom shard metrics
                             // (depending on whether the patch has been applied or not). Thus, we need to use reflection
                             // to check whether getMaxWeight() method exist in Cache.java
-                            LOG.info("\nMOCHI, querying for max memory!!");
-                            Method getQueryCacheMaxSizeMethod = QueryCacheStats.class.getMethod("getMaxMemorySize");
-                            long queryCacheMaxSize = (Long) getQueryCacheMaxSizeMethod.invoke(shardStats.getStats().queryCache);
-                            Method getFieldDataCacheMaxSizeMethod = FieldDataStats.class.getMethod("getMaxMemorySize");
-                            long fieldDataMaxSize = (Long) getFieldDataCacheMaxSizeMethod.invoke(shardStats.getStats().fieldData);
-                            Method getRequestCacheMaxSizeMethod = RequestCacheStats.class.getMethod("getMaxMemorySize");
-                            long requestCacheMaxSize = (Long) getRequestCacheMaxSizeMethod.invoke(shardStats.getStats().requestCache);
-                            LOG.info("\nMOCHI, queryCacheMaxSize: " + queryCacheMaxSize);
-                            LOG.info("\nMOCHI, fieldDataMaxSize: " + fieldDataMaxSize);
-                            LOG.info("\nMOCHI, requestCacheMaxSize: " + requestCacheMaxSize);
+                            //
+                            // Currently, we are collecting maxWeight metrics only for FieldData and Shard Request Cache.
+                            LOG.info("MOCHI, querying for max memory!!");
+                            Cache fieldDataCache = indicesService.getIndicesFieldDataCache().getCache();
+                            Field field = fieldDataCache.getClass().getDeclaredField("maximumWeight");
+                            field.setAccessible(true);
+                            long fieldDataMaxSize =  (Long) field.get(fieldDataCache);
 
-                            final CustomShardStats customShardStats = new CustomShardStats(
-                                    queryCacheMaxSize, fieldDataMaxSize, requestCacheMaxSize);
+                            Field requestCacheField = indicesService.getClass().getDeclaredField("indicesRequestCache");
+                            requestCacheField.setAccessible(true);
+                            Cache requestCache = (Cache) requestCacheField.get(indicesService);
+                            Field maximumWeightField = requestCache.getClass().getDeclaredField("maximumWeight");
+                            maximumWeightField.setAccessible(true);
+                            Long requestCacheMaxSize = (Long) maximumWeightField.get(requestCache);
+
+                            LOG.info("MOCHI, fieldDataMaxSize: " + fieldDataMaxSize);
+                            LOG.info("MOCHI, requestCacheMaxSize: " + requestCacheMaxSize);
+                            final CustomShardStats customShardStats = new CustomShardStats(fieldDataMaxSize, requestCacheMaxSize);
                             return new NodeStatsMetricsStatus(shardStats, customShardStats);
                         } catch (Exception e) {
                             return new NodeStatsMetricsStatus(shardStats, null);
@@ -260,8 +263,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         private final long queryCacheHitCount;
         private final long queryCacheMissCount;
         private final long queryCacheInBytes;
-        @JsonInclude(JsonInclude.Include.NON_NULL)
-        private final Long queryCacheMaxSizeInBytes;
         private final long fieldDataEvictions;
         private final long fieldDataInBytes;
         @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -318,11 +319,9 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.requestCacheInBytes = calculate(
                     ShardStatsValue.CACHE_REQUEST_SIZE);
             if(customShardStats != null) {
-                this.queryCacheMaxSizeInBytes = customShardStats.queryCacheMaxSizeInBytes;
                 this.fieldDataMaxSizeInBytes = customShardStats.fieldDataMaxSizeInBytes;
                 this.requestCacheMaxSizeInBytes =customShardStats.requestCacheMaxSizeInBytes;
             } else {
-                this.queryCacheMaxSizeInBytes = null;
                 this.fieldDataMaxSizeInBytes = null;
                 this.requestCacheMaxSizeInBytes = null;
             }
@@ -353,13 +352,12 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @SuppressWarnings("checkstyle:parameternumber")
         public NodeStatsMetricsStatus(long indexingThrottleTime,
                 long queryCacheHitCount, long queryCacheMissCount,
-                long queryCacheInBytes, long queryCacheMaxSizeInBytes,
-                long fieldDataEvictions, long fieldDataInBytes,
-                long fieldDataMaxSizeInBytes, long requestCacheHitCount,
-                long requestCacheMissCount, long requestCacheEvictions,
-                long requestCacheInBytes, long requestCacheMaxSizeInBytes,
-                long refreshCount, long refreshTime,
-                long flushCount, long flushTime, long mergeCount,
+                long queryCacheInBytes, long fieldDataEvictions,
+                long fieldDataInBytes, long fieldDataMaxSizeInBytes,
+                long requestCacheHitCount, long requestCacheMissCount,
+                long requestCacheEvictions, long requestCacheInBytes,
+                long requestCacheMaxSizeInBytes, long refreshCount,
+                long refreshTime, long flushCount, long flushTime, long mergeCount,
                 long mergeTime, long mergeCurrent, long indexBufferBytes,
                 long segmentCount, long segmentsMemory, long termsMemory,
                 long storedFieldsMemory, long termVectorsMemory,
@@ -372,7 +370,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.queryCacheHitCount = queryCacheHitCount;
             this.queryCacheMissCount = queryCacheMissCount;
             this.queryCacheInBytes = queryCacheInBytes;
-            this.queryCacheMaxSizeInBytes = queryCacheMaxSizeInBytes;
             this.fieldDataEvictions = fieldDataEvictions;
             this.fieldDataInBytes = fieldDataInBytes;
             this.fieldDataMaxSizeInBytes = fieldDataMaxSizeInBytes;
@@ -430,11 +427,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonProperty(ShardStatsValue.Constants.QUERY_CACHE_IN_BYTES_VALUE)
         public long getQueryCacheInBytes() {
             return queryCacheInBytes;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.QUERY_CACHE_MAX_SIZE_IN_BYTES_VALUE)
-        public long getQueryCacheMaxSizeInBytes() {
-            return queryCacheMaxSizeInBytes;
         }
 
         @JsonProperty(ShardStatsValue.Constants.FIELDDATA_EVICTION_VALUE)
@@ -579,14 +571,11 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
     }
 
     private static class CustomShardStats {
-        public final long queryCacheMaxSizeInBytes;
         public final long fieldDataMaxSizeInBytes;
         public final long requestCacheMaxSizeInBytes;
 
-        CustomShardStats(long queryCacheMaxSizeInBytes,
-                         long fieldDataMaxSizeInBytes,
+        CustomShardStats(long fieldDataMaxSizeInBytes,
                          long requestCacheMaxSizeInBytes) {
-            this.queryCacheMaxSizeInBytes = queryCacheMaxSizeInBytes;
             this.fieldDataMaxSizeInBytes = fieldDataMaxSizeInBytes;
             this.requestCacheMaxSizeInBytes = requestCacheMaxSizeInBytes;
         }
