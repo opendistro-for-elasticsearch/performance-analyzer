@@ -129,10 +129,9 @@ public class MetricPropertiesTests extends AbstractReaderTests {
     private String createShardStatMetrics(long indexingThrottleTime,
             long queryCacheHitCount, long queryCacheMissCount,
             long queryCacheInBytes, long fieldDataEvictions,
-            long fieldDataInBytes, long fieldDataMaxSizeInBytes,
-            long requestCacheHitCount, long requestCacheMissCount,
-            long requestCacheEvictions, long requestCacheInBytes,
-            long requestCacheMaxSizeInBytes, long refreshCount, long refreshTime,
+            long fieldDataInBytes, long requestCacheHitCount,
+            long requestCacheMissCount, long requestCacheEvictions,
+            long requestCacheInBytes, long refreshCount, long refreshTime,
             long flushCount, long flushTime, long mergeCount,
             long mergeTime, long mergeCurrent, long indexBufferBytes,
             long segmentCount, long segmentsMemory, long termsMemory,
@@ -144,10 +143,9 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                 indexingThrottleTime,
                 queryCacheHitCount, queryCacheMissCount,
                 queryCacheInBytes, fieldDataEvictions,
-                fieldDataInBytes, fieldDataMaxSizeInBytes,
-                requestCacheHitCount, requestCacheMissCount,
-                requestCacheEvictions, requestCacheInBytes,
-                requestCacheMaxSizeInBytes, refreshCount, refreshTime,
+                fieldDataInBytes, requestCacheHitCount,
+                requestCacheMissCount, requestCacheEvictions,
+                requestCacheInBytes, refreshCount, refreshTime,
                 flushCount, flushTime, mergeCount,
                 mergeTime, mergeCurrent, indexBufferBytes,
                 segmentCount, segmentsMemory, termsMemory,
@@ -184,12 +182,12 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                 .newFile(createRelativePath(moviesIndexeRelativePath, "1"));
 
         write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
-                createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L, 8145L, 6565L,
                         672L, 0L, 384L, 28L, 496L, 0L, 0L, 0L, 0L));
 
         write(moviesShard1, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
-                createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L, 8019L, 6445L,
                         664L, 0L, 384L, 6L, 520L, 0L, 0L, 0L, 0L));
 
@@ -197,7 +195,7 @@ public class MetricPropertiesTests extends AbstractReaderTests {
                 .newFile(createRelativePath(taxisIndexeRelativePath, "0"));
 
         write(taxisShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
-                createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                         0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L));
 
@@ -327,20 +325,20 @@ public class MetricPropertiesTests extends AbstractReaderTests {
         if (condition != FailureCondition.EMPTY_FILE) {
             if (condition == FailureCondition.INVALID_JSON_TIME) {
                 write(moviesShard0, false, getCurrentNonJsonMilliSeconds(),
-                        createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                        createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
                                 0L, 0L));
             } else if (condition == FailureCondition.INVALID_JSON_METRIC) {
                 write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
-                        createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                        createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
                                 0L, 0L, condition));
             }
             else {
                 write(moviesShard0, false, PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds(),
-                        createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
+                        createShardStatMetrics(0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L,
                                 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 2L,
                                 8145L, 6565L, 672L, 0L, 384L, 28L, 496L, 0L, 0L,
                                 0L, 0L));
