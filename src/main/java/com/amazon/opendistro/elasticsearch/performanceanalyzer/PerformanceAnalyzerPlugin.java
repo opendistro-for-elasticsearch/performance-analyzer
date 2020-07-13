@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheCustomMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
@@ -155,6 +156,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
         this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CacheCustomMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CircuitBreakerCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new OSMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new HeapMetricsCollector());

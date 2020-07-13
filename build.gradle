@@ -135,6 +135,7 @@ dependencies {
 
     compile 'com.google.guava:guava:27.0.1-jre'
     compile 'org.jooq:jooq:3.10.8'
+    compile 'org.apache.commons:commons-lang3:3.6'
     compile 'org.bouncycastle:bcprov-jdk15on:1.60'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.3'

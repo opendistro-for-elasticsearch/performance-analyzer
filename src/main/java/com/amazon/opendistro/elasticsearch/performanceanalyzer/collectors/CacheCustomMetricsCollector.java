@@ -23,13 +23,10 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsPr
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.elasticsearch.common.cache.Cache;
-import org.elasticsearch.indices.IndicesRequestCache;
 import org.elasticsearch.indices.IndicesService;
 
 /*
@@ -44,7 +41,6 @@ import org.elasticsearch.indices.IndicesService;
  *
  */
 public class CacheCustomMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
-    private static final Logger LOG = LogManager.getLogger(CacheCustomMetricsCollector.class);
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
             CacheCustomMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 0;
@@ -69,46 +65,29 @@ public class CacheCustomMetricsCollector extends PerformanceAnalyzerMetricsColle
         // to check whether getMaxWeight() method exist in Cache.java
         //
         // Currently, we are collecting maxWeight metrics only for FieldData and Shard Request Cache.
-        LOG.info("\nMOCHI, insider the for loop for collectMetrics()!!");
         CacheMaxSizeStatus fieldDataCacheMaxSizeStatus = AccessController.doPrivileged(
                 (PrivilegedAction<CacheMaxSizeStatus>) () -> {
                     try {
-                        LOG.info("MOCHI, querying for max memory for Field Data Cache!!");
                         Cache fieldDataCache = indicesService.getIndicesFieldDataCache().getCache();
-                        Field field = fieldDataCache.getClass().getDeclaredField("maximumWeight");
-                        field.setAccessible(true);
-                        long fieldDataMaxSize =  (Long) field.get(fieldDataCache);
-                        LOG.info("MOCHI, fieldDataMaxSize: " + fieldDataMaxSize);
+                        long fieldDataMaxSize = (Long) FieldUtils.readField(fieldDataCache, "maximumWeight", true);
                         return new CacheMaxSizeStatus("Field Data Cache", fieldDataMaxSize);
                     } catch (Exception e) {
                         return new CacheMaxSizeStatus(null, null);
                     }
                 });
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(fieldDataCacheMaxSizeStatus.serialize());
-
         CacheMaxSizeStatus shardRequestCacheMaxSizeStatus = AccessController.doPrivileged(
                 (PrivilegedAction<CacheMaxSizeStatus>) () -> {
                     try {
-                        LOG.info("MOCHI, querying for max memory for Shard Request Cache!!");
-                        Field requestCacheField = indicesService.getClass().getDeclaredField("indicesRequestCache");
-                        requestCacheField.setAccessible(true);
-                        IndicesRequestCache requestCache = (IndicesRequestCache) requestCacheField.get(indicesService);
-
-                        Field cacheField = requestCache.getClass().getDeclaredField("cache");
-                        cacheField.setAccessible(true);
-                        Cache cache = (Cache) requestCacheField.get(requestCache);
-
-                        Field maximumWeightField = cache.getClass().getDeclaredField("maximumWeight");
-                        maximumWeightField.setAccessible(true);
-                        Long requestCacheMaxSize = (Long) maximumWeightField.get(cache);
-                        LOG.info("MOCHI, requestCacheMaxSize: " + requestCacheMaxSize);
+                        Object reqCache = FieldUtils.readField(indicesService, "indicesRequestCache", true);
+                        Cache requestCache = (Cache) FieldUtils.readField(reqCache, "cache", true);
+                        Long requestCacheMaxSize = (Long) FieldUtils.readField(requestCache, "maximumWeight", true);
                         return new CacheMaxSizeStatus("Shard Request Cache", requestCacheMaxSize);
                     } catch (Exception e) {
                         return new CacheMaxSizeStatus(null, null);
                     }
                 });
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(shardRequestCacheMaxSizeStatus.serialize());
-
         saveMetricValues(value.toString(), startTime);
     }
 
