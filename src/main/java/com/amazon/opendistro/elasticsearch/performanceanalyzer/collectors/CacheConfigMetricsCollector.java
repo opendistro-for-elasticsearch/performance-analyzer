@@ -15,13 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.decisionmaker.DecisionMakerConsts.CACHE_MAX_WEIGHT;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheType.FIELD_DATA_CACHE;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheType.SHARD_REQUEST_CACHE;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheCustomDimension;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheCustomValue;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheConfigDimension;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheConfigValue;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -35,19 +41,19 @@ import org.elasticsearch.indices.IndicesService;
  * (other than NodeStatsMetricsCollector which collects the per shard metrics) for this
  * metric.
  *
- * CacheCustomMetricsCollector collects the max size for the Field Data and Shard Request
+ * CacheConfigMetricsCollector collects the max size for the Field Data and Shard Request
  * Cache currently and can be extended for remaining cache types and any other node level
  * cache metric.
  *
  */
-public class CacheCustomMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
+public class CacheConfigMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
-            CacheCustomMetricsCollector.class).samplingInterval;
+            CacheConfigMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 0;
     private StringBuilder value;
 
-    public CacheCustomMetricsCollector() {
-        super(SAMPLING_TIME_INTERVAL, "CacheCustomMetrics");
+    public CacheConfigMetricsCollector() {
+        super(SAMPLING_TIME_INTERVAL, "CacheConfigMetrics");
         value = new StringBuilder();
     }
 
@@ -60,19 +66,19 @@ public class CacheCustomMetricsCollector extends PerformanceAnalyzerMetricsColle
 
         value.setLength(0);
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
-        // This is for backward compatibility. Core ES may or may not emit custom shard metrics
-        // (depending on whether the patch has been applied or not). Thus, we need to use reflection
-        // to check whether getMaxWeight() method exist in Cache.java
+        // This is for backward compatibility. Core ES may or may not emit maxWeight metric.
+        // (depending on whether the patch has been applied or not). Thus, we need to use
+        // reflection to check whether getMaxWeight() method exist in Cache.java
         //
         // Currently, we are collecting maxWeight metrics only for FieldData and Shard Request Cache.
         CacheMaxSizeStatus fieldDataCacheMaxSizeStatus = AccessController.doPrivileged(
                 (PrivilegedAction<CacheMaxSizeStatus>) () -> {
                     try {
                         Cache fieldDataCache = indicesService.getIndicesFieldDataCache().getCache();
-                        long fieldDataMaxSize = (Long) FieldUtils.readField(fieldDataCache, "maximumWeight", true);
-                        return new CacheMaxSizeStatus("Field Data Cache", fieldDataMaxSize);
+                        long fieldDataMaxSize = (Long) FieldUtils.readField(fieldDataCache, CACHE_MAX_WEIGHT, true);
+                        return new CacheMaxSizeStatus(FIELD_DATA_CACHE, fieldDataMaxSize);
                     } catch (Exception e) {
-                        return new CacheMaxSizeStatus(null, null);
+                        return new CacheMaxSizeStatus(FIELD_DATA_CACHE, null);
                     }
                 });
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(fieldDataCacheMaxSizeStatus.serialize());
@@ -81,10 +87,10 @@ public class CacheCustomMetricsCollector extends PerformanceAnalyzerMetricsColle
                     try {
                         Object reqCache = FieldUtils.readField(indicesService, "indicesRequestCache", true);
                         Cache requestCache = (Cache) FieldUtils.readField(reqCache, "cache", true);
-                        Long requestCacheMaxSize = (Long) FieldUtils.readField(requestCache, "maximumWeight", true);
-                        return new CacheMaxSizeStatus("Shard Request Cache", requestCacheMaxSize);
+                        Long requestCacheMaxSize = (Long) FieldUtils.readField(requestCache, CACHE_MAX_WEIGHT, true);
+                        return new CacheMaxSizeStatus(SHARD_REQUEST_CACHE, requestCacheMaxSize);
                     } catch (Exception e) {
-                        return new CacheMaxSizeStatus(null, null);
+                        return new CacheMaxSizeStatus(SHARD_REQUEST_CACHE, null);
                     }
                 });
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(shardRequestCacheMaxSizeStatus.serialize());
@@ -98,27 +104,27 @@ public class CacheCustomMetricsCollector extends PerformanceAnalyzerMetricsColle
             throw new RuntimeException("keys length should be " + KEYS_PATH_LENGTH);
         }
 
-        return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sCacheCustomPath);
+        return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sCacheConfigPath);
     }
 
     static class CacheMaxSizeStatus extends MetricStatus {
 
-        private final String cacheType;
+        private final CacheType cacheType;
 
-        @JsonInclude(JsonInclude.Include.NON_NULL)
+        @JsonInclude(Include.NON_NULL)
         private final long cacheMaxSize;
 
-        CacheMaxSizeStatus(String cacheType, Long cacheMaxSize) {
+        CacheMaxSizeStatus(CacheType cacheType, Long cacheMaxSize) {
             this.cacheType = cacheType;
             this.cacheMaxSize = cacheMaxSize;
         }
 
-        @JsonProperty(CacheCustomDimension.Constants.TYPE_VALUE)
-        public String getCacheType() {
+        @JsonProperty(CacheConfigDimension.Constants.TYPE_VALUE)
+        public CacheType getCacheType() {
             return cacheType;
         }
 
-        @JsonProperty(CacheCustomValue.Constants.MAX_SIZE)
+        @JsonProperty(CacheConfigValue.Constants.CACHE_MAX_SIZE_VALUE)
         public long getCacheMaxSize() {
             return cacheMaxSize;
         }

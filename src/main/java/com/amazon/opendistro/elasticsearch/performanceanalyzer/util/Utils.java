@@ -1,6 +1,6 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.util;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheCustomMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
@@ -13,7 +13,7 @@ public class Utils {
 
     public static void configureMetrics() {
         MetricsConfiguration.MetricConfig cdefault = MetricsConfiguration.cdefault ;
-        MetricsConfiguration.CONFIG_MAP.put(CacheCustomMetricsCollector.class, cdefault);
+        MetricsConfiguration.CONFIG_MAP.put(CacheConfigMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(CircuitBreakerCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(NodeDetailsCollector.class, cdefault);
