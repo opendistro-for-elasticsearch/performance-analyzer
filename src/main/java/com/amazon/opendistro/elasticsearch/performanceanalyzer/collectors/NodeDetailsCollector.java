@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesHelper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeDetailColumns;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
@@ -67,7 +68,7 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         // know this information in advance unless we add the number of nodes as
         // additional metadata in the file.
         try {
-            String rcaOverrides = configOverridesWrapper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
+            String rcaOverrides = ConfigOverridesHelper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
             value.append(rcaOverrides);
         } catch (IOException ioe) {
             LOG.error("Unable to serialize rca config overrides.", ioe);

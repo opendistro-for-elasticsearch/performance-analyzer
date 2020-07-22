@@ -31,7 +31,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 public class ConfigOverridesClusterSettingHandlerTests {
@@ -47,14 +46,11 @@ public class ConfigOverridesClusterSettingHandlerTests {
     @Mock
     private ClusterSettingsManager mockClusterSettingsManager;
 
-    @Mock
-    private ObjectMapper mockObjectMapper;
-
     @Captor
     private ArgumentCaptor<String> updatedClusterSettingCaptor;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         initMocks(this);
         this.testSetting = Setting.simpleString(TEST_KEY);
         this.testOverridesWrapper = new ConfigOverridesWrapper();
@@ -75,10 +71,8 @@ public class ConfigOverridesClusterSettingHandlerTests {
 
     @Test
     public void onSettingUpdateFailureTest() throws IOException {
-        String updatedSettingValue = ConfigOverridesTestHelper.getValidConfigOverridesJson();
-        ConfigOverridesWrapper failingOverridesWrapper = new ConfigOverridesWrapper(mockObjectMapper);
-
-        when(mockObjectMapper.readValue(updatedSettingValue, ConfigOverrides.class)).thenThrow(IOException.class);
+        String updatedSettingValue = "invalid json";
+        ConfigOverridesWrapper failingOverridesWrapper = new ConfigOverridesWrapper();
 
         testClusterSettingHandler = new ConfigOverridesClusterSettingHandler(
                 failingOverridesWrapper, mockClusterSettingsManager, testSetting);

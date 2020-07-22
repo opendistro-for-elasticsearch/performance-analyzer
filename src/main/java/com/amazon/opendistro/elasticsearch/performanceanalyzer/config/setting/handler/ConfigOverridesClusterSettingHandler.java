@@ -1,6 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverrides;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesHelper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ClusterSettingListener;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ClusterSettingsManager;
@@ -41,7 +42,7 @@ public class ConfigOverridesClusterSettingHandler implements ClusterSettingListe
     @Override
     public void onSettingUpdate(String newSettingValue) {
         try {
-            final ConfigOverrides newOverrides = overridesHolder.deserialize(newSettingValue);
+            final ConfigOverrides newOverrides = ConfigOverridesHelper.deserialize(newSettingValue);
             overridesHolder.setCurrentClusterConfigOverrides(newOverrides);
             overridesHolder.setLastUpdatedTimestamp(System.currentTimeMillis());
         } catch (IOException e) {
@@ -72,7 +73,7 @@ public class ConfigOverridesClusterSettingHandler implements ClusterSettingListe
     private String buildClusterSettingValue(final ConfigOverrides newOverrides) throws IOException {
         final ConfigOverrides mergedConfigOverrides = merge(overridesHolder.getCurrentClusterConfigOverrides(), newOverrides);
 
-        return overridesHolder.serialize(mergedConfigOverrides);
+        return ConfigOverridesHelper.serialize(mergedConfigOverrides);
     }
 
     /**

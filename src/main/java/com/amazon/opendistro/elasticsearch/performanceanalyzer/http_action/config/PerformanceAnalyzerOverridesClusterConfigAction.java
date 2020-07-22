@@ -1,6 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverrides;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesHelper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.ConfigOverridesClusterSettingHandler;
 import org.apache.logging.log4j.LogManager;
@@ -95,7 +96,7 @@ public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHan
                 final ConfigOverrides overrides = overridesWrapper.getCurrentClusterConfigOverrides();
                 XContentBuilder builder = channel.newBuilder();
                 builder.startObject();
-                builder.field(OVERRIDES_FIELD, overridesWrapper.serialize(overrides));
+                builder.field(OVERRIDES_FIELD, ConfigOverridesHelper.serialize(overrides));
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
@@ -114,7 +115,7 @@ public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHan
      */
     private RestChannelConsumer handlePost(final RestRequest request) throws IOException {
         String jsonString = XContentHelper.convertToJson(request.content(), false, XContentType.JSON);
-        ConfigOverrides requestedOverrides = overridesWrapper.deserialize(jsonString);
+        ConfigOverrides requestedOverrides = ConfigOverridesHelper.deserialize(jsonString);
 
         if (!validateOverrides(requestedOverrides)) {
             String reason = "enable set and disable set should be disjoint";
