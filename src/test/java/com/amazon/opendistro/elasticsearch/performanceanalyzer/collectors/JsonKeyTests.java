@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector.CacheMaxSizeStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
@@ -30,6 +31,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Thread
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerValue;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheConfigDimension;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheConfigValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.DiskDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.DiskValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.HeapDimension;
@@ -80,7 +83,10 @@ public class JsonKeyTests {
     @Test
     public void testJsonKeyNames() throws NoSuchFieldException,
     SecurityException {
-
+        verifyMethodWithJsonKeyNames(CacheMaxSizeStatus.class,
+                CacheConfigDimension.values(),
+                CacheConfigValue.values(),
+                getMethodJsonProperty);
         verifyMethodWithJsonKeyNames(CircuitBreakerStatus.class,
                 CircuitBreakerDimension.values(),
                 CircuitBreakerValue.values(),
