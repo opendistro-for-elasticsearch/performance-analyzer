@@ -195,7 +195,7 @@ import org.ajoberstar.gradle.git.tasks.GitClone
 String rcaDir
 
 static def propEnabled(property) {
-    return System.getProperty(property) != null
+    return System.getProperty(property) != null && System.getProperty(property).toLowerCase().equals("true")
 }
 
 // The following Gradle tasks are used to create a PA/RCA enabled Elasticsearch cluster
