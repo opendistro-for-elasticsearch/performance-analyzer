@@ -41,11 +41,13 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final String PA_ENABLED = "performanceAnalyzerEnabled";
     private static final String RCA_ENABLED = "rcaEnabled";
     private static final String PA_LOGGING_ENABLED = "loggingEnabled";
+    private static final String BATCH_METRICS_ENABLED = "batchMetricsEnabled";
     private static PerformanceAnalyzerConfigAction instance = null;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
     private static final String PA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/config";
     private static final String LOGGING_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/config";
+    private static final String BATCH_METRICS_CONFIG_PATH = "/_opendistro/_performanceanalyzer/batch/config";
 
     public static PerformanceAnalyzerConfigAction getInstance() {
         return instance;
@@ -72,6 +74,8 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
         controller.registerHandler(RestRequest.Method.POST, RCA_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.GET, LOGGING_CONFIG_PATH, this);
         controller.registerHandler(RestRequest.Method.POST, LOGGING_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, BATCH_METRICS_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, BATCH_METRICS_CONFIG_PATH, this);
     }
 
     @Override
@@ -98,11 +102,18 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                     }
 
                     performanceAnalyzerController.updateLoggingState(shouldEnable);
+                } else if (request.path().contains(BATCH_METRICS_CONFIG_PATH)) {
+                    if (shouldEnable && !performanceAnalyzerController.isPerformanceAnalyzerEnabled()) {
+                        return getChannelConsumerWithError("Error: PA not enabled. Enable PA before turning Batch Metrics on");
+                    }
+
+                    performanceAnalyzerController.updateBatchMetricsState(shouldEnable);
                 } else {
                     // Disabling Performance Analyzer should disable the RCA framework as well.
                     if (!shouldEnable) {
                         performanceAnalyzerController.updateRcaState(false);
                         performanceAnalyzerController.updateLoggingState(false);
+                        performanceAnalyzerController.updateBatchMetricsState(false);
                     }
                     performanceAnalyzerController.updatePerformanceAnalyzerState(shouldEnable);
                 }
@@ -124,6 +135,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 builder.field(RCA_ENABLED, performanceAnalyzerController.isRcaEnabled());
                 builder.field(PA_LOGGING_ENABLED, performanceAnalyzerController.isLoggingEnabled());
                 builder.field(SHARDS_PER_COLLECTION, performanceAnalyzerController.getNodeStatsShardsPerCollection());
+                builder.field(BATCH_METRICS_ENABLED, performanceAnalyzerController.isBatchMetricsEnabled());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {

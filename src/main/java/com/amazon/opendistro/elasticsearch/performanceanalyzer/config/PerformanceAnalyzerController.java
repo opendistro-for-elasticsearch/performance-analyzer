@@ -19,16 +19,19 @@ public class PerformanceAnalyzerController {
     private static final String PERFORMANCE_ANALYZER_ENABLED_CONF = "performance_analyzer_enabled.conf";
     private static final String RCA_ENABLED_CONF = "rca_enabled.conf";
     private static final String LOGGING_ENABLED_CONF = "logging_enabled.conf";
+    private static final String BATCH_METRICS_ENABLED_CONF = "batch_metrics_enabled.conf";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
     public static final int DEFAULT_NUM_OF_SHARDS_PER_COLLECTION = 0;
 
     private boolean paEnabled;
     private boolean rcaEnabled;
     private boolean loggingEnabled;
+    private boolean batchMetricsEnabled;
     private volatile int shardsPerCollection;
     private boolean paEnabledDefaultValue = false;
     private boolean rcaEnabledDefaultValue = false;
     private boolean loggingEnabledDefaultValue = false;
+    private boolean batchMetricsEnabledDefaultValue = false;
     private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
 
     public PerformanceAnalyzerController(final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
@@ -36,6 +39,7 @@ public class PerformanceAnalyzerController {
         initPerformanceAnalyzerStateFromConf();
         initRcaStateFromConf();
         initLoggingStateFromConf();
+        initBatchMetricsStateFromConf();
         shardsPerCollection = DEFAULT_NUM_OF_SHARDS_PER_COLLECTION;
     }
 
@@ -69,6 +73,8 @@ public class PerformanceAnalyzerController {
     public boolean isLoggingEnabled() {
         return loggingEnabled;
     }
+
+    public boolean isBatchMetricsEnabled() { return batchMetricsEnabled; }
 
     /**
      * Reads the shardsPerCollection parameter in NodeStatsMetric
@@ -131,6 +137,20 @@ public class PerformanceAnalyzerController {
         saveStateToConf(this.loggingEnabled, LOGGING_ENABLED_CONF);
     }
 
+    /**
+     * Updates the state of the batch metrics api.
+     *
+     * @param shouldEnable The desired state of the batch metrics api. False to disable, and true to enable.
+     */
+    public void updateBatchMetricsState(final boolean shouldEnable) {
+        if (shouldEnable && !isPerformanceAnalyzerEnabled()) {
+            return;
+        }
+
+        this.batchMetricsEnabled = shouldEnable;
+        saveStateToConf(this.batchMetricsEnabled, BATCH_METRICS_ENABLED_CONF);
+    }
+
     private void initPerformanceAnalyzerStateFromConf() {
         Path filePath = Paths.get(getDataDirectory(), PERFORMANCE_ANALYZER_ENABLED_CONF);
         PerformanceAnalyzerPlugin.invokePrivileged(() -> {
@@ -184,6 +204,25 @@ public class PerformanceAnalyzerController {
 
             // For logging to be enabled, it needs both PA and Logging to be enabled.
             updateLoggingState(paEnabled && loggingEnabledFromConf);
+        });
+    }
+
+    private void initBatchMetricsStateFromConf() {
+        Path filePath = Paths.get(getDataDirectory(), BATCH_METRICS_ENABLED_CONF);
+        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
+            boolean batchMetricsEnabledFromConf;
+            try {
+                batchMetricsEnabledFromConf = readBooleanFromFile(filePath);
+            } catch (Exception e) {
+                LOG.debug("Error reading Performance Analyzer state from Conf file", e);
+                if (e instanceof NoSuchFileException) {
+                    saveStateToConf(batchMetricsEnabledDefaultValue, BATCH_METRICS_ENABLED_CONF);
+                }
+                batchMetricsEnabledFromConf = batchMetricsEnabledDefaultValue;
+            }
+
+            // For batch metrics to be enabled, it needs both PA and Batch Metrics to be enabled.
+            updateBatchMetricsState(paEnabled && batchMetricsEnabledFromConf);
         });
     }
 
