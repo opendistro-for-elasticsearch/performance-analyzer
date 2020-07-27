@@ -231,7 +231,6 @@ public class ClusterSettingsManager implements ClusterStateListener {
             final List<ClusterSettingListener<String>> listeners = stringSettingListenerMap.get(setting);
             if (listeners != null) {
                 for (ClusterSettingListener<String> listener : listeners) {
-                    LOG.error("Calling string listener with value: {}", settingValue);
                     listener.onSettingUpdate(settingValue);
                 }
             }

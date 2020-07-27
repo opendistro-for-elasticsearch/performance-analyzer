@@ -161,22 +161,19 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
 
         configOverridesWrapper = new ConfigOverridesWrapper();
-        clusterSettingsManager = new ClusterSettingsManager(
-                Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+        clusterSettingsManager = new ClusterSettingsManager(Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
                         PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING),
                 Collections.singletonList(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING));
         configOverridesClusterSettingHandler = new ConfigOverridesClusterSettingHandler(configOverridesWrapper, clusterSettingsManager,
                 PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
         clusterSettingsManager.addSubscriberForStringSetting(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING,
                 configOverridesClusterSettingHandler);
-        perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(
-                performanceAnalyzerController,
+        perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(performanceAnalyzerController,
                 clusterSettingsManager);
         clusterSettingsManager.addSubscriberForIntSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
                 perfAnalyzerClusterSettingHandler);
 
-        nodeStatsSettingHandler = new NodeStatsSettingHandler(
-                performanceAnalyzerController,
+        nodeStatsSettingHandler = new NodeStatsSettingHandler(performanceAnalyzerController,
                 clusterSettingsManager);
         clusterSettingsManager.addSubscriberForIntSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
                 nodeStatsSettingHandler);
