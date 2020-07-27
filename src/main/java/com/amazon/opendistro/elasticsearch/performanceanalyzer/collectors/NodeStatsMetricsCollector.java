@@ -219,14 +219,16 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
     public void populateMetricValues(IndicesService indicesService, IndexShard currentIndexShard,
                                 long startTime, boolean allMetrics) {
         IndexShardStats currentIndexShardStats;
+        int log1_cnt = 0;
+        int log2_cnt = 0;
         if (allMetrics) {
             currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, new CommonStatsFlags(
-                    CommonStatsFlags.Flag.Store, CommonStatsFlags.Flag.Indexing, CommonStatsFlags.Flag.Merge,
-                    CommonStatsFlags.Flag.Flush, CommonStatsFlags.Flag.Refresh, CommonStatsFlags.Flag.QueryCache,
-                    CommonStatsFlags.Flag.FieldData, CommonStatsFlags.Flag.RequestCache, CommonStatsFlags.Flag.Recovery));
+                    CommonStatsFlags.Flag.QueryCache, CommonStatsFlags.Flag.FieldData, CommonStatsFlags.Flag.RequestCache));
         } else {
             currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, new CommonStatsFlags(
-                    CommonStatsFlags.Flag.Segments));
+                    CommonStatsFlags.Flag.Segments, CommonStatsFlags.Flag.Store, CommonStatsFlags.Flag.Indexing,
+                    CommonStatsFlags.Flag.Merge, CommonStatsFlags.Flag.Flush, CommonStatsFlags.Flag.Refresh,
+                    CommonStatsFlags.Flag.Recovery));
         }
         for (ShardStats shardStats : currentIndexShardStats.getShards()) {
             StringBuilder value = new StringBuilder();
@@ -234,13 +236,22 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
             //- go through the list of metrics to be collected and emit
             if (allMetrics) {
+                if (log2_cnt % 10000 == 0) {
+                    LOG.error("Collecting light weight metrics for all shards Irrespective of the node collector Value");
+                    log2_cnt = 0;
+                }
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                         .append(new NodeStatsMetricsAllShardsPerCollectionStatus(shardStats).serialize());
             } else {
+                if (log1_cnt % 10000 == 0) {
+                    LOG.error("Collecting Heavy weight metrics for shards set in the Node Collector Value");
+                    log1_cnt = 0;
+                }
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                         .append(new NodeStatsMetricsFewShardsPerCollectionStatus(shardStats).serialize());
             }
-
+            log1_cnt++;
+            log2_cnt++;
             saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
                     String.valueOf(currentIndexShardStats.getShardId().id()));
         }
