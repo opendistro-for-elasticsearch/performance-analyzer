@@ -262,6 +262,14 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonIgnore
         private ShardStats shardStats;
 
+        private final long indexingThrottleTime;
+        private final long refreshCount;
+        private final long refreshTime;
+        private final long flushCount;
+        private final long flushTime;
+        private final long mergeCount;
+        private final long mergeTime;
+        private final long mergeCurrent;
         private final long indexBufferBytes;
         private final long segmentCount;
         private final long segmentsMemory;
@@ -280,6 +288,14 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             super();
             this.shardStats = shardStats;
 
+            this.indexingThrottleTime = calculate(ShardStatsValue.INDEXING_THROTTLE_TIME);
+            this.refreshCount = calculate(ShardStatsValue.REFRESH_EVENT);
+            this.refreshTime = calculate(ShardStatsValue.REFRESH_TIME);
+            this.flushCount = calculate(ShardStatsValue.FLUSH_EVENT);
+            this.flushTime = calculate(ShardStatsValue.FLUSH_TIME);
+            this.mergeCount = calculate(ShardStatsValue.MERGE_EVENT);
+            this.mergeTime = calculate(ShardStatsValue.MERGE_TIME);
+            this.mergeCurrent = calculate(ShardStatsValue.MERGE_CURRENT_EVENT);
             this.indexBufferBytes = calculate(ShardStatsValue.INDEXING_BUFFER);
             this.segmentCount = calculate(ShardStatsValue.SEGMENTS_TOTAL);
             this.segmentsMemory = calculate(ShardStatsValue.SEGMENTS_MEMORY);
@@ -298,14 +314,25 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         }
 
         @SuppressWarnings("checkstyle:parameternumber")
-        public NodeStatsMetricsFewShardsPerCollectionStatus(long indexBufferBytes,
-                long segmentCount, long segmentsMemory, long termsMemory,
-                long storedFieldsMemory, long termVectorsMemory,
-                long normsMemory, long pointsMemory, long docValuesMemory,
-                long indexWriterMemory, long versionMapMemory,
-                long bitsetMemory, long shardSizeInBytes) {
+        public NodeStatsMetricsFewShardsPerCollectionStatus(long indexingThrottleTime, long refreshCount, long refreshTime,
+                                                            long flushCount, long flushTime, long mergeCount,
+                                                            long mergeTime, long mergeCurrent, long indexBufferBytes,
+                                                            long segmentCount, long segmentsMemory, long termsMemory,
+                                                            long storedFieldsMemory, long termVectorsMemory,
+                                                            long normsMemory, long pointsMemory, long docValuesMemory,
+                                                            long indexWriterMemory, long versionMapMemory,
+                                                            long bitsetMemory, long shardSizeInBytes) {
             super();
             this.shardStats = null;
+
+            this.indexingThrottleTime = indexingThrottleTime;
+            this.refreshCount = refreshCount;
+            this.refreshTime = refreshTime;
+            this.flushCount = flushCount;
+            this.flushTime = flushTime;
+            this.mergeCount = mergeCount;
+            this.mergeTime = mergeTime;
+            this.mergeCurrent = mergeCurrent;
             this.indexBufferBytes = indexBufferBytes;
             this.segmentCount = segmentCount;
             this.segmentsMemory = segmentsMemory;
@@ -324,6 +351,46 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
 
         private long calculate(ShardStatsValue nodeMetric) {
             return valueCalculators.get(nodeMetric.toString()).calculateValue(shardStats);
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.INDEXING_THROTTLE_TIME_VALUE)
+        public long getIndexingThrottleTime() {
+            return indexingThrottleTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REFRESH_COUNT_VALUE)
+        public long getRefreshCount() {
+            return refreshCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.REFRESH_TIME_VALUE)
+        public long getRefreshTime() {
+            return refreshTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.FLUSH_COUNT_VALUE)
+        public long getFlushCount() {
+            return flushCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.FLUSH_TIME_VALUE)
+        public long getFlushTime() {
+            return flushTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.MERGE_COUNT_VALUE)
+        public long getMergeCount() {
+            return mergeCount;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.MERGE_TIME_VALUE)
+        public long getMergeTime() {
+            return mergeTime;
+        }
+
+        @JsonProperty(ShardStatsValue.Constants.MERGE_CURRENT_VALUE)
+        public long getMergeCurrent() {
+            return mergeCurrent;
         }
 
         @JsonIgnore
@@ -402,7 +469,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonIgnore
         private ShardStats shardStats;
 
-        private final long indexingThrottleTime;
         private final long queryCacheHitCount;
         private final long queryCacheMissCount;
         private final long queryCacheInBytes;
@@ -412,20 +478,11 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         private final long requestCacheMissCount;
         private final long requestCacheEvictions;
         private final long requestCacheInBytes;
-        private final long refreshCount;
-        private final long refreshTime;
-        private final long flushCount;
-        private final long flushTime;
-        private final long mergeCount;
-        private final long mergeTime;
-        private final long mergeCurrent;
 
         public NodeStatsMetricsAllShardsPerCollectionStatus(ShardStats shardStats) {
             super();
             this.shardStats = shardStats;
 
-            this.indexingThrottleTime = calculate(
-                    ShardStatsValue.INDEXING_THROTTLE_TIME);
             this.queryCacheHitCount = calculate(
                     ShardStatsValue.CACHE_QUERY_HIT);
             this.queryCacheMissCount = calculate(
@@ -443,27 +500,17 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                     ShardStatsValue.CACHE_REQUEST_EVICTION);
             this.requestCacheInBytes = calculate(
                     ShardStatsValue.CACHE_REQUEST_SIZE);
-            this.refreshCount = calculate(ShardStatsValue.REFRESH_EVENT);
-            this.refreshTime = calculate(ShardStatsValue.REFRESH_TIME);
-            this.flushCount = calculate(ShardStatsValue.FLUSH_EVENT);
-            this.flushTime = calculate(ShardStatsValue.FLUSH_TIME);
-            this.mergeCount = calculate(ShardStatsValue.MERGE_EVENT);
-            this.mergeTime = calculate(ShardStatsValue.MERGE_TIME);
-            this.mergeCurrent = calculate(ShardStatsValue.MERGE_CURRENT_EVENT);
         }
 
         @SuppressWarnings("checkstyle:parameternumber")
-        public NodeStatsMetricsAllShardsPerCollectionStatus(long indexingThrottleTime,
-                                                            long queryCacheHitCount, long queryCacheMissCount,
+        public NodeStatsMetricsAllShardsPerCollectionStatus(long queryCacheHitCount, long queryCacheMissCount,
                                                             long queryCacheInBytes, long fieldDataEvictions,
                                                             long fieldDataInBytes, long requestCacheHitCount,
                                                             long requestCacheMissCount, long requestCacheEvictions,
-                                                            long requestCacheInBytes, long refreshCount, long refreshTime,
-                                                            long flushCount, long flushTime, long mergeCount,
-                                                            long mergeTime, long mergeCurrent) {
+                                                            long requestCacheInBytes) {
             super();
             this.shardStats = null;
-            this.indexingThrottleTime = indexingThrottleTime;
+
             this.queryCacheHitCount = queryCacheHitCount;
             this.queryCacheMissCount = queryCacheMissCount;
             this.queryCacheInBytes = queryCacheInBytes;
@@ -473,13 +520,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             this.requestCacheMissCount = requestCacheMissCount;
             this.requestCacheEvictions = requestCacheEvictions;
             this.requestCacheInBytes = requestCacheInBytes;
-            this.refreshCount = refreshCount;
-            this.refreshTime = refreshTime;
-            this.flushCount = flushCount;
-            this.flushTime = flushTime;
-            this.mergeCount = mergeCount;
-            this.mergeTime = mergeTime;
-            this.mergeCurrent = mergeCurrent;
         }
 
 
@@ -490,11 +530,6 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonIgnore
         public ShardStats getShardStats() {
             return shardStats;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.INDEXING_THROTTLE_TIME_VALUE)
-        public long getIndexingThrottleTime() {
-            return indexingThrottleTime;
         }
 
         @JsonProperty(ShardStatsValue.Constants.QUEY_CACHE_HIT_COUNT_VALUE)
@@ -542,39 +577,5 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             return requestCacheInBytes;
         }
 
-        @JsonProperty(ShardStatsValue.Constants.REFRESH_COUNT_VALUE)
-        public long getRefreshCount() {
-            return refreshCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.REFRESH_TIME_VALUE)
-        public long getRefreshTime() {
-            return refreshTime;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.FLUSH_COUNT_VALUE)
-        public long getFlushCount() {
-            return flushCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.FLUSH_TIME_VALUE)
-        public long getFlushTime() {
-            return flushTime;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.MERGE_COUNT_VALUE)
-        public long getMergeCount() {
-            return mergeCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.MERGE_TIME_VALUE)
-        public long getMergeTime() {
-            return mergeTime;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.MERGE_CURRENT_VALUE)
-        public long getMergeCurrent() {
-            return mergeCurrent;
-        }
     }
 }
