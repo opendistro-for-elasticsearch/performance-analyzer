@@ -136,8 +136,12 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         ensurePaAndRcaEnabled();
         WaitFor.waitFor(() -> {
             Request request = new Request("GET", "/_opendistro/_performanceanalyzer/rca");
-            Response resp = paClient.performRequest(request);
-            return Objects.equals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
+            try {
+                Response resp = paClient.performRequest(request);
+                return Objects.equals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
+            } catch (Exception e) { // 404, RCA context hasn't been set up yet
+                return false;
+            }
         }, 2, TimeUnit.MINUTES);
     }
 
