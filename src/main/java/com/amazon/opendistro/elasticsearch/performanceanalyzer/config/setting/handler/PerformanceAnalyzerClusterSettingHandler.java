@@ -25,11 +25,11 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
                                                      final ClusterSettingsManager clusterSettingsManager) {
         this.controller = controller;
         this.clusterSettingsManager = clusterSettingsManager;
-        this.currentClusterSetting =
-            initializeClusterSettingValue(
+        this.currentClusterSetting = initializeClusterSettingValue(
                 controller.isPerformanceAnalyzerEnabled(),
                 controller.isRcaEnabled(),
-                controller.isLoggingEnabled());
+                controller.isLoggingEnabled(),
+                controller.isBatchMetricsEnabled());
     }
 
     /**
@@ -107,13 +107,15 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     * @return the cluster setting value
     */
     private Integer initializeClusterSettingValue(
-            final boolean paEnabled, final boolean rcaEnabled, final boolean loggingEnabled) {
+            final boolean paEnabled, final boolean rcaEnabled, final boolean loggingEnabled,
+            final boolean batchMetricsEnabled) {
         int clusterSetting = CLUSTER_SETTING_DISABLED_VALUE;
 
         clusterSetting = paEnabled ? setBit(clusterSetting, PA_ENABLED_BIT_POS) : clusterSetting;
         if (paEnabled) {
             clusterSetting = rcaEnabled ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
             clusterSetting = loggingEnabled ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
+            clusterSetting = batchMetricsEnabled ? setBit(clusterSetting, BATCH_METRICS_ENABLED_BIT_POS) : clusterSetting;
         }
         return clusterSetting;
     }
@@ -219,7 +221,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      * @return composite cluster setting as an integer.
      */
     private Integer getBatchMetricsSettingValueFromState(final boolean shouldEnable) {
-        int clusterSetting = currentClusterSetting != UNSET_CLUSTER_SETTING_VALUE ? currentClusterSetting : CLUSTER_SETTING_DISABLED_VALUE;
+        int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
             return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, BATCH_METRICS_ENABLED_BIT_POS) : clusterSetting;
