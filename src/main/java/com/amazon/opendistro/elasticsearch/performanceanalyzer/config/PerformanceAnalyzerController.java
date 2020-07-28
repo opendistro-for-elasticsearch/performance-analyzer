@@ -74,7 +74,9 @@ public class PerformanceAnalyzerController {
         return loggingEnabled;
     }
 
-    public boolean isBatchMetricsEnabled() { return batchMetricsEnabled; }
+    public boolean isBatchMetricsEnabled() {
+        return batchMetricsEnabled;
+    }
 
     /**
      * Reads the shardsPerCollection parameter in NodeStatsMetric
