@@ -76,9 +76,9 @@ public class CacheConfigMetricsCollector extends PerformanceAnalyzerMetricsColle
                     try {
                         Cache fieldDataCache = indicesService.getIndicesFieldDataCache().getCache();
                         long fieldDataMaxSize = (Long) FieldUtils.readField(fieldDataCache, CACHE_MAX_WEIGHT, true);
-                        return new CacheMaxSizeStatus(FIELD_DATA_CACHE, fieldDataMaxSize);
+                        return new CacheMaxSizeStatus(FIELD_DATA_CACHE.toString(), fieldDataMaxSize);
                     } catch (Exception e) {
-                        return new CacheMaxSizeStatus(FIELD_DATA_CACHE, null);
+                        return new CacheMaxSizeStatus(FIELD_DATA_CACHE.toString(), null);
                     }
                 });
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(fieldDataCacheMaxSizeStatus.serialize());
@@ -88,9 +88,9 @@ public class CacheConfigMetricsCollector extends PerformanceAnalyzerMetricsColle
                         Object reqCache = FieldUtils.readField(indicesService, "indicesRequestCache", true);
                         Cache requestCache = (Cache) FieldUtils.readField(reqCache, "cache", true);
                         Long requestCacheMaxSize = (Long) FieldUtils.readField(requestCache, CACHE_MAX_WEIGHT, true);
-                        return new CacheMaxSizeStatus(SHARD_REQUEST_CACHE, requestCacheMaxSize);
+                        return new CacheMaxSizeStatus(SHARD_REQUEST_CACHE.toString(), requestCacheMaxSize);
                     } catch (Exception e) {
-                        return new CacheMaxSizeStatus(SHARD_REQUEST_CACHE, null);
+                        return new CacheMaxSizeStatus(SHARD_REQUEST_CACHE.toString(), null);
                     }
                 });
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor).append(shardRequestCacheMaxSizeStatus.serialize());
@@ -109,18 +109,18 @@ public class CacheConfigMetricsCollector extends PerformanceAnalyzerMetricsColle
 
     static class CacheMaxSizeStatus extends MetricStatus {
 
-        private final CacheType cacheType;
+        private final String cacheType;
 
         @JsonInclude(Include.NON_NULL)
         private final long cacheMaxSize;
 
-        CacheMaxSizeStatus(CacheType cacheType, Long cacheMaxSize) {
+        CacheMaxSizeStatus(String cacheType, Long cacheMaxSize) {
             this.cacheType = cacheType;
             this.cacheMaxSize = cacheMaxSize;
         }
 
         @JsonProperty(CacheConfigDimension.Constants.TYPE_VALUE)
-        public CacheType getCacheType() {
+        public String getCacheType() {
             return cacheType;
         }
 
