@@ -126,21 +126,28 @@ public class AbstractReaderTests extends AbstractTests {
         // dummyCollector is only used to create the json string
         NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
         String str = (dummyCollector.new NodeStatsMetricsFewShardsPerCollectionStatus(
-                 indexBufferBytes,
-                 segmentCount,
-                 segmentsMemory,
-                 termsMemory,
-                 storedFieldsMemory,
-                 termVectorsMemory,
-                 normsMemory,
-                 pointsMemory,
-                 docValuesMemory,
-                 indexWriterMemory,
-                 versionMapMemory,
-                 bitsetMemory, shardSizeInBytes)).serialize();
+                indexingThrottleTime,
+                refreshCount,
+                refreshTime,
+                flushCount,
+                flushTime,
+                mergeCount,
+                mergeTime,
+                mergeCurrent,
+                indexBufferBytes,
+                segmentCount,
+                segmentsMemory,
+                termsMemory,
+                storedFieldsMemory,
+                termVectorsMemory,
+                normsMemory,
+                pointsMemory,
+                docValuesMemory,
+                indexWriterMemory,
+                versionMapMemory,
+                bitsetMemory, shardSizeInBytes)).serialize();
 
         str += (dummyCollector.new NodeStatsMetricsAllShardsPerCollectionStatus(
-                indexingThrottleTime,
                 queryCacheHitCount,
                 queryCacheMissCount,
                 queryCacheInBytes,
@@ -149,14 +156,7 @@ public class AbstractReaderTests extends AbstractTests {
                 requestCacheHitCount,
                 requestCacheMissCount,
                 requestCacheEvictions,
-                requestCacheInBytes,
-                refreshCount,
-                refreshTime,
-                flushCount,
-                flushTime,
-                mergeCount,
-                mergeTime,
-                mergeCurrent)).serialize();
+                requestCacheInBytes)).serialize();
 
         if (condition == FailureCondition.INVALID_JSON_METRIC) {
             str = str.substring(1);
