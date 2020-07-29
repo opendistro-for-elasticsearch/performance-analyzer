@@ -56,7 +56,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
 
   private String portNumber;
   private final boolean isHttpsEnabled;
-  private static Set<String> SUPPORTED_REDIRECTIONS = ImmutableSet.of("rca", "metrics");
+  private static Set<String> SUPPORTED_REDIRECTIONS = ImmutableSet.of("rca", "metrics", "batch");
 
   @Inject
   public PerformanceAnalyzerResourceProvider(Settings settings, RestController controller) {
