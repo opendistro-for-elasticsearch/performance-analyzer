@@ -187,21 +187,12 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             }
             // Metrics populated with a few shards per collection.
             // The number is set via Cluster Settings API.
-            for(int i = 0; i < controller.getNodeStatsShardsPerCollection(); i++){
-                if (!currentShardsIter.hasNext()) {
-                    break;
-                }
-                IndexShard currentIndexShard = currentShardsIter.next().getValue();
-                populateMetricValues(indicesService, currentIndexShard, startTime, false);
-            }
+            populateMetricValuesForFewShards(indicesService, startTime);
 
             // Metrics populated for all shards in every collection.
             // These metrics dont cause any performance impact while getting populated
             // in a single revision.
-            for (HashMap.Entry currentShard : currentShards.entrySet() ){
-                IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
-                populateMetricValues(indicesService, currentIndexShard, startTime, true);
-            }
+            populateMetricValueForAllShards(indicesService, startTime);
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting NodesStats Metrics: {} for startTime {} with ExceptionCode: {}",
                       () -> ex.toString(), () -> startTime, () -> StatExceptionCode.NODESTATS_COLLECTION_ERROR.toString());
@@ -216,12 +207,29 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         return field;
     }
 
-    public void populateMetricValues(IndicesService indicesService, IndexShard currentIndexShard,
-                                long startTime, boolean allMetrics) {
+    public void populateMetricValuesForFewShards(IndicesService indicesService,long startTime) {
+        for(int i = 0; i < controller.getNodeStatsShardsPerCollection(); i++){
+            if (!currentShardsIter.hasNext()) {
+                break;
+            }
+            IndexShard currentIndexShard = currentShardsIter.next().getValue();
+            // Collect rest of the metrics for some of the shards in a single iteration.
+            populateMetricValuesPerShard(indicesService, currentIndexShard, startTime, false);
+        }
+    }
+
+    public void populateMetricValueForAllShards(IndicesService indicesService,long startTime) {
+        for (HashMap.Entry currentShard : currentShards.entrySet() ){
+            IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
+            // Collect cache metrics to be collected for all the shards in a single iteration.
+            populateMetricValuesPerShard(indicesService, currentIndexShard, startTime, true);
+        }
+    }
+
+    public void populateMetricValuesPerShard(IndicesService indicesService, IndexShard currentIndexShard,
+                                long startTime, boolean allShards) {
         IndexShardStats currentIndexShardStats;
-        int log1_cnt = 0;
-        int log2_cnt = 0;
-        if (allMetrics) {
+        if (allShards) {
             currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, new CommonStatsFlags(
                     CommonStatsFlags.Flag.QueryCache, CommonStatsFlags.Flag.FieldData, CommonStatsFlags.Flag.RequestCache));
         } else {
@@ -234,24 +242,15 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             StringBuilder value = new StringBuilder();
 
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
-            //- go through the list of metrics to be collected and emit
-            if (allMetrics) {
-                if (log2_cnt % 10000 == 0) {
-                    LOG.error("Collecting light weight metrics for all shards Irrespective of the node collector Value");
-                    log2_cnt = 0;
-                }
+            if (allShards) {
+                // Populate the result with cache specific metrics only.
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                         .append(new NodeStatsMetricsAllShardsPerCollectionStatus(shardStats).serialize());
             } else {
-                if (log1_cnt % 10000 == 0) {
-                    LOG.error("Collecting Heavy weight metrics for shards set in the Node Collector Value");
-                    log1_cnt = 0;
-                }
+                // Populate the result with all other metrics to the result.
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                         .append(new NodeStatsMetricsFewShardsPerCollectionStatus(shardStats).serialize());
             }
-            log1_cnt++;
-            log2_cnt++;
             saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
                     String.valueOf(currentIndexShardStats.getShardId().id()));
         }
