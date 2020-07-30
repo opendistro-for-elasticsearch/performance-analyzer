@@ -125,36 +125,38 @@ public class AbstractReaderTests extends AbstractTests {
             long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
         NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
-        String str = (dummyCollector.new NodeStatsMetricsStatus(
+        String str = (dummyCollector.new NodeStatsMetricsFewShardsPerCollectionStatus(
                 indexingThrottleTime,
-                 queryCacheHitCount,
-                 queryCacheMissCount,
-                 queryCacheInBytes,
-                 fieldDataEvictions,
-                 fieldDataInBytes,
-                 requestCacheHitCount,
-                 requestCacheMissCount,
-                 requestCacheEvictions,
-                 requestCacheInBytes,
-                 refreshCount,
-                 refreshTime,
-                 flushCount,
-                 flushTime,
-                 mergeCount,
-                 mergeTime,
-                 mergeCurrent,
-                 indexBufferBytes,
-                 segmentCount,
-                 segmentsMemory,
-                 termsMemory,
-                 storedFieldsMemory,
-                 termVectorsMemory,
-                 normsMemory,
-                 pointsMemory,
-                 docValuesMemory,
-                 indexWriterMemory,
-                 versionMapMemory,
-                 bitsetMemory, shardSizeInBytes)).serialize();
+                refreshCount,
+                refreshTime,
+                flushCount,
+                flushTime,
+                mergeCount,
+                mergeTime,
+                mergeCurrent,
+                indexBufferBytes,
+                segmentCount,
+                segmentsMemory,
+                termsMemory,
+                storedFieldsMemory,
+                termVectorsMemory,
+                normsMemory,
+                pointsMemory,
+                docValuesMemory,
+                indexWriterMemory,
+                versionMapMemory,
+                bitsetMemory, shardSizeInBytes)).serialize();
+
+        str += (dummyCollector.new NodeStatsMetricsAllShardsPerCollectionStatus(
+                queryCacheHitCount,
+                queryCacheMissCount,
+                queryCacheInBytes,
+                fieldDataEvictions,
+                fieldDataInBytes,
+                requestCacheHitCount,
+                requestCacheMissCount,
+                requestCacheEvictions,
+                requestCacheInBytes)).serialize();
 
         if (condition == FailureCondition.INVALID_JSON_METRIC) {
             str = str.substring(1);
