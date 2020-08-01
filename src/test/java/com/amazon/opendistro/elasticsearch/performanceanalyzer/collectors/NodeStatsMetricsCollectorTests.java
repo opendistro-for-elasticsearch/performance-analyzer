@@ -33,9 +33,9 @@ public class NodeStatsMetricsCollectorTests extends CustomMetricsLocationTestBas
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1253722339;
         
-        MetricsConfiguration.CONFIG_MAP.put(NodeStatsMetricsCollector.class, MetricsConfiguration.cdefault);
+        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
 
-        NodeStatsMetricsCollector nodeStatsMetricsCollector = new NodeStatsMetricsCollector(null);
+        NodeStatsAllShardsMetricsCollector nodeStatsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
         nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
 
 

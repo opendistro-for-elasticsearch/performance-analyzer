@@ -21,7 +21,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DiskMe
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFewShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
@@ -124,8 +125,8 @@ public class AbstractReaderTests extends AbstractTests {
             long indexWriterMemory, long versionMapMemory,
             long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
-        NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
-        String str = (dummyCollector.new NodeStatsMetricsFewShardsPerCollectionStatus(
+        NodeStatsFewShardsMetricsCollector dummyCollectorFewShards = new NodeStatsFewShardsMetricsCollector(null);
+        String str = (dummyCollectorFewShards.new NodeStatsMetricsFewShardsPerCollectionStatus(
                 indexingThrottleTime,
                 refreshCount,
                 refreshTime,
@@ -147,7 +148,8 @@ public class AbstractReaderTests extends AbstractTests {
                 versionMapMemory,
                 bitsetMemory, shardSizeInBytes)).serialize();
 
-        str += (dummyCollector.new NodeStatsMetricsAllShardsPerCollectionStatus(
+        NodeStatsAllShardsMetricsCollector dummyCollectorAllShards = new NodeStatsAllShardsMetricsCollector(null);
+        str += (dummyCollectorAllShards.new NodeStatsMetricsAllShardsPerCollectionStatus(
                 queryCacheHitCount,
                 queryCacheMissCount,
                 queryCacheInBytes,
