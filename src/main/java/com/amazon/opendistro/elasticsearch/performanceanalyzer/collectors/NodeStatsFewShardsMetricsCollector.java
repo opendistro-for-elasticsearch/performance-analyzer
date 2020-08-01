@@ -56,7 +56,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
 
     private void populateCurrentShards() {
         currentShards.clear();
-        currentShards = NodeCollectorUtils.getShards();
+        currentShards = NodeStatsUtils.getShards();
         currentShardsIter = currentShards.entrySet().iterator();
     }
 
@@ -97,13 +97,13 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
     } };
 
     private long getIndexBufferBytes(ShardStats shardStats) {
-        IndexShard shard = currentShards.get(NodeCollectorUtils.getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
+        IndexShard shard = currentShards.get(NodeStatsUtils.getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
 
         if (shard == null) {
             return 0;
         }
 
-        return NodeCollectorUtils.CAN_WRITE_INDEX_BUFFER_STATES.contains(shard.state()) ? shard.getWritingBytes()
+        return NodeStatsUtils.CAN_WRITE_INDEX_BUFFER_STATES.contains(shard.state()) ? shard.getWritingBytes()
                 + shard.getIndexBufferRAMBytesUsed() : 0;
     }
 
@@ -137,7 +137,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
                     break;
                 }
                 IndexShard currentIndexShard = currentShardsIter.next().getValue();
-                IndexShardStats currentIndexShardStats = NodeCollectorUtils.indexShardStats(indicesService,
+                IndexShardStats currentIndexShardStats = NodeStatsUtils.indexShardStats(indicesService,
                         currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.Segments,
                                 CommonStatsFlags.Flag.Store,
                                 CommonStatsFlags.Flag.Indexing,

@@ -58,7 +58,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
 
     private void populateCurrentShards() {
         currentShards.clear();
-        currentShards = NodeCollectorUtils.getShards();
+        currentShards = NodeStatsUtils.getShards();
     }
 
     private Map<String, ValueCalculator> valueCalculators = new HashMap<String, ValueCalculator>() { {
@@ -103,7 +103,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
             // Metrics populated for all shards in every collection.
             for (HashMap.Entry currentShard : currentShards.entrySet() ){
                 IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
-                IndexShardStats currentIndexShardStats = NodeCollectorUtils.indexShardStats(indicesService,
+                IndexShardStats currentIndexShardStats = NodeStatsUtils.indexShardStats(indicesService,
                         currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.QueryCache,
                                 CommonStatsFlags.Flag.FieldData,
                                 CommonStatsFlags.Flag.RequestCache));

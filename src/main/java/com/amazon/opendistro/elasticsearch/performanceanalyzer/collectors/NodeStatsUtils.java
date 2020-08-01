@@ -15,9 +15,9 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 
-public class NodeCollectorUtils {
+public class NodeStatsUtils {
 
-    public NodeCollectorUtils() {
+    public NodeStatsUtils() {
 
     }
 
