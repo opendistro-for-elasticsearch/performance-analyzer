@@ -46,7 +46,6 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
     private Iterator<HashMap.Entry<String, IndexShard>> currentShardsIter;
     private final PerformanceAnalyzerController controller;
 
-
     public NodeStatsFewShardsMetricsCollector(final PerformanceAnalyzerController controller) {
         super(SAMPLING_TIME_INTERVAL, "NodeStatsMetrics");
         currentShards = new HashMap<>();
