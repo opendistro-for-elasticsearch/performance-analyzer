@@ -1,6 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting;
 
 import org.elasticsearch.common.settings.Setting;
+import org.elasticsearch.common.settings.Settings;
 
 public final class PerformanceAnalyzerClusterSettings {
     /**
@@ -11,7 +12,7 @@ public final class PerformanceAnalyzerClusterSettings {
      */
     public static final Setting<Integer> COMPOSITE_PA_SETTING = Setting.intSetting(
             "cluster.metadata.perf_analyzer.state",
-            0,
+            3,
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
     );
@@ -44,4 +45,14 @@ public final class PerformanceAnalyzerClusterSettings {
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
     );
+
+    /**
+     * Settings instance that contains the default values for cluster settings exposed
+     * by performance analyzer.
+     */
+    public static final Settings DEFAULT_SETTINGS = Settings.builder()
+            .put(COMPOSITE_PA_SETTING.getKey(), 3)
+            .put(PA_NODE_STATS_SETTING.getKey(), 1)
+            .put(CONFIG_OVERRIDES_SETTING.getKey(), "")
+            .build();
 }

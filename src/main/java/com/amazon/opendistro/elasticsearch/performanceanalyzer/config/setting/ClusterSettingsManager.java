@@ -163,7 +163,7 @@ public class ClusterSettingsManager implements ClusterStateListener {
      * Reads all the cluster settings managed by this instance.
      */
     private void readAllManagedClusterSettings() {
-        LOG.debug("Trying to read initial cluster settings");
+        LOG.error("kak: Trying to read initial cluster settings");
         final ClusterStateRequest clusterStateRequest = new ClusterStateRequest();
         clusterStateRequest.routingTable(false)
                            .nodes(false);
@@ -256,14 +256,16 @@ public class ClusterSettingsManager implements ClusterStateListener {
                                                                  .persistentSettings();
 
             for (final Setting<Integer> setting : managedIntSettings) {
-                Integer settingValue = clusterSettings.getAsInt(setting.getKey(), null);
+                Integer settingValue = clusterSettings.getAsInt(setting.getKey(),
+                        PerformanceAnalyzerClusterSettings.DEFAULT_SETTINGS.getAsInt(setting.getKey(), null));
                 if (settingValue != null) {
                     callIntSettingListeners(setting, settingValue);
                 }
             }
 
             for (final Setting<String> setting : managedStringSettings) {
-                String settingValue = clusterSettings.get(setting.getKey(), "");
+                String settingValue = clusterSettings.get(setting.getKey(),
+                        PerformanceAnalyzerClusterSettings.DEFAULT_SETTINGS.get(setting.getKey(), null));
                 if (settingValue != null) {
                     callStringSettingListeners(setting, settingValue);
                 }
