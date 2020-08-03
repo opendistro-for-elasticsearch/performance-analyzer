@@ -88,8 +88,6 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         if (keysPath.length != KEYS_PATH_LENGTH) {
             throw new RuntimeException("keys length should be " + KEYS_PATH_LENGTH);
         }
-
-
         return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sIndicesPath, keysPath[0], keysPath[1]);
     }
 

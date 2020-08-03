@@ -99,7 +99,7 @@ public class Utils {
     }
 
     public static String getUniqueShardIdKey(ShardId shardId) {
-        return "[" + shardId.getIndex().getUUID() + "][" + shardId.getId() + "]";
+        return "[" + shardId.hashCode() + "][" + shardId.getId() + "]";
     }
 
     public static final EnumSet<IndexShardState> CAN_WRITE_INDEX_BUFFER_STATES = EnumSet.of(
