@@ -27,7 +27,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheC
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFewShardsMetricsCollector.NodeStatsMetricsFewShardsPerCollectionStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector.NodeStatsMetricsFixedShardsPerCollectionStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector.ThreadPoolStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
@@ -108,7 +108,7 @@ public class JsonKeyTests {
         verifyMethodWithJsonKeyNames(NodeStatsMetricsAllShardsPerCollectionStatus.class,
                 new MetricDimension[] {}, ShardStatsValue.values(),
                 getMethodJsonProperty);
-        verifyMethodWithJsonKeyNames(NodeStatsMetricsFewShardsPerCollectionStatus.class,
+        verifyMethodWithJsonKeyNames(NodeStatsMetricsFixedShardsPerCollectionStatus.class,
                 new MetricDimension[] {}, ShardStatsValue.values(),
                 getMethodJsonProperty);
         verifyNodeDetailJsonKeyNames();

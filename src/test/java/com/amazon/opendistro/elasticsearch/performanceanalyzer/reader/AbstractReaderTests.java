@@ -22,7 +22,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMe
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFewShardsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
@@ -125,8 +125,8 @@ public class AbstractReaderTests extends AbstractTests {
             long indexWriterMemory, long versionMapMemory,
             long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
-        NodeStatsFewShardsMetricsCollector dummyCollectorFewShards = new NodeStatsFewShardsMetricsCollector(null);
-        String str = (dummyCollectorFewShards.new NodeStatsMetricsFewShardsPerCollectionStatus(
+        NodeStatsFixedShardsMetricsCollector dummyCollectorFewShards = new NodeStatsFixedShardsMetricsCollector(null);
+        String str = (dummyCollectorFewShards.new NodeStatsMetricsFixedShardsPerCollectionStatus(
                 indexingThrottleTime,
                 refreshCount,
                 refreshTime,

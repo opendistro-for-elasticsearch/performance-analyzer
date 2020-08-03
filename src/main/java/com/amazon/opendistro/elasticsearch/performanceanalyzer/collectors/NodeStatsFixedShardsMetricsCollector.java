@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
@@ -36,17 +37,25 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * This collector collects metrics for fixed number of shards on a node in a single run.
+ * These metrics are heavy weight metrics which have performance impacts
+ * on the performance of the node. The number of shards is set via a cluster settings api.
+ * The parameter to set is shardsPerCollection. The metrics will be populated for these many shards
+ * in a single run.
+ */
+
 @SuppressWarnings("unchecked")
-public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
+public class NodeStatsFixedShardsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
             NodeStatsAllShardsMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 2;
-    private static final Logger LOG = LogManager.getLogger(NodeStatsFewShardsMetricsCollector.class);
+    private static final Logger LOG = LogManager.getLogger(NodeStatsFixedShardsMetricsCollector.class);
     private HashMap<String, IndexShard> currentShards;
     private Iterator<HashMap.Entry<String, IndexShard>> currentShardsIter;
     private final PerformanceAnalyzerController controller;
 
-    public NodeStatsFewShardsMetricsCollector(final PerformanceAnalyzerController controller) {
+    public NodeStatsFixedShardsMetricsCollector(final PerformanceAnalyzerController controller) {
         super(SAMPLING_TIME_INTERVAL, "NodeStatsMetrics");
         currentShards = new HashMap<>();
         currentShardsIter = currentShards.entrySet().iterator();
@@ -55,7 +64,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
 
     private void populateCurrentShards() {
         currentShards.clear();
-        currentShards = NodeStatsUtils.getShards();
+        currentShards = Utils.getShards();
         currentShardsIter = currentShards.entrySet().iterator();
     }
 
@@ -96,13 +105,13 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
     } };
 
     private long getIndexBufferBytes(ShardStats shardStats) {
-        IndexShard shard = currentShards.get(NodeStatsUtils.getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
+        IndexShard shard = currentShards.get(Utils.getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
 
         if (shard == null) {
             return 0;
         }
 
-        return NodeStatsUtils.CAN_WRITE_INDEX_BUFFER_STATES.contains(shard.state()) ? shard.getWritingBytes()
+        return Utils.CAN_WRITE_INDEX_BUFFER_STATES.contains(shard.state()) ? shard.getWritingBytes()
                 + shard.getIndexBufferRAMBytesUsed() : 0;
     }
 
@@ -136,7 +145,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
                     break;
                 }
                 IndexShard currentIndexShard = currentShardsIter.next().getValue();
-                IndexShardStats currentIndexShardStats = NodeStatsUtils.indexShardStats(indicesService,
+                IndexShardStats currentIndexShardStats = Utils.indexShardStats(indicesService,
                         currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.Segments,
                                 CommonStatsFlags.Flag.Store,
                                 CommonStatsFlags.Flag.Indexing,
@@ -150,7 +159,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
                     value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
                     //- go through the list of metrics to be collected and emit
                     value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
-                            .append(new NodeStatsMetricsFewShardsPerCollectionStatus(shardStats).serialize());
+                            .append(new NodeStatsMetricsFixedShardsPerCollectionStatus(shardStats).serialize());
 
                     saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
                             String.valueOf(currentIndexShardStats.getShardId().id()));
@@ -171,7 +180,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
         return field;
     }
 
-    public class NodeStatsMetricsFewShardsPerCollectionStatus extends MetricStatus {
+    public class NodeStatsMetricsFixedShardsPerCollectionStatus extends MetricStatus {
 
         @JsonIgnore
         private ShardStats shardStats;
@@ -198,7 +207,7 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
         private final long bitsetMemory;
         private final long shardSizeInBytes;
 
-        public NodeStatsMetricsFewShardsPerCollectionStatus(ShardStats shardStats) {
+        public NodeStatsMetricsFixedShardsPerCollectionStatus(ShardStats shardStats) {
             super();
             this.shardStats = shardStats;
 
@@ -228,14 +237,14 @@ public class NodeStatsFewShardsMetricsCollector extends PerformanceAnalyzerMetri
         }
 
         @SuppressWarnings("checkstyle:parameternumber")
-        public NodeStatsMetricsFewShardsPerCollectionStatus(long indexingThrottleTime, long refreshCount, long refreshTime,
-                                                            long flushCount, long flushTime, long mergeCount,
-                                                            long mergeTime, long mergeCurrent, long indexBufferBytes,
-                                                            long segmentCount, long segmentsMemory, long termsMemory,
-                                                            long storedFieldsMemory, long termVectorsMemory,
-                                                            long normsMemory, long pointsMemory, long docValuesMemory,
-                                                            long indexWriterMemory, long versionMapMemory,
-                                                            long bitsetMemory, long shardSizeInBytes) {
+        public NodeStatsMetricsFixedShardsPerCollectionStatus(long indexingThrottleTime, long refreshCount, long refreshTime,
+                                                              long flushCount, long flushTime, long mergeCount,
+                                                              long mergeTime, long mergeCurrent, long indexBufferBytes,
+                                                              long segmentCount, long segmentsMemory, long termsMemory,
+                                                              long storedFieldsMemory, long termVectorsMemory,
+                                                              long normsMemory, long pointsMemory, long docValuesMemory,
+                                                              long indexWriterMemory, long versionMapMemory,
+                                                              long bitsetMemory, long shardSizeInBytes) {
             super();
             this.shardStats = null;
 

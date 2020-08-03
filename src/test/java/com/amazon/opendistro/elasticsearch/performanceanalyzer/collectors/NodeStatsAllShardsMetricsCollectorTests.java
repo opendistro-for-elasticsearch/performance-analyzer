@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Ignore
-public class NodeStatsMetricsCollectorTests extends CustomMetricsLocationTestBase {
+public class NodeStatsAllShardsMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testNodeStatsMetrics() {
@@ -35,8 +35,8 @@ public class NodeStatsMetricsCollectorTests extends CustomMetricsLocationTestBas
         
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
 
-        NodeStatsAllShardsMetricsCollector nodeStatsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
-        nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
+        NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
+        nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
@@ -47,28 +47,28 @@ public class NodeStatsMetricsCollectorTests extends CustomMetricsLocationTestBas
         assertEquals("89123.23", fetchedValue);
 
         try {
-            nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
+            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
             //- expecting exception...only 1 values passed; 2 expected
         }
 
         try {
-            nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills);
+            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills);
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
             //- expecting exception...only 0 values passed; 2 expected
         }
 
         try {
-            nodeStatsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
+            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
             //- expecting exception...only 3 values passed; 2 expected
         }
 
         try {
-            nodeStatsMetricsCollector.getNodeIndicesStatsByShardField();
+            nodeStatsAllShardsMetricsCollector.getNodeIndicesStatsByShardField();
         } catch (Exception exception) {
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
         }

@@ -19,6 +19,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
@@ -35,6 +36,12 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsPr
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * This collector collects metrics for all shards on a node in a single run.
+ * These metrics are light weight metrics which have minimal performance impacts
+ * on the performance of the node.
+ */
 
 @SuppressWarnings("unchecked")
 public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
@@ -58,7 +65,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
 
     private void populateCurrentShards() {
         currentShards.clear();
-        currentShards = NodeStatsUtils.getShards();
+        currentShards = Utils.getShards();
     }
 
     private Map<String, ValueCalculator> valueCalculators = new HashMap<String, ValueCalculator>() { {
@@ -103,7 +110,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
             // Metrics populated for all shards in every collection.
             for (HashMap.Entry currentShard : currentShards.entrySet() ){
                 IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
-                IndexShardStats currentIndexShardStats = NodeStatsUtils.indexShardStats(indicesService,
+                IndexShardStats currentIndexShardStats = Utils.indexShardStats(indicesService,
                         currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.QueryCache,
                                 CommonStatsFlags.Flag.FieldData,
                                 CommonStatsFlags.Flag.RequestCache));
