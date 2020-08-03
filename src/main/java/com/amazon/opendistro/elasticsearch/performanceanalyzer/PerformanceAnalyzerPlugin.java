@@ -81,7 +81,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetr
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ClusterSettingsManager;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
@@ -187,8 +188,11 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
 
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MetricsPurgeActivity());
 
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector(configOverridesWrapper));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeStatsMetricsCollector(performanceAnalyzerController));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
+                NodeStatsAllShardsMetricsCollector(performanceAnalyzerController));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
+                NodeStatsFixedShardsMetricsCollector(performanceAnalyzerController));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());

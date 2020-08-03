@@ -16,25 +16,19 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import java.lang.reflect.Field;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
-import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.shard.IndexShard;
-import org.elasticsearch.index.shard.IndexShardState;
-import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.NodeIndicesStats;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
@@ -43,82 +37,40 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * This collector collects metrics for fixed number of shards on a node in a single run.
+ * These metrics are heavy weight metrics which have performance impacts
+ * on the performance of the node. The number of shards is set via a cluster settings api.
+ * The parameter to set is shardsPerCollection. The metrics will be populated for these many shards
+ * in a single run.
+ */
+
 @SuppressWarnings("unchecked")
-public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
-    public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(NodeStatsMetricsCollector.class).samplingInterval;
+public class NodeStatsFixedShardsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
+    public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
+            NodeStatsAllShardsMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 2;
-    private static final Logger LOG = LogManager.getLogger(NodeStatsMetricsCollector.class);
+    private static final Logger LOG = LogManager.getLogger(NodeStatsFixedShardsMetricsCollector.class);
     private HashMap<String, IndexShard> currentShards;
     private Iterator<HashMap.Entry<String, IndexShard>> currentShardsIter;
     private final PerformanceAnalyzerController controller;
 
-
-    public NodeStatsMetricsCollector(final PerformanceAnalyzerController controller) {
+    public NodeStatsFixedShardsMetricsCollector(final PerformanceAnalyzerController controller) {
         super(SAMPLING_TIME_INTERVAL, "NodeStatsMetrics");
         currentShards = new HashMap<>();
         currentShardsIter = currentShards.entrySet().iterator();
         this.controller = controller;
     }
 
-    private String getUniqueShardIdKey(ShardId shardId) {
-        return "[" + shardId.getIndex().getUUID() + "][" + shardId.getId() + "]";
-    }
-
     private void populateCurrentShards() {
         currentShards.clear();
-        Iterator<IndexService> indexServices = ESResources.INSTANCE.getIndicesService().iterator();
-        while (indexServices.hasNext()) {
-            Iterator<IndexShard> indexShards = indexServices.next().iterator();
-            while (indexShards.hasNext()) {
-                IndexShard shard = indexShards.next();
-                currentShards.put(getUniqueShardIdKey(shard.shardId()), shard);
-            }
-        }
+        currentShards = Utils.getShards();
         currentShardsIter = currentShards.entrySet().iterator();
     }
-
-    /**
-     * This function is copied directly from IndicesService.java in elastic search as the original function is not public
-     * we need to collect stats per shard based instead of calling the stat() function to fetch all at once(which increases
-     * cpu usage on data nodes dramatically).
-     */
-    private IndexShardStats indexShardStats(final IndicesService indicesService, final IndexShard indexShard,
-                                            final CommonStatsFlags flags) {
-        if (indexShard.routingEntry() == null) {
-            return null;
-        }
-
-        return new IndexShardStats(
-                indexShard.shardId(),
-                new ShardStats[]{
-                        new ShardStats(
-                                indexShard.routingEntry(),
-                                indexShard.shardPath(),
-                                new CommonStats(indicesService.getIndicesQueryCache(), indexShard, flags),
-                                null,
-                                null,
-                                null)
-                });
-    }
-
-    private static final EnumSet<IndexShardState> CAN_WRITE_INDEX_BUFFER_STATES = EnumSet.of(
-            IndexShardState.RECOVERING, IndexShardState.POST_RECOVERY, IndexShardState.STARTED);
 
     private Map<String, ValueCalculator> valueCalculators = new HashMap<String, ValueCalculator>() { {
         put(ShardStatsValue.INDEXING_THROTTLE_TIME.toString(),
                 (shardStats) -> shardStats.getStats().getIndexing().getTotal().getThrottleTime().millis());
-
-        put(ShardStatsValue.CACHE_QUERY_HIT.toString(), (shardStats) -> shardStats.getStats().getQueryCache().getHitCount());
-        put(ShardStatsValue.CACHE_QUERY_MISS.toString(), (shardStats) -> shardStats.getStats().getQueryCache().getMissCount());
-        put(ShardStatsValue.CACHE_QUERY_SIZE.toString(), (shardStats) -> shardStats.getStats().getQueryCache().getMemorySizeInBytes());
-
-        put(ShardStatsValue.CACHE_FIELDDATA_EVICTION.toString(), (shardStats) -> shardStats.getStats().getFieldData().getEvictions());
-        put(ShardStatsValue.CACHE_FIELDDATA_SIZE.toString(), (shardStats) -> shardStats.getStats().getFieldData().getMemorySizeInBytes());
-
-        put(ShardStatsValue.CACHE_REQUEST_HIT.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getHitCount());
-        put(ShardStatsValue.CACHE_REQUEST_MISS.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getMissCount());
-        put(ShardStatsValue.CACHE_REQUEST_EVICTION.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getEvictions());
-        put(ShardStatsValue.CACHE_REQUEST_SIZE.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getMemorySizeInBytes());
 
         put(ShardStatsValue.REFRESH_EVENT.toString(), (shardStats) -> shardStats.getStats().getRefresh().getTotal());
         put(ShardStatsValue.REFRESH_TIME.toString(), (shardStats) -> shardStats.getStats().getRefresh().getTotalTimeInMillis());
@@ -142,10 +94,10 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         put(ShardStatsValue.DOC_VALUES_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getDocValuesMemoryInBytes());
         put(ShardStatsValue.INDEX_WRITER_MEMORY.toString(),
                 (shardStats) -> shardStats.getStats().getSegments().getIndexWriterMemoryInBytes());
-            put(ShardStatsValue.VERSION_MAP_MEMORY.toString(),
-                    (shardStats) -> shardStats.getStats().getSegments()
-                            .getVersionMapMemoryInBytes());
-            put(ShardStatsValue.BITSET_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getBitsetMemoryInBytes());
+        put(ShardStatsValue.VERSION_MAP_MEMORY.toString(),
+                (shardStats) -> shardStats.getStats().getSegments()
+                        .getVersionMapMemoryInBytes());
+        put(ShardStatsValue.BITSET_MEMORY.toString(), (shardStats) -> shardStats.getStats().getSegments().getBitsetMemoryInBytes());
 
         put(ShardStatsValue.INDEXING_BUFFER.toString(), (shardStats) -> getIndexBufferBytes(shardStats));
         put(ShardStatsValue.SHARD_SIZE_IN_BYTES.toString(), (shardStats) -> shardStats.getStats().getStore().getSizeInBytes());
@@ -153,13 +105,14 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
     } };
 
     private long getIndexBufferBytes(ShardStats shardStats) {
-        IndexShard shard = currentShards.get(getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
+        IndexShard shard = currentShards.get(Utils.getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
 
         if (shard == null) {
             return 0;
         }
 
-        return CAN_WRITE_INDEX_BUFFER_STATES.contains(shard.state()) ? shard.getWritingBytes() + shard.getIndexBufferRAMBytesUsed() : 0;
+        return Utils.CAN_WRITE_INDEX_BUFFER_STATES.contains(shard.state()) ? shard.getWritingBytes()
+                + shard.getIndexBufferRAMBytesUsed() : 0;
     }
 
 
@@ -181,7 +134,7 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         if (indicesService == null) {
             return;
         }
-        
+
         try {
             //reach the end of current shardId list. retrieve new shard list from IndexService
             if (!currentShardsIter.hasNext()) {
@@ -192,14 +145,21 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
                     break;
                 }
                 IndexShard currentIndexShard = currentShardsIter.next().getValue();
-                IndexShardStats currentIndexShardStats = this.indexShardStats(indicesService, currentIndexShard, CommonStatsFlags.ALL);
+                IndexShardStats currentIndexShardStats = Utils.indexShardStats(indicesService,
+                        currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.Segments,
+                                CommonStatsFlags.Flag.Store,
+                                CommonStatsFlags.Flag.Indexing,
+                                CommonStatsFlags.Flag.Merge,
+                                CommonStatsFlags.Flag.Flush,
+                                CommonStatsFlags.Flag.Refresh,
+                                CommonStatsFlags.Flag.Recovery));
                 for (ShardStats shardStats : currentIndexShardStats.getShards()) {
                     StringBuilder value = new StringBuilder();
 
                     value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
                     //- go through the list of metrics to be collected and emit
                     value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
-                            .append(new NodeStatsMetricsStatus(shardStats).serialize());
+                            .append(new NodeStatsMetricsFixedShardsPerCollectionStatus(shardStats).serialize());
 
                     saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
                             String.valueOf(currentIndexShardStats.getShardId().id()));
@@ -207,10 +167,11 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             }
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting NodesStats Metrics: {} for startTime {} with ExceptionCode: {}",
-                      () -> ex.toString(), () -> startTime, () -> StatExceptionCode.NODESTATS_COLLECTION_ERROR.toString());
+                    () -> ex.toString(), () -> startTime, () -> StatExceptionCode.NODESTATS_COLLECTION_ERROR.toString());
             StatsCollector.instance().logException(StatExceptionCode.NODESTATS_COLLECTION_ERROR);
         }
     }
+
 
     //- Separated to have a unit test; and catch any code changes around this field
     Field getNodeIndicesStatsByShardField() throws Exception {
@@ -219,21 +180,12 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         return field;
     }
 
-    public class NodeStatsMetricsStatus extends MetricStatus {
+    public class NodeStatsMetricsFixedShardsPerCollectionStatus extends MetricStatus {
 
         @JsonIgnore
         private ShardStats shardStats;
 
         private final long indexingThrottleTime;
-        private final long queryCacheHitCount;
-        private final long queryCacheMissCount;
-        private final long queryCacheInBytes;
-        private final long fieldDataEvictions;
-        private final long fieldDataInBytes;
-        private final long requestCacheHitCount;
-        private final long requestCacheMissCount;
-        private final long requestCacheEvictions;
-        private final long requestCacheInBytes;
         private final long refreshCount;
         private final long refreshTime;
         private final long flushCount;
@@ -255,29 +207,11 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         private final long bitsetMemory;
         private final long shardSizeInBytes;
 
-        public NodeStatsMetricsStatus(ShardStats shardStats) {
+        public NodeStatsMetricsFixedShardsPerCollectionStatus(ShardStats shardStats) {
             super();
             this.shardStats = shardStats;
 
-            this.indexingThrottleTime = calculate(
-                    ShardStatsValue.INDEXING_THROTTLE_TIME);
-            this.queryCacheHitCount = calculate(
-                    ShardStatsValue.CACHE_QUERY_HIT);
-            this.queryCacheMissCount = calculate(
-                    ShardStatsValue.CACHE_QUERY_MISS);
-            this.queryCacheInBytes = calculate(
-                    ShardStatsValue.CACHE_QUERY_SIZE);
-            this.fieldDataEvictions = calculate(
-                    ShardStatsValue.CACHE_FIELDDATA_EVICTION);
-            this.fieldDataInBytes = calculate(ShardStatsValue.CACHE_FIELDDATA_SIZE);
-            this.requestCacheHitCount = calculate(
-                    ShardStatsValue.CACHE_REQUEST_HIT);
-            this.requestCacheMissCount = calculate(
-                    ShardStatsValue.CACHE_REQUEST_MISS);
-            this.requestCacheEvictions = calculate(
-                    ShardStatsValue.CACHE_REQUEST_EVICTION);
-            this.requestCacheInBytes = calculate(
-                    ShardStatsValue.CACHE_REQUEST_SIZE);
+            this.indexingThrottleTime = calculate(ShardStatsValue.INDEXING_THROTTLE_TIME);
             this.refreshCount = calculate(ShardStatsValue.REFRESH_EVENT);
             this.refreshTime = calculate(ShardStatsValue.REFRESH_TIME);
             this.flushCount = calculate(ShardStatsValue.FLUSH_EVENT);
@@ -303,31 +237,18 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         }
 
         @SuppressWarnings("checkstyle:parameternumber")
-        public NodeStatsMetricsStatus(long indexingThrottleTime,
-                long queryCacheHitCount, long queryCacheMissCount,
-                long queryCacheInBytes, long fieldDataEvictions,
-                long fieldDataInBytes, long requestCacheHitCount,
-                long requestCacheMissCount, long requestCacheEvictions,
-                long requestCacheInBytes, long refreshCount, long refreshTime,
-                long flushCount, long flushTime, long mergeCount,
-                long mergeTime, long mergeCurrent, long indexBufferBytes,
-                long segmentCount, long segmentsMemory, long termsMemory,
-                long storedFieldsMemory, long termVectorsMemory,
-                long normsMemory, long pointsMemory, long docValuesMemory,
-                long indexWriterMemory, long versionMapMemory,
-                long bitsetMemory, long shardSizeInBytes) {
+        public NodeStatsMetricsFixedShardsPerCollectionStatus(long indexingThrottleTime, long refreshCount, long refreshTime,
+                                                              long flushCount, long flushTime, long mergeCount,
+                                                              long mergeTime, long mergeCurrent, long indexBufferBytes,
+                                                              long segmentCount, long segmentsMemory, long termsMemory,
+                                                              long storedFieldsMemory, long termVectorsMemory,
+                                                              long normsMemory, long pointsMemory, long docValuesMemory,
+                                                              long indexWriterMemory, long versionMapMemory,
+                                                              long bitsetMemory, long shardSizeInBytes) {
             super();
             this.shardStats = null;
+
             this.indexingThrottleTime = indexingThrottleTime;
-            this.queryCacheHitCount = queryCacheHitCount;
-            this.queryCacheMissCount = queryCacheMissCount;
-            this.queryCacheInBytes = queryCacheInBytes;
-            this.fieldDataEvictions = fieldDataEvictions;
-            this.fieldDataInBytes = fieldDataInBytes;
-            this.requestCacheHitCount = requestCacheHitCount;
-            this.requestCacheMissCount = requestCacheMissCount;
-            this.requestCacheEvictions = requestCacheEvictions;
-            this.requestCacheInBytes = requestCacheInBytes;
             this.refreshCount = refreshCount;
             this.refreshTime = refreshTime;
             this.flushCount = flushCount;
@@ -355,59 +276,9 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
             return valueCalculators.get(nodeMetric.toString()).calculateValue(shardStats);
         }
 
-        @JsonIgnore
-        public ShardStats getShardStats() {
-            return shardStats;
-        }
-
         @JsonProperty(ShardStatsValue.Constants.INDEXING_THROTTLE_TIME_VALUE)
         public long getIndexingThrottleTime() {
             return indexingThrottleTime;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.QUEY_CACHE_HIT_COUNT_VALUE)
-        public long getQueryCacheHitCount() {
-            return queryCacheHitCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.QUERY_CACHE_MISS_COUNT_VALUE)
-        public long getQueryCacheMissCount() {
-            return queryCacheMissCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.QUERY_CACHE_IN_BYTES_VALUE)
-        public long getQueryCacheInBytes() {
-            return queryCacheInBytes;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.FIELDDATA_EVICTION_VALUE)
-        public long getFieldDataEvictions() {
-            return fieldDataEvictions;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.FIELD_DATA_IN_BYTES_VALUE)
-        public long getFieldDataInBytes() {
-            return fieldDataInBytes;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_HIT_COUNT_VALUE)
-        public long getRequestCacheHitCount() {
-            return requestCacheHitCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_MISS_COUNT_VALUE)
-        public long getRequestCacheMissCount() {
-            return requestCacheMissCount;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_EVICTION_VALUE)
-        public long getRequestCacheEvictions() {
-            return requestCacheEvictions;
-        }
-
-        @JsonProperty(ShardStatsValue.Constants.REQUEST_CACHE_IN_BYTES_VALUE)
-        public long getRequestCacheInBytes() {
-            return requestCacheInBytes;
         }
 
         @JsonProperty(ShardStatsValue.Constants.REFRESH_COUNT_VALUE)
@@ -443,6 +314,11 @@ public class NodeStatsMetricsCollector extends PerformanceAnalyzerMetricsCollect
         @JsonProperty(ShardStatsValue.Constants.MERGE_CURRENT_VALUE)
         public long getMergeCurrent() {
             return mergeCurrent;
+        }
+
+        @JsonIgnore
+        public ShardStats getShardStats() {
+            return shardStats;
         }
 
         @JsonProperty(ShardStatsValue.Constants.INDEX_BUFFER_BYTES_VALUE)

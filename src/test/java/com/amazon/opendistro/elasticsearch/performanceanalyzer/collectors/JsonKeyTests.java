@@ -26,8 +26,8 @@ import java.util.function.Function;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector.CacheMaxSizeStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector.NodeStatsMetricsStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector.NodeStatsMetricsFixedShardsPerCollectionStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector.ThreadPoolStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CircuitBreakerDimension;
@@ -40,7 +40,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.HeapValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.IPDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.IPValue;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.MasterPendingValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.TCPDimension;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.TCPValue;
@@ -106,12 +105,11 @@ public class JsonKeyTests {
         verifyMethodWithJsonKeyNames(ThreadPoolStatus.class,
                 ThreadPoolDimension.values(), ThreadPoolValue.values(),
                 getMethodJsonProperty);
-        verifyMethodWithJsonKeyNames(NodeStatsMetricsStatus.class,
+        verifyMethodWithJsonKeyNames(NodeStatsMetricsAllShardsPerCollectionStatus.class,
                 new MetricDimension[] {}, ShardStatsValue.values(),
                 getMethodJsonProperty);
-        verifyMethodWithJsonKeyNames(MasterPendingStatus.class,
-                new MetricDimension[] {},
-                MasterPendingValue.values(),
+        verifyMethodWithJsonKeyNames(NodeStatsMetricsFixedShardsPerCollectionStatus.class,
+                new MetricDimension[] {}, ShardStatsValue.values(),
                 getMethodJsonProperty);
         verifyNodeDetailJsonKeyNames();
     }
@@ -130,16 +128,21 @@ public class JsonKeyTests {
             }
         }
 
-        assertTrue(dimensions.length + metrics.length == jsonKeySet.size());
+        assertTrue(dimensions.length + metrics.length >= jsonKeySet.size());
 
         for (MetricDimension d : dimensions) {
             assertTrue(String.format("We need %s", d.toString()),
                     jsonKeySet.contains(d.toString()));
+            jsonKeySet.remove(d.toString());
         }
 
-        for (MetricValue v : metrics) {
-            assertTrue(String.format("We need %s", v.toString()),
-                    jsonKeySet.contains(v.toString()));
+        Set<String> s =  new HashSet<>();
+        for (MetricValue m : metrics) {
+            s.add(m.toString());
+        }
+        for (String v : jsonKeySet) {
+            assertTrue(String.format("We need %s", v),
+                    s.contains(v));
         }
     }
 

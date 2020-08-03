@@ -21,7 +21,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DiskMe
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector.HeapStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricDimension;
@@ -124,37 +125,40 @@ public class AbstractReaderTests extends AbstractTests {
             long indexWriterMemory, long versionMapMemory,
             long bitsetMemory, long shardSizeInBytes, FailureCondition condition) {
         // dummyCollector is only used to create the json string
-        NodeStatsMetricsCollector dummyCollector = new NodeStatsMetricsCollector(null);
-        String str = (dummyCollector.new NodeStatsMetricsStatus(
+        NodeStatsFixedShardsMetricsCollector dummyCollectorFewShards = new NodeStatsFixedShardsMetricsCollector(null);
+        String str = (dummyCollectorFewShards.new NodeStatsMetricsFixedShardsPerCollectionStatus(
                 indexingThrottleTime,
-                 queryCacheHitCount,
-                 queryCacheMissCount,
-                 queryCacheInBytes,
-                 fieldDataEvictions,
-                 fieldDataInBytes,
-                 requestCacheHitCount,
-                 requestCacheMissCount,
-                 requestCacheEvictions,
-                 requestCacheInBytes,
-                 refreshCount,
-                 refreshTime,
-                 flushCount,
-                 flushTime,
-                 mergeCount,
-                 mergeTime,
-                 mergeCurrent,
-                 indexBufferBytes,
-                 segmentCount,
-                 segmentsMemory,
-                 termsMemory,
-                 storedFieldsMemory,
-                 termVectorsMemory,
-                 normsMemory,
-                 pointsMemory,
-                 docValuesMemory,
-                 indexWriterMemory,
-                 versionMapMemory,
-                 bitsetMemory, shardSizeInBytes)).serialize();
+                refreshCount,
+                refreshTime,
+                flushCount,
+                flushTime,
+                mergeCount,
+                mergeTime,
+                mergeCurrent,
+                indexBufferBytes,
+                segmentCount,
+                segmentsMemory,
+                termsMemory,
+                storedFieldsMemory,
+                termVectorsMemory,
+                normsMemory,
+                pointsMemory,
+                docValuesMemory,
+                indexWriterMemory,
+                versionMapMemory,
+                bitsetMemory, shardSizeInBytes)).serialize();
+
+        NodeStatsAllShardsMetricsCollector dummyCollectorAllShards = new NodeStatsAllShardsMetricsCollector(null);
+        str += (dummyCollectorAllShards.new NodeStatsMetricsAllShardsPerCollectionStatus(
+                queryCacheHitCount,
+                queryCacheMissCount,
+                queryCacheInBytes,
+                fieldDataEvictions,
+                fieldDataInBytes,
+                requestCacheHitCount,
+                requestCacheMissCount,
+                requestCacheEvictions,
+                requestCacheInBytes)).serialize();
 
         if (condition == FailureCondition.INVALID_JSON_METRIC) {
             str = str.substring(1);
