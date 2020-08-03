@@ -15,8 +15,11 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.ConfigOverridesClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerOverridesClusterConfigAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
 import java.security.AccessController;
@@ -96,6 +99,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_sha
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
+
 import static java.util.Collections.singletonList;
 
 public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
@@ -105,6 +109,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     private static SecurityManager sm = null;
     private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
+    private final ConfigOverridesClusterSettingHandler configOverridesClusterSettingHandler;
+    private final ConfigOverridesWrapper configOverridesWrapper;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private final ClusterSettingsManager clusterSettingsManager;
 
@@ -153,9 +159,27 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         //initialize plugin settings. Accessing plugin settings before this
         //point will break, as the plugin location will not be initialized.
         PluginSettings.instance();
-
         scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
         this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
+
+        configOverridesWrapper = new ConfigOverridesWrapper();
+        clusterSettingsManager = new ClusterSettingsManager(Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                        PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING),
+                Collections.singletonList(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING));
+        configOverridesClusterSettingHandler = new ConfigOverridesClusterSettingHandler(configOverridesWrapper, clusterSettingsManager,
+                PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
+        clusterSettingsManager.addSubscriberForStringSetting(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING,
+                configOverridesClusterSettingHandler);
+        perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(performanceAnalyzerController,
+                clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForIntSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                perfAnalyzerClusterSettingHandler);
+
+        nodeStatsSettingHandler = new NodeStatsSettingHandler(performanceAnalyzerController,
+                clusterSettingsManager);
+        clusterSettingsManager.addSubscriberForIntSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+                nodeStatsSettingHandler);
+
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CacheConfigMetricsCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CircuitBreakerCollector());
@@ -175,22 +199,6 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
         scheduledMetricCollectorsExecutor.start();
-
-        clusterSettingsManager = new ClusterSettingsManager(
-                Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                              PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING));
-
-        perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(
-                performanceAnalyzerController,
-                clusterSettingsManager);
-        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                perfAnalyzerClusterSettingHandler);
-
-        nodeStatsSettingHandler = new NodeStatsSettingHandler(
-                performanceAnalyzerController,
-                clusterSettingsManager);
-        clusterSettingsManager.addSubscriberForSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
-                nodeStatsSettingHandler);
 
         EventLog eventLog = new EventLog();
         EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
@@ -241,7 +249,10 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
         PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
                 restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
-        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp);
+        PerformanceAnalyzerOverridesClusterConfigAction paOverridesConfigClusterAction =
+                new PerformanceAnalyzerOverridesClusterConfigAction(settings, restController,
+                        configOverridesClusterSettingHandler, configOverridesWrapper);
+        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp, paOverridesConfigClusterAction);
     }
 
     @Override
@@ -279,7 +290,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     @Override
     public List<Setting<?>> getSettings() {
         return Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING);
+                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+                             PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
     }
 
 }

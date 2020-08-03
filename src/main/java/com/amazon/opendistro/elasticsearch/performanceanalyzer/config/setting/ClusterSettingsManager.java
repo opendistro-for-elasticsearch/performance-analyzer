@@ -28,14 +28,17 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
  */
 public class ClusterSettingsManager implements ClusterStateListener {
     private static final Logger LOG = LogManager.getLogger(ClusterSettingsManager.class);
-    private Map<Setting<Integer>, List<ClusterSettingListener<Integer>>> listenerMap = new HashMap<>();
-    private final List<Setting<Integer>> managedSettings = new ArrayList<>();
+    private final Map<Setting<Integer>, List<ClusterSettingListener<Integer>>> intSettingListenerMap = new HashMap<>();
+    private final Map<Setting<String>, List<ClusterSettingListener<String>>> stringSettingListenerMap = new HashMap<>();
+    private final List<Setting<Integer>> managedIntSettings = new ArrayList<>();
+    private final List<Setting<String>> managedStringSettings = new ArrayList<>();
     private final ClusterSettingsResponseHandler clusterSettingsResponseHandler;
 
     private boolean initialized = false;
 
-    public ClusterSettingsManager(List<Setting<Integer>> initialSettings) {
-        managedSettings.addAll(initialSettings);
+    public ClusterSettingsManager(List<Setting<Integer>> intSettings, List<Setting<String>> stringSettings) {
+        managedIntSettings.addAll(intSettings);
+        managedStringSettings.addAll(stringSettings);
         this.clusterSettingsResponseHandler = new ClusterSettingsResponseHandler();
     }
 
@@ -45,18 +48,35 @@ public class ClusterSettingsManager implements ClusterStateListener {
      * @param setting  The setting that needs to be listened to.
      * @param listener The listener object that will be called when the setting changes.
      */
-    public void addSubscriberForSetting(Setting<Integer> setting, ClusterSettingListener<Integer> listener) {
-        if (listenerMap.containsKey(setting)) {
-            final List<ClusterSettingListener<Integer>> currentListeners = listenerMap.get(setting);
+    public void addSubscriberForIntSetting(Setting<Integer> setting, ClusterSettingListener<Integer> listener) {
+        if (intSettingListenerMap.containsKey(setting)) {
+            final List<ClusterSettingListener<Integer>> currentListeners = intSettingListenerMap.get(setting);
             if (!currentListeners.contains(listener)) {
                 currentListeners.add(listener);
-                listenerMap.put(setting, currentListeners);
+                intSettingListenerMap.put(setting, currentListeners);
             }
         } else {
-            listenerMap.put(setting, Collections.singletonList(listener));
+            intSettingListenerMap.put(setting, Collections.singletonList(listener));
         }
     }
 
+    /**
+     * Adds a listener that will be called when the requested setting's value changes.
+     *
+     * @param setting  The setting that needs to be listened to.
+     * @param listener The listener object that will be called when the setting changes.
+     */
+    public void addSubscriberForStringSetting(Setting<String> setting, ClusterSettingListener<String> listener) {
+        if (stringSettingListenerMap.containsKey(setting)) {
+            final List<ClusterSettingListener<String>> currentListeners = stringSettingListenerMap.get(setting);
+            if (!currentListeners.contains(listener)) {
+                currentListeners.add(listener);
+                stringSettingListenerMap.put(setting, currentListeners);
+            }
+        } else {
+            stringSettingListenerMap.put(setting, Collections.singletonList(listener));
+        }
+    }
     /**
      * Bootstraps the listeners and tries to read initial values for cluster settings.
      */
@@ -92,13 +112,33 @@ public class ClusterSettingsManager implements ClusterStateListener {
     }
 
     /**
+     * Updates the requested setting with the requested value across the cluster.
+     *
+     * @param setting  The setting that needs to be updated.
+     * @param newValue The new value for the setting.
+     */
+    public void updateSetting(final Setting<String> setting, final String newValue) {
+        final ClusterUpdateSettingsRequest request = new ClusterUpdateSettingsRequest();
+        request.persistentSettings(Settings.builder()
+                .put(setting.getKey(), newValue)
+                .build());
+        ESResources.INSTANCE.getClient().admin().cluster().updateSettings(request);
+    }
+
+    /**
      * Registers a setting update listener for all the settings managed by this instance.
      */
     private void registerSettingUpdateListener() {
-        for (Setting<Integer> setting : managedSettings) {
+        for (Setting<Integer> setting : managedIntSettings) {
             ESResources.INSTANCE.getClusterService()
                                 .getClusterSettings()
-                                .addSettingsUpdateConsumer(setting, updatedVal -> callListeners(setting, updatedVal));
+                                .addSettingsUpdateConsumer(setting, updatedVal -> callIntSettingListeners(setting, updatedVal));
+        }
+
+        for (Setting<String> setting : managedStringSettings) {
+            ESResources.INSTANCE.getClusterService()
+                    .getClusterSettings()
+                    .addSettingsUpdateConsumer(setting, updatedVal -> callStringSettingListeners(setting, updatedVal));
         }
     }
 
@@ -166,9 +206,9 @@ public class ClusterSettingsManager implements ClusterStateListener {
      * @param setting      The setting whose listeners need to be notified.
      * @param settingValue The new value for the setting.
      */
-    private void callListeners(final Setting<Integer> setting, int settingValue) {
+    private void callIntSettingListeners(final Setting<Integer> setting, int settingValue) {
         try {
-            final List<ClusterSettingListener<Integer>> listeners = listenerMap.get(setting);
+            final List<ClusterSettingListener<Integer>> listeners = intSettingListenerMap.get(setting);
             if (listeners != null) {
                 for (ClusterSettingListener<Integer> listener : listeners) {
                     listener.onSettingUpdate(settingValue);
@@ -180,6 +220,25 @@ public class ClusterSettingsManager implements ClusterStateListener {
         }
     }
 
+    /**
+     * Calls all the listeners for the specified setting with the requested value.
+     *
+     * @param setting      The setting whose listeners need to be notified.
+     * @param settingValue The new value for the setting.
+     */
+    private void callStringSettingListeners(final Setting<String> setting, String settingValue) {
+        try {
+            final List<ClusterSettingListener<String>> listeners = stringSettingListenerMap.get(setting);
+            if (listeners != null) {
+                for (ClusterSettingListener<String> listener : listeners) {
+                    listener.onSettingUpdate(settingValue);
+                }
+            }
+        } catch(Exception ex) {
+            LOG.error(ex);
+            StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
+        }
+    }
     /**
      * Class that handles response to GET /_cluster/settings
      */
@@ -196,10 +255,17 @@ public class ClusterSettingsManager implements ClusterStateListener {
                                                                  .getMetaData()
                                                                  .persistentSettings();
 
-            for (final Setting<Integer> setting : managedSettings) {
+            for (final Setting<Integer> setting : managedIntSettings) {
                 Integer settingValue = clusterSettings.getAsInt(setting.getKey(), null);
                 if (settingValue != null) {
-                    callListeners(setting, settingValue);
+                    callIntSettingListeners(setting, settingValue);
+                }
+            }
+
+            for (final Setting<String> setting : managedStringSettings) {
+                String settingValue = clusterSettings.get(setting.getKey(), "");
+                if (settingValue != null) {
+                    callStringSettingListeners(setting, settingValue);
                 }
             }
         }
