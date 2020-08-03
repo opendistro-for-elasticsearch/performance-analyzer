@@ -3,6 +3,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.conf
 import java.io.IOException;
 import java.util.Map;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.NodeStatsSettingHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,6 +33,7 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
     private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
+    private static final String BATCH_METRICS_RETENTION_PERIOD = "batchMetricsRetentionPeriod";
 
     private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
@@ -113,6 +115,7 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
                 builder.startObject();
                 builder.field(CURRENT, clusterSettingHandler.getCurrentClusterSettingValue());
                 builder.field(SHARDS_PER_COLLECTION, nodeStatsSettingHandler.getNodeStatsSetting());
+                builder.field(BATCH_METRICS_RETENTION_PERIOD, PluginSettings.instance().getBatchMetricsRetentionPeriod());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
