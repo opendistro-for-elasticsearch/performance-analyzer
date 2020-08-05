@@ -80,7 +80,11 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         
         // line#3 denotes when the timestamp when the config override happened.
-        value.append(configOverridesWrapper.getLastUpdatedTimestamp());
+        if (configOverridesWrapper != null) {
+            value.append(configOverridesWrapper.getLastUpdatedTimestamp());
+        } else {
+            value.append(0L);
+        }
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
         DiscoveryNodes discoveryNodes = ESResources.INSTANCE.getClusterService().state().nodes();
