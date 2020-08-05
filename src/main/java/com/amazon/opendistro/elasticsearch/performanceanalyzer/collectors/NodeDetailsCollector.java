@@ -68,8 +68,12 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         // know this information in advance unless we add the number of nodes as
         // additional metadata in the file.
         try {
-            String rcaOverrides = ConfigOverridesHelper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
-            value.append(rcaOverrides);
+            if (configOverridesWrapper != null) {
+                String rcaOverrides = ConfigOverridesHelper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
+                value.append(rcaOverrides);
+            } else {
+                LOG.warn("Overrides wrapper is null. Check NodeDetailsCollector instantiation.");
+            }
         } catch (IOException ioe) {
             LOG.error("Unable to serialize rca config overrides.", ioe);
         }

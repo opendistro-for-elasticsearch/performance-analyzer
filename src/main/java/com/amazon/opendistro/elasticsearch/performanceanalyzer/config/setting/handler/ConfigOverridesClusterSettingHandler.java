@@ -57,9 +57,13 @@ public class ConfigOverridesClusterSettingHandler implements ClusterSettingListe
     @Override
     public void onSettingUpdate(String newSettingValue) {
         try {
-            final ConfigOverrides newOverrides = ConfigOverridesHelper.deserialize(newSettingValue);
-            overridesHolder.setCurrentClusterConfigOverrides(newOverrides);
-            overridesHolder.setLastUpdatedTimestamp(System.currentTimeMillis());
+            if (newSettingValue != null && !newSettingValue.isEmpty()) {
+                final ConfigOverrides newOverrides = ConfigOverridesHelper.deserialize(newSettingValue);
+                overridesHolder.setCurrentClusterConfigOverrides(newOverrides);
+                overridesHolder.setLastUpdatedTimestamp(System.currentTimeMillis());
+            } else {
+                LOG.warn("Config override setting update called with empty string. Ignoring.");
+            }
         } catch (IOException e) {
             LOG.error("Unable to apply received cluster setting update: " + newSettingValue, e);
         }
@@ -73,8 +77,7 @@ public class ConfigOverridesClusterSettingHandler implements ClusterSettingListe
      */
     public void updateConfigOverrides(final ConfigOverrides newOverrides) throws IOException {
         String newClusterSettingValue = buildClusterSettingValue(newOverrides);
-        // TODO: @ktkrg - Change to debug
-        LOG.error("Updating cluster setting with new overrides string: {}", newClusterSettingValue);
+        LOG.debug("Updating cluster setting with new overrides string: {}", newClusterSettingValue);
         clusterSettingsManager.updateSetting(setting, newClusterSettingValue);
     }
 

@@ -188,7 +188,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
 
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MetricsPurgeActivity());
 
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector(configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
                 NodeStatsAllShardsMetricsCollector(performanceAnalyzerController));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
