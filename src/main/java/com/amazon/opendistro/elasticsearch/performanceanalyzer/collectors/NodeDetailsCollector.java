@@ -68,15 +68,23 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         // know this information in advance unless we add the number of nodes as
         // additional metadata in the file.
         try {
-            String rcaOverrides = ConfigOverridesHelper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
-            value.append(rcaOverrides);
+            if (configOverridesWrapper != null) {
+                String rcaOverrides = ConfigOverridesHelper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
+                value.append(rcaOverrides);
+            } else {
+                LOG.warn("Overrides wrapper is null. Check NodeDetailsCollector instantiation.");
+            }
         } catch (IOException ioe) {
             LOG.error("Unable to serialize rca config overrides.", ioe);
         }
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
         
         // line#3 denotes when the timestamp when the config override happened.
-        value.append(configOverridesWrapper.getLastUpdatedTimestamp());
+        if (configOverridesWrapper != null) {
+            value.append(configOverridesWrapper.getLastUpdatedTimestamp());
+        } else {
+            value.append(0L);
+        }
         value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
         DiscoveryNodes discoveryNodes = ESResources.INSTANCE.getClusterService().state().nodes();
