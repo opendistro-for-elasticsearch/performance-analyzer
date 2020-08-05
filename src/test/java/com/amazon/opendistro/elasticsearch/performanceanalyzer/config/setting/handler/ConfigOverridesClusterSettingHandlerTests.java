@@ -99,6 +99,19 @@ public class ConfigOverridesClusterSettingHandlerTests {
     }
 
     @Test
+    public void onSettingUpdateEmptySettingsTest() throws IOException {
+        ConfigOverridesWrapper failingOverridesWrapper = new ConfigOverridesWrapper();
+
+        testClusterSettingHandler = new ConfigOverridesClusterSettingHandler(
+                failingOverridesWrapper, mockClusterSettingsManager, testSetting);
+
+        testClusterSettingHandler.onSettingUpdate(null);
+
+        assertEquals(MAPPER.writeValueAsString(EMPTY_OVERRIDES),
+                MAPPER.writeValueAsString(testOverridesWrapper.getCurrentClusterConfigOverrides()));
+    }
+
+    @Test
     public void updateConfigOverridesMergeSuccessTest() throws IOException {
         testOverridesWrapper.setCurrentClusterConfigOverrides(testOverrides);
 

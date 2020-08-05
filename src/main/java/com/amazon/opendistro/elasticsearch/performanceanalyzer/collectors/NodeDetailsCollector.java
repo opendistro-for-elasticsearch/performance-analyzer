@@ -38,10 +38,6 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
     private static final int KEYS_PATH_LENGTH = 0;
     private final ConfigOverridesWrapper configOverridesWrapper;
 
-    public NodeDetailsCollector() {
-        this(null);
-    }
-
     public NodeDetailsCollector(final ConfigOverridesWrapper configOverridesWrapper) {
         super(SAMPLING_TIME_INTERVAL, "NodeDetails");
         this.configOverridesWrapper = configOverridesWrapper;
