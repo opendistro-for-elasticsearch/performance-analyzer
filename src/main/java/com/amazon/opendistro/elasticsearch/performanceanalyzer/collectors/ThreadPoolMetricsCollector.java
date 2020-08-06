@@ -76,26 +76,31 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             statsRecordMap.put(threadPoolName, new ThreadPoolStatsRecord(startTime, stats.getRejected()));
             final long finalRejectionDelta = rejectionDelta;
             ThreadPoolStatus threadPoolStatus = AccessController.doPrivileged((PrivilegedAction<ThreadPoolStatus>) () -> {
+                Integer capacity;
+                Double latency;
+                //This is for backward compatibility. core ES may or may not emit latency metric
+                // (depending on whether the patch has been applied or not)
+                // so we need to use reflection to check whether getCapacity() method exist in ThreadPoolStats.java.
                 try {
-                    //This is for backward compatibility. core ES may or may not emit latency metric
-                    // (depending on whether the patch has been applied or not)
-                    // so we need to use reflection to check whether getLatency() method exist in ThreadPoolStats.java.
-                    // call stats.getLatency()
-                    Method getLantencyMethod = Stats.class.getMethod("getLatency");
-                    double latency = (Double) getLantencyMethod.invoke(stats);
                     // call stats.getCapacity()
                     Method getCapacityMethod = Stats.class.getMethod("getCapacity");
-                    int capacity = (Integer) getCapacityMethod.invoke(stats);
-                    return new ThreadPoolStatus(stats.getName(),
-                        stats.getQueue(), finalRejectionDelta,
-                        stats.getThreads(), stats.getActive(),
-                        latency, capacity);
-                } catch (Exception e) {
-                    //core ES does not have the latency patch. send the threadpool metrics without adding latency.
-                    return new ThreadPoolStatus(stats.getName(),
-                        stats.getQueue(), finalRejectionDelta,
-                        stats.getThreads(), stats.getActive());
+                    capacity = (Integer) getCapacityMethod.invoke(stats);
                 }
+                catch (Exception e) {
+                    //core ES does not have the latency patch. send the threadpool metrics without adding latency.
+                    capacity = null;
+                }
+                try {
+                    // call stats.getLatency()
+                    Method getLantencyMethod = Stats.class.getMethod("getLatency");
+                    latency = (Double) getLantencyMethod.invoke(stats);
+                } catch (Exception e) {
+                    latency = null;
+                }
+                return new ThreadPoolStatus(stats.getName(),
+                    stats.getQueue(), finalRejectionDelta,
+                    stats.getThreads(), stats.getActive(),
+                    latency, capacity);
             });
             value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                     .append(threadPoolStatus.serialize());
@@ -161,8 +166,8 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             long rejected,
             int threadsCount,
             int threadsActive,
-            double queueLatency,
-            int queueCapacity) {
+            Double queueLatency,
+            Integer queueCapacity) {
             this.type = type;
             this.queueSize = queueSize;
             this.rejected = rejected;
