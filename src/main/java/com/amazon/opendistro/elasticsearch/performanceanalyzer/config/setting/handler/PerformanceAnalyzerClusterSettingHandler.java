@@ -165,7 +165,8 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
-            return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
+            return checkPerformanceAnalyzerEnabled(currentClusterSetting)
+                ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
         } else {
             return resetBit(clusterSetting, RCA_ENABLED_BIT_POS);
         }
@@ -182,7 +183,8 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
-            return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
+            return checkPerformanceAnalyzerEnabled(currentClusterSetting)
+                ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
         } else {
             return resetBit(clusterSetting, LOGGING_ENABLED_BIT_POS);
         }
@@ -208,5 +210,15 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      */
     private int resetBit(int number, int bitPosition) {
         return bitPosition < MAX_ALLOWED_BIT_POS ? (number & ~(1 << bitPosition)) : number;
+    }
+
+    /**
+    * Checks if the pa is set or not.
+    *
+    * @param number The number which needs to be checked.
+    * @return true if the PA_ENABLED bit is set, false otherwise.
+    */
+    private boolean checkPerformanceAnalyzerEnabled(int number) {
+        return ((number & (1 << PA_ENABLED_BIT_POS)) == ENABLED_VALUE);
     }
 }
