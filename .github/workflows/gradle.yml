@@ -28,7 +28,7 @@ jobs:
         java-version: 1.12
     - name: Build RCA with Gradle
       working-directory:  ./tmp/rca
-      run: ./gradlew build
+      run: ./gradlew build -x test
     - name: Publish RCA jar to maven local
       working-directory: ./tmp/rca
       run: ./gradlew publishToMavenLocal
