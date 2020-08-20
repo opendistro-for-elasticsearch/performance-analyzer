@@ -58,17 +58,15 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
     public NodeStatsAllShardsMetricsCollector(final PerformanceAnalyzerController controller) {
         super(SAMPLING_TIME_INTERVAL, "NodeStatsMetrics");
         currentShards = new HashMap<>();
+        prevPerShardStats = new HashMap<>();
+        currentPerShardStats = new HashMap<>();
         this.controller = controller;
     }
 
     private void populateCurrentShards() {
-        if (currentShards.size() == 0) {
-            // Initializing value for the first run
-            prevPerShardStats = null;
-            currentPerShardStats = null;
-        } else{
+        if (currentShards.size() != 0) {
             prevPerShardStats = currentPerShardStats;
-            currentPerShardStats = null;
+            currentPerShardStats.clear();
         }
         currentShards.clear();
         currentShards = Utils.getShards();
@@ -111,20 +109,21 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
 
         try {
             populateCurrentShards();
-
             populatePerShardStats(indicesService);
 
             for (HashMap.Entry currentShard : currentPerShardStats.entrySet()) {
                 ShardId shardId = (ShardId) currentShard.getKey();
                 ShardStats currentShardStats = (ShardStats) currentShard.getValue();
-                if (prevPerShardStats == null) {
+                if (prevPerShardStats.size() == 0) {
                     // Populating value for the first run.
                     populateMetricValue(currentShardStats, startTime, shardId.getIndexName(), shardId.id());
+                    continue;
                 }
                 ShardStats prevShardStats = prevPerShardStats.get(shardId);
                 if (prevShardStats != null) {
                     // Populate value for shards which are new and were not present in the previous run.
                     populateMetricValue(currentShardStats, startTime, shardId.getIndexName(), shardId.id());
+                    continue;
                 }
                 NodeStatsMetricsAllShardsPerCollectionStatus prevValue = new
                         NodeStatsMetricsAllShardsPerCollectionStatus(prevShardStats);
@@ -178,15 +177,15 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         StringBuilder value = new StringBuilder();
 
         NodeStatsMetricsAllShardsPerCollectionStatus nodeStatsMetrics = new NodeStatsMetricsAllShardsPerCollectionStatus(
-                currValue.queryCacheHitCount - prevValue.queryCacheHitCount,
-                currValue.queryCacheMissCount - prevValue.queryCacheMissCount,
-                currValue.queryCacheInBytes - prevValue.fieldDataInBytes,
-                currValue.fieldDataEvictions - prevValue.fieldDataEvictions,
-                currValue.fieldDataInBytes - prevValue.fieldDataInBytes,
-                currValue.requestCacheHitCount - prevValue.requestCacheHitCount,
-                currValue.requestCacheMissCount - prevValue.queryCacheMissCount,
-                currValue.requestCacheEvictions - prevValue.requestCacheEvictions,
-                currValue.requestCacheInBytes - prevValue.requestCacheInBytes);
+                (currValue.queryCacheHitCount - prevValue.queryCacheHitCount),
+                (currValue.queryCacheMissCount - prevValue.queryCacheMissCount),
+                (currValue.queryCacheInBytes - prevValue.fieldDataInBytes),
+                (currValue.fieldDataEvictions - prevValue.fieldDataEvictions),
+                (currValue.fieldDataInBytes - prevValue.fieldDataInBytes),
+                (currValue.requestCacheHitCount - prevValue.requestCacheHitCount),
+                (currValue.requestCacheMissCount - prevValue.queryCacheMissCount),
+                (currValue.requestCacheEvictions - prevValue.requestCacheEvictions),
+                (currValue.requestCacheInBytes - prevValue.requestCacheInBytes));
 
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
