@@ -162,26 +162,58 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         paClient = buildBasicClient(restClientSettings(), hosts.toArray(new HttpHost[0]));
     }
 
+    private enum Component {
+        PA,
+        RCA
+    }
 
-    public static void ensurePaAndRcaEnabled() throws Exception {
-        // TODO replace with waitFor with a 1min timeout
-        for (int i = 0; i < 60; i++) {
-            Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
-            Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
-                    new TypeReference<Map<String, Object>>(){});
-            if (respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
-                    !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
-                break;
+    /**
+     * enableComponent enables PA or RCA on the test cluster
+     * @param component Either PA or RCA
+     * @return The cluster's {@link Response}
+     */
+    public Response enableComponent(Component component) throws Exception {
+        String endpoint;
+        if (component == Component.PA) {
+            endpoint = "_opendistro/_performanceanalyzer/cluster/config";
+        } else if (component == Component.RCA) {
+            endpoint = "_opendistro/_performanceanalyzer/rca/cluster/config";
+        } else {
+            throw new IllegalArgumentException("Unrecognized component value " + component.toString());
+        }
+        Request request = new Request("POST", endpoint);
+        request.setJsonEntity("{\"enabled\": true}");
+        return client().performRequest(request);
+    }
+
+
+    /**
+     * ensurePaAndRcaEnabled makes a best effort to enable PA and RCA on the test ES cluster
+     * @throws Exception If the function is unable to enable PA and RCA
+     */
+    public void ensurePaAndRcaEnabled() throws Exception {
+        // Attempt to enable PA and RCA on the cluster
+        WaitFor.waitFor(() -> {
+            try {
+                Response paResp = enableComponent(Component.PA);
+                Response rcaResp = enableComponent(Component.RCA);
+                return paResp.getStatusLine().getStatusCode() == HttpStatus.SC_OK &&
+                    rcaResp.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
+            } catch (Exception e) {
+                return false;
             }
-            Thread.sleep(1000L);
-        }
-        Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
-        Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
-                new TypeReference<Map<String, Object>>(){});
-        if (!respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
-                !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
-            throw new Exception("PA and RCA are not enabled on the target cluster!");
-        }
+        }, 1, TimeUnit.MINUTES);
+
+        // Sanity check that PA and RCA are enabled on the cluster
+        Response resp = client().performRequest(
+            new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
+        Map<String, Object> respMap = mapper
+            .readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
+                new TypeReference<Map<String, Object>>() {
+                });
+        Integer state = (Integer) respMap.get("currentPerformanceAnalyzerClusterState");
+        Assert.assertTrue("PA and RCA are not enabled on the target cluster!",
+            (state & 0x03) >= 3);
     }
 
     @Test
