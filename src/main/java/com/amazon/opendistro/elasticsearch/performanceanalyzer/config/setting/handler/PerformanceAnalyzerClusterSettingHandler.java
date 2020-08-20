@@ -165,7 +165,8 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
-            return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
+            return checkBit(currentClusterSetting, PA_ENABLED_BIT_POS)
+                ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
         } else {
             return resetBit(clusterSetting, RCA_ENABLED_BIT_POS);
         }
@@ -182,7 +183,8 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         int clusterSetting = currentClusterSetting;
 
         if (shouldEnable) {
-            return controller.isPerformanceAnalyzerEnabled() ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
+            return checkBit(currentClusterSetting, PA_ENABLED_BIT_POS)
+                ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
         } else {
             return resetBit(clusterSetting, LOGGING_ENABLED_BIT_POS);
         }
@@ -208,5 +210,16 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      */
     private int resetBit(int number, int bitPosition) {
         return bitPosition < MAX_ALLOWED_BIT_POS ? (number & ~(1 << bitPosition)) : number;
+    }
+    
+    /**
+     * Checks if the bit is set or not at the specified position.
+     *
+     * @param clusterSettingValue The number which needs to be checked.
+     * @param bitPosition The position of the bit in the clusterSettingValue
+     * @return true if the bit is set, false otherwise.
+     */
+    private boolean checkBit(int clusterSettingValue, int bitPosition) {
+        return ((bitPosition < MAX_ALLOWED_BIT_POS) & (clusterSettingValue & (1 << bitPosition)) == ENABLED_VALUE);
     }
 }

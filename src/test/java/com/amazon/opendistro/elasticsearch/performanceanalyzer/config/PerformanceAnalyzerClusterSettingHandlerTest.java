@@ -66,6 +66,17 @@ public class PerformanceAnalyzerClusterSettingHandlerTest {
         assertEquals(0, clusterSettingHandler.getCurrentClusterSettingValue());
     }
 
+    @Test
+    public void updateClusterStateTest() {
+        setControllerValues(ENABLED_STATE, ENABLED_STATE, DISABLED_STATE);
+        clusterSettingHandler =
+                new PerformanceAnalyzerClusterSettingHandler(
+                        mockPerformanceAnalyzerController, mockClusterSettingsManager);
+        assertEquals(3, clusterSettingHandler.getCurrentClusterSettingValue());
+        clusterSettingHandler.onSettingUpdate(0);
+        assertEquals(0, clusterSettingHandler.getCurrentClusterSettingValue());
+    }
+
     private void setControllerValues(final Boolean paEnabled, final Boolean rcaEnabled, final Boolean loggingEnabled) {
         when(mockPerformanceAnalyzerController.isPerformanceAnalyzerEnabled()).thenReturn(paEnabled);
         when(mockPerformanceAnalyzerController.isRcaEnabled()).thenReturn(rcaEnabled);
