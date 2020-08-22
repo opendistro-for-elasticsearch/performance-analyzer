@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "7.8.0")
+        es_version = System.getProperty("es.version", "7.9.0")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -52,7 +52,7 @@ spotbugsTest {
 }
 
 ext {
-    opendistroVersion = '1.9.0'
+    opendistroVersion = '1.10.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -135,26 +135,44 @@ dependencies {
         all*.exclude group: "org.elasticsearch", module: "securemock"
     }
 
-    compile 'com.google.guava:guava:27.0.1-jre'
+    compile ('com.google.guava:guava:28.2-jre') {
+        force = 'true'
+    }
     compile 'org.jooq:jooq:3.10.8'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
-    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.3'
-    compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.66'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.66'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.10'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.0') {
+        force = 'true'
+    }
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.0') {
+        force = 'true'
+    }
 
     // JDK9+ has to run powermock 2+. https://github.com/powermock/powermock/issues/888
     testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.0'
-    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.0'
+    testCompile(group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.0') {
+        exclude(group: 'org.hamcrest', module: 'hamcrest-core')
+    }
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.0'
     testCompile group: 'org.powermock', name: 'powermock-core', version: '2.0.0'
     testCompile group: 'org.powermock', name: 'powermock-api-support', version: '2.0.0'
-    testCompile group: 'org.powermock', name: 'powermock-module-junit4-common', version: '2.0.0'
+    testCompile(group: 'org.powermock', name: 'powermock-module-junit4-common', version: '2.0.0') {
+        exclude(group: 'org.hamcrest', module: 'hamcrest-core')
+    }
     testCompile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
     testCompile group: 'org.powermock', name: 'powermock-reflect', version: '2.0.0'
-    testCompile group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.3'
-    testCompile group: 'org.objenesis', name: 'objenesis', version: '3.0.1'
+    testCompile(group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.3') {
+        force = 'true'
+    }
+    testCompile(group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.9.3') {
+        force = 'true'
+    }
+    testCompile(group: 'org.objenesis', name: 'objenesis', version: '3.0.1') {
+        force = 'true'
+    }
 }
 
 dependencyLicenses {
@@ -168,7 +186,8 @@ dependencyLicenses.doFirst {
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
                                              "thirdPartyAudit",
-                                             "testingConventions"] 
+                                             "testingConventions",
+                                             "dependencyLicenses"]
 import java.nio.file.Paths
 import org.ajoberstar.gradle.git.tasks.GitClone
 
@@ -204,7 +223,7 @@ task buildRca() {
         exec {
             def licenseDir = "$projectDir/licenses"
             workingDir("$licenseDir")
-            commandLine 'rm', "performanceanalyzer-rca-1.3.jar.sha1"
+            commandLine 'rm', "performanceanalyzer-rca-1.10.jar.sha1"
         }
         exec {
             workingDir("$projectDir")
