@@ -61,6 +61,7 @@ import org.elasticsearch.plugins.ActionPlugin;
 import org.elasticsearch.plugins.NetworkPlugin;
 import org.elasticsearch.plugins.Plugin;
 import org.elasticsearch.plugins.SearchPlugin;
+import org.elasticsearch.repositories.RepositoriesService;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.script.ScriptService;
 import org.elasticsearch.threadpool.ThreadPool;
@@ -243,7 +244,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                                                                     final SettingsFilter settingsFilter,
                                                                     final IndexNameExpressionResolver indexNameExpressionResolver,
                                                                     final Supplier<DiscoveryNodes> nodesInCluster) {
-        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(settings,
+        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(
                 restController, performanceAnalyzerController);
         PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
         PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
@@ -260,7 +261,9 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     public Collection<Object> createComponents(Client client, ClusterService clusterService, ThreadPool threadPool,
                                                ResourceWatcherService resourceWatcherService, ScriptService scriptService,
                                                NamedXContentRegistry xContentRegistry, Environment environment,
-                                               NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry) {
+                                               NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
+                                               IndexNameExpressionResolver indexNameExpressionResolver,
+                                               Supplier<RepositoriesService> repositoriesServiceSupplier) {
         ESResources.INSTANCE.setClusterService(clusterService);
         ESResources.INSTANCE.setThreadPool(threadPool);
         ESResources.INSTANCE.setEnvironment(environment);
