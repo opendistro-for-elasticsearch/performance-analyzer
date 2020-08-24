@@ -1,5 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,8 +46,10 @@ import java.util.concurrent.TimeUnit;
 
 public class PerformanceAnalyzerIT extends ESRestTestCase {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIT.class);
-    private static final int PORT = Integer.parseInt(System.getProperty("tests.pa.port"));
+    private int paPort;
     private static final ObjectMapper mapper = new ObjectMapper();
+    // TODO this must be initialized at construction time to avoid NPEs, we should find a way for subclasses to override this
+    private ITConfig config = new ITConfig();
     private static RestClient paClient;
 
     // Don't wipe the cluster after test completion
@@ -55,7 +59,7 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
     }
 
     protected boolean isHttps() {
-        return System.getProperty("tests.https", "false").toLowerCase().equals("true");
+        return config.isHttps();
     }
 
     @Override
@@ -118,11 +122,9 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         }
         builder.setDefaultHeaders(defaultHeaders);
         builder.setHttpClientConfigCallback((HttpAsyncClientBuilder httpClientBuilder) -> {
-            String userName = System.getProperty("tests.user");
-            String password = System.getProperty("tests.password");
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             credentialsProvider
-                .setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(userName, password));
+                .setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.getUser(), config.getPassword()));
             try {
                 return httpClientBuilder
                     .setDefaultCredentialsProvider(credentialsProvider)
@@ -149,15 +151,16 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
     }
 
     @Before
-    public void initPaClient() throws Exception {
-        String cluster = System.getProperty("tests.rest.cluster");
+    public void setupIT() throws Exception {
+        String cluster = config.getRestEndpoint();
+        paPort = config.getPaPort();
         logger.info("Cluster is {}", cluster);
         if (cluster == null) {
             throw new RuntimeException("Must specify [tests.rest.cluster] system property with a comma delimited list of [host:port] "
                     + "to which to send REST requests");
         }
         List<HttpHost> hosts = Collections.singletonList(
-                new HttpHost(cluster.substring(0, cluster.lastIndexOf(":")), PORT, "http"));
+                new HttpHost(cluster.substring(0, cluster.lastIndexOf(":")), paPort, "http"));
         logger.info("initializing PerformanceAnalyzer client against {}", hosts);
         paClient = buildBasicClient(restClientSettings(), hosts.toArray(new HttpHost[0]));
     }
@@ -216,7 +219,8 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
                 });
         Integer state = (Integer) respMap.get("currentPerformanceAnalyzerClusterState");
         Assert.assertTrue("PA and RCA are not enabled on the target cluster!",
-            (state & 0x03) >= 3);
+            PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerClusterSettingHandler.PA_ENABLED_BIT_POS) &&
+                PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerClusterSettingHandler.RCA_ENABLED_BIT_POS));
     }
 
     @Test

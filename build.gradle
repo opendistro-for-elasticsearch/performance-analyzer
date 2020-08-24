@@ -247,11 +247,17 @@ task setupEsCluster() {
  * each of these properties.
  *
  * -Dtests.rest.cluster the Elasticsearch REST endpoint that test clients should hit
- * -Dtests.cluster the Elasticsearch transport endpoint that test clients should hit
+ * -Dtests.cluster the Elasticsearch <a href="https://discuss.elastic.co/t/transport-client-vs-rest-client/13936">transport</a>
+ *      endpoint that test clients should hit
  * -Dtests.enableIT a flag to enable integration testing, by default this is false
  * -Dtests.useDockerCluster if true, spin up a local 2 node cluster before executing tests
  *        NOTE: if you specify this, don't specify -Dtests.rest.cluster or -Dtests.cluster
  * -Dtests.pa.port the port number of the PerformanceAnalyzer REST endpoint
+ * -Dtests.https either true or false, if true, then instantiate REST and transport clients using
+ *      the https:// protocol and basic authentication via the -Dtests.user and -Dtests.password properties
+ * -Dtests.user the username of the admin user, this is used in conjunction with -Dtests.https and
+ *      -Dtests.password to authenticate requests in the opendistro-security context
+ * -Dtests.password the password of the admin user specified by -Dtests.user
  */
 integTestRunner {
     onlyIf = {
