@@ -14,7 +14,7 @@ public final class PerformanceAnalyzerClusterSettings {
             0,
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
-            );
+    );
 
     public enum PerformanceAnalyzerFeatureBits {
         PA_BIT,
@@ -30,6 +30,17 @@ public final class PerformanceAnalyzerClusterSettings {
     public static final Setting<Integer> PA_NODE_STATS_SETTING = Setting.intSetting(
             "cluster.metadata.perf_analyzer.pa_node_stats_setting",
             1,
+            Setting.Property.NodeScope,
+            Setting.Property.Dynamic
+    );
+
+    /**
+     * Cluster setting controlling the config overrides to be applied on performance
+     * analyzer components.
+     */
+    public static final Setting<String> CONFIG_OVERRIDES_SETTING = Setting.simpleString(
+            "cluster.metadata.perf_analyzer.config.overrides",
+            "",
             Setting.Property.NodeScope,
             Setting.Property.Dynamic
     );

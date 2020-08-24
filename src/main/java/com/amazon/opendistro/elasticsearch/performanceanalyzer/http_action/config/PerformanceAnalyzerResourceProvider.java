@@ -19,7 +19,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSett
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import java.io.InputStream;
-import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -29,7 +28,6 @@ import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
-import org.elasticsearch.rest.RestRequest.Method;
 import org.elasticsearch.rest.RestResponse;
 import org.elasticsearch.rest.RestStatus;
 
@@ -59,13 +57,11 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   private String portNumber;
   private final boolean isHttpsEnabled;
   private static Set<String> SUPPORTED_REDIRECTIONS = ImmutableSet.of("rca", "metrics");
-  private static final List<Route> ROUTES =
-      Collections.unmodifiableList(
-          Collections.singletonList(new Route(Method.GET, AGENT_PATH + "{redirectEndpoint}")));
 
   @Inject
   public PerformanceAnalyzerResourceProvider(Settings settings, RestController controller) {
-    super();
+    super(settings);
+    controller.registerHandler(org.elasticsearch.rest.RestRequest.Method.GET, AGENT_PATH + "{redirectEndpoint}", this);
     PluginSettings pluginSettings = PluginSettings.instance();
     portNumber = pluginSettings.getSettingValue("webservice-listener-port", DEFAULT_PORT_NUMBER);
     isHttpsEnabled = pluginSettings.getHttpsEnabled();
@@ -113,14 +109,6 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
 
   public String getName() {
     return "PerformanceAnalyzer_ResourceProvider";
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public List<Route> routes() {
-      return ROUTES;
   }
 
   @Override

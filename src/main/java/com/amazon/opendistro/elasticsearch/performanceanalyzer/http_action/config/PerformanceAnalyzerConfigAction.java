@@ -15,17 +15,14 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.unmodifiableList;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -33,6 +30,8 @@ import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.rest.RestStatus;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 
 @SuppressWarnings("deprecation")
 public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
@@ -42,19 +41,11 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final String PA_ENABLED = "performanceAnalyzerEnabled";
     private static final String RCA_ENABLED = "rcaEnabled";
     private static final String PA_LOGGING_ENABLED = "loggingEnabled";
+    private static PerformanceAnalyzerConfigAction instance = null;
+    private final PerformanceAnalyzerController performanceAnalyzerController;
     private static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
     private static final String PA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/config";
     private static final String LOGGING_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/config";
-    private static PerformanceAnalyzerConfigAction instance = null;
-    private static final List<Route> ROUTES = unmodifiableList(asList(
-            new Route(RestRequest.Method.GET, PA_CONFIG_PATH),
-            new Route(RestRequest.Method.POST, PA_CONFIG_PATH),
-            new Route(RestRequest.Method.GET, RCA_CONFIG_PATH),
-            new Route(RestRequest.Method.POST, RCA_CONFIG_PATH),
-            new Route(RestRequest.Method.GET, LOGGING_CONFIG_PATH),
-            new Route(RestRequest.Method.POST, LOGGING_CONFIG_PATH)
-        ));
-    private final PerformanceAnalyzerController performanceAnalyzerController;
 
     public static PerformanceAnalyzerConfigAction getInstance() {
         return instance;
@@ -65,15 +56,22 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     }
 
     @Inject
-    public PerformanceAnalyzerConfigAction(final RestController controller,
-        final PerformanceAnalyzerController performanceAnalyzerController) {
-        super();
+    public PerformanceAnalyzerConfigAction(final Settings settings,
+                                           final RestController controller,
+                                           final PerformanceAnalyzerController performanceAnalyzerController) {
+        super(settings);
         this.performanceAnalyzerController = performanceAnalyzerController;
+        registerHandlers(controller);
         LOG.info("PerformanceAnalyzer Enabled: {}", performanceAnalyzerController::isPerformanceAnalyzerEnabled);
     }
-    @Override
-    public List<Route> routes() {
-        return ROUTES;
+
+    private void registerHandlers(final RestController controller) {
+        controller.registerHandler(RestRequest.Method.GET, PA_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, PA_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, RCA_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, RCA_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.GET, LOGGING_CONFIG_PATH, this);
+        controller.registerHandler(RestRequest.Method.POST, LOGGING_CONFIG_PATH, this);
     }
 
     @Override

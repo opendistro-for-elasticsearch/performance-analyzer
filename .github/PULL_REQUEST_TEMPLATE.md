@@ -1,4 +1,4 @@
-*Issue #, if available:*
+*Fixes #, if available:*
 
 *Description of changes:*
 
