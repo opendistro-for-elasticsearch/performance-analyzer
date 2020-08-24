@@ -31,6 +31,30 @@ Then you provide parameters for metrics, aggregations, dimensions, and nodes (op
 GET `_opendistro/_performanceanalyzer/metrics?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all`
 
 
+## Batch Metrics API
+While the basic metrics api associated with performance analyzer provies the last 5 seconds worth of metrics, the batch metrics api provides more detailed metrics and from longer periods of time. See the [design doc](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/blob/master/docs/batch-metrics-api.md) for more information.
+
+The Batch Metrics API uses a single HTTP method and URI for all requests:
+
+GET `<endpoint>/_opendistro/_performanceanalyzer/batch`
+
+Then you provide parameters for metrics, starttime, endtime, and samplingperiod (optional):
+
+```
+?metrics=<metrics>&starttime=<starttime>&endtime=<endtime>&samplingperiod=5"
+```
+
+* metrics - comma separated list of metrics you are interested in. For a full list of metrics, see Metrics Reference.
+* starttime - Unix timestamp (difference between the current time and midnight, January 1, 1970 UTC) determining the oldest data point to return. starttime is inclusive — data points from at or after the starttime will be returned. Note, the starttime and endtime supplied by the user with both be rounded down to the nearest samplingperiod.
+* endtime - Unix timestamp determining the freshest data point to return. endtime is exclusive — only datapoints from before the endtime will be returned.
+* samplingperiod - The sampling period in seconds. Must be no less than 5, must be less than the retention period, and must be a multiple of 5. The default is 5s.
+
+Note, the maximum number of datapoints that a single query can request for via API is capped at 100,800 datapoints. If a query exceeds this limit, an error is returned. Parameters like the starttime, endtime, and samplingperiod can be adjusted on such queries to request for fewer datapoints at a time.
+
+### SAMPLE REQUEST
+GET `_opendistro/_performanceanalyzer/batch?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412650000&endtime=1594412665000&samplingperiod=5`
+
+
 ## Documentation
 
 Please refer to the [technical documentation](https://opendistro.github.io/for-elasticsearch-docs/) for detailed information on installing and configuring Performance Analyzer.
