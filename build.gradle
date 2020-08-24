@@ -145,10 +145,10 @@ dependencies {
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.10'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.0') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
         force = 'true'
     }
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.0') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1') {
         force = 'true'
     }
 
