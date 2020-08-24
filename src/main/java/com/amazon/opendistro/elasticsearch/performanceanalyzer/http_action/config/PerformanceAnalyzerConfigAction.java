@@ -138,7 +138,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 builder.field(PA_LOGGING_ENABLED, performanceAnalyzerController.isLoggingEnabled());
                 builder.field(SHARDS_PER_COLLECTION, performanceAnalyzerController.getNodeStatsShardsPerCollection());
                 builder.field(BATCH_METRICS_ENABLED, performanceAnalyzerController.isBatchMetricsEnabled());
-                builder.field(BATCH_METRICS_RETENTION_PERIOD, PluginSettings.instance().getBatchMetricsRetentionPeriod());
+                builder.field(BATCH_METRICS_RETENTION_PERIOD, PluginSettings.instance().getBatchMetricsRetentionPeriodMinutes());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {

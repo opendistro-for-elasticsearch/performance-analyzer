@@ -115,7 +115,7 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
                 builder.startObject();
                 builder.field(CURRENT, clusterSettingHandler.getCurrentClusterSettingValue());
                 builder.field(SHARDS_PER_COLLECTION, nodeStatsSettingHandler.getNodeStatsSetting());
-                builder.field(BATCH_METRICS_RETENTION_PERIOD, PluginSettings.instance().getBatchMetricsRetentionPeriod());
+                builder.field(BATCH_METRICS_RETENTION_PERIOD, PluginSettings.instance().getBatchMetricsRetentionPeriodMinutes());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
