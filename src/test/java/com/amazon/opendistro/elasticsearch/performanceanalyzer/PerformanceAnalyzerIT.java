@@ -1,6 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings.PerformanceAnalyzerFeatureBits;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -219,8 +220,8 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
                 });
         Integer state = (Integer) respMap.get("currentPerformanceAnalyzerClusterState");
         Assert.assertTrue("PA and RCA are not enabled on the target cluster!",
-            PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerClusterSettingHandler.PA_ENABLED_BIT_POS) &&
-                PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerClusterSettingHandler.RCA_ENABLED_BIT_POS));
+            PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerFeatureBits.PA_BIT.ordinal()) &&
+                PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal()));
     }
 
     @Test

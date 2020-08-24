@@ -11,10 +11,9 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     private static final int CLUSTER_SETTING_DISABLED_VALUE = 0;
     private static final int ENABLED_VALUE = 1;
     private static final int MAX_ALLOWED_BIT_POS = Math.min(PerformanceAnalyzerFeatureBits.values().length, Integer.SIZE - 1);
-
-    public static final int RCA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal();
-    public static final int PA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.PA_BIT.ordinal();
-    public static final int LOGGING_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.LOGGING_BIT.ordinal();
+    private static final int RCA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal();
+    private static final int PA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.PA_BIT.ordinal();
+    private static final int LOGGING_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.LOGGING_BIT.ordinal();
 
     private final PerformanceAnalyzerController controller;
     private final ClusterSettingsManager clusterSettingsManager;
