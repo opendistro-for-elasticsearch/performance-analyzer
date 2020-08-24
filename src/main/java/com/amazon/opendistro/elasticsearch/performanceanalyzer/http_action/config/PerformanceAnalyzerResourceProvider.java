@@ -73,19 +73,18 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
     if (isHttpsEnabled) {
       // skip host name verification
       // Create a trust manager that does not validate certificate chains
-      TrustManager[] trustAllCerts = new TrustManager[]{
-              new X509TrustManager() {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                  return null;
-                }
-
-                public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                }
-
-                public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                }
+      TrustManager[] trustAllCerts =
+          new TrustManager[] {
+            new X509TrustManager() {
+              public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return null;
               }
-      };
+
+              public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+
+              public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+            }
+          };
 
       // Install the all-trusting trust manager
       try {
@@ -93,7 +92,9 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
         sc.init(null, trustAllCerts, new java.security.SecureRandom());
         HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
       } catch (AccessControlException e) {
-        LOG.warn("SecurityManager forbids setting default SSL Socket Factory...using default settings", e);
+        LOG.warn(
+            "SecurityManager forbids setting default SSL Socket Factory...using default settings",
+            e);
       } catch (Exception e) {
         LOG.warn("Error encountered while initializing SSLContext...using default settings", e);
       }
@@ -104,9 +105,12 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
       try {
         HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid);
       } catch (AccessControlException e) {
-        LOG.warn("SecurityManager forbids setting default hostname verifier...using default settings", e);
+        LOG.warn(
+            "SecurityManager forbids setting default hostname verifier...using default settings",
+            e);
       } catch (Exception e) {
-        LOG.warn("Error encountered while initializing hostname verifier...using default settings", e);
+        LOG.warn(
+            "Error encountered while initializing hostname verifier...using default settings", e);
       }
     }
   }
@@ -115,16 +119,15 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
     return "PerformanceAnalyzer_ResourceProvider";
   }
 
-  /**
-   * {@inheritDoc}
-   */
+  /** {@inheritDoc} */
   @Override
   public List<Route> routes() {
-      return ROUTES;
+    return ROUTES;
   }
 
   @Override
-  protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client) throws IOException {
+  protected RestChannelConsumer prepareRequest(RestRequest request, NodeClient client)
+      throws IOException {
     StringBuilder response = new StringBuilder();
     String inputLine;
     int responseCode;
@@ -137,12 +140,14 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
         channel.sendResponse(finalResponse);
       };
     } else {
-      HttpURLConnection httpURLConnection = isHttpsEnabled ? createHttpsURLConnection(url) :
-          createHttpURLConnection(url);
-      //Build Response in buffer
+      HttpURLConnection httpURLConnection =
+          isHttpsEnabled ? createHttpsURLConnection(url) : createHttpURLConnection(url);
+      // Build Response in buffer
       responseCode = httpURLConnection.getResponseCode();
-      InputStream inputStream = (responseCode == HttpsURLConnection.HTTP_OK) ?
-          httpURLConnection.getInputStream() : httpURLConnection.getErrorStream();
+      InputStream inputStream =
+          (responseCode == HttpsURLConnection.HTTP_OK)
+              ? httpURLConnection.getInputStream()
+              : httpURLConnection.getErrorStream();
 
       try (BufferedReader in = new BufferedReader(new InputStreamReader(inputStream))) {
         while ((inputLine = in.readLine()) != null) {
@@ -152,13 +157,15 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
       } catch (Exception ex) {
         LOG.error("Error receiving response for Request Uri {} - {}", request.uri(), ex);
         return channel -> {
-          channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR,
-              "Encountered error possibly with downstream APIs"));
+          channel.sendResponse(
+              new BytesRestResponse(
+                  RestStatus.INTERNAL_SERVER_ERROR,
+                  "Encountered error possibly with downstream APIs"));
         };
       }
 
-      RestResponse finalResponse = new BytesRestResponse(RestStatus.fromCode(responseCode),
-          String.valueOf(response));
+      RestResponse finalResponse =
+          new BytesRestResponse(RestStatus.fromCode(responseCode), String.valueOf(response));
       LOG.debug("finalResponse: {}", finalResponse);
 
       return channel -> {
@@ -167,11 +174,12 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
           for (Map.Entry<String, List<String>> entry : map.entrySet()) {
             finalResponse.addHeader(entry.getKey(), entry.getValue().toString());
           }
-          //Send Response back to callee
+          // Send Response back to callee
           channel.sendResponse(finalResponse);
         } catch (Exception ex) {
           LOG.error("Error sending response", ex);
-          channel.sendResponse(new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "Something went wrong"));
+          channel.sendResponse(
+              new BytesRestResponse(RestStatus.INTERNAL_SERVER_ERROR, "Something went wrong"));
         }
       };
     }
@@ -204,7 +212,8 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
   public URL getAgentUri(RestRequest request) throws IOException {
     String redirectEndpoint = request.param("redirectEndpoint");
     String urlScheme = isHttpsEnabled ? "https://" : "http://";
-    String redirectBasePath = urlScheme + "localhost:" + portNumber + "/_opendistro/_performanceanalyzer/";
+    String redirectBasePath =
+        urlScheme + "localhost:" + portNumber + "/_opendistro/_performanceanalyzer/";
     // Need to register all params in ES request else es throws illegal_argument_exception
     for (String key : request.params().keySet()) {
       request.param(key);

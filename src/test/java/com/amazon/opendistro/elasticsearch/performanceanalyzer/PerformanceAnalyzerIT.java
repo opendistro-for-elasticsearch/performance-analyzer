@@ -4,6 +4,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Objects;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.util.EntityUtils;
@@ -14,7 +15,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.test.rest.ESRestTestCase;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 
 public class PerformanceAnalyzerIT extends ESRestTestCase {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIT.class);
-    private static final int PORT = 9600;
+    private static final int PORT = Integer.parseInt(System.getProperty("tests.pa.port"));
     private static final ObjectMapper mapper = new ObjectMapper();
     private static RestClient paClient;
 
@@ -81,7 +82,8 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
             Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
             Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
                     new TypeReference<Map<String, Object>>(){});
-            if (respMap.get("currentPerformanceAnalyzerClusterState").equals(3)) {
+            if (respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
+                    !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
                 break;
             }
             Thread.sleep(1000L);
@@ -89,7 +91,8 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
         Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
                 new TypeReference<Map<String, Object>>(){});
-        if (!respMap.get("currentPerformanceAnalyzerClusterState").equals(3)) {
+        if (!respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
+                !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
             throw new Exception("PA and RCA are not enabled on the target cluster!");
         }
     }
@@ -128,8 +131,22 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         });
     }
 
-    @AfterClass
-    public static void closePaClient() throws Exception {
+    @Test
+    public void testRcaIsRunning() throws Exception {
+        ensurePaAndRcaEnabled();
+        WaitFor.waitFor(() -> {
+            Request request = new Request("GET", "/_opendistro/_performanceanalyzer/rca");
+            try {
+                Response resp = paClient.performRequest(request);
+                return Objects.equals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
+            } catch (Exception e) { // 404, RCA context hasn't been set up yet
+                return false;
+            }
+        }, 2, TimeUnit.MINUTES);
+    }
+
+    @After
+    public void closePaClient() throws Exception {
         ESRestTestCase.closeClients();
         paClient.close();
         LOG.debug("AfterClass has run");

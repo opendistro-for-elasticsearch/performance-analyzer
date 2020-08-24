@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright <2020> Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -63,6 +63,17 @@ public class PerformanceAnalyzerClusterSettingHandlerTest {
         clusterSettingHandler =
                 new PerformanceAnalyzerClusterSettingHandler(
                         mockPerformanceAnalyzerController, mockClusterSettingsManager);
+        assertEquals(0, clusterSettingHandler.getCurrentClusterSettingValue());
+    }
+
+    @Test
+    public void updateClusterStateTest() {
+        setControllerValues(ENABLED_STATE, ENABLED_STATE, DISABLED_STATE);
+        clusterSettingHandler =
+                new PerformanceAnalyzerClusterSettingHandler(
+                        mockPerformanceAnalyzerController, mockClusterSettingsManager);
+        assertEquals(3, clusterSettingHandler.getCurrentClusterSettingValue());
+        clusterSettingHandler.onSettingUpdate(0);
         assertEquals(0, clusterSettingHandler.getCurrentClusterSettingValue());
     }
 

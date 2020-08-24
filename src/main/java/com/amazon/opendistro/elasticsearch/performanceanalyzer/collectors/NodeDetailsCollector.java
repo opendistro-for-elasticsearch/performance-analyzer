@@ -16,6 +16,8 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesHelper;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeDetailColumns;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
@@ -27,15 +29,18 @@ import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.cluster.node.DiscoveryNodes;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(NodeDetailsCollector.class).samplingInterval;
     private static final Logger LOG = LogManager.getLogger(NodeDetailsCollector.class);
     private static final int KEYS_PATH_LENGTH = 0;
+    private final ConfigOverridesWrapper configOverridesWrapper;
 
-    public NodeDetailsCollector() {
+    public NodeDetailsCollector(final ConfigOverridesWrapper configOverridesWrapper) {
         super(SAMPLING_TIME_INTERVAL, "NodeDetails");
+        this.configOverridesWrapper = configOverridesWrapper;
     }
 
     @Override
@@ -53,6 +58,30 @@ public class NodeDetailsCollector extends PerformanceAnalyzerMetricsCollector im
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
              .append(
                      PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+
+        // We add the config overrides in line#2 because we don't know how many lines
+        // follow that belong to actual node details, and the reader also has no way to
+        // know this information in advance unless we add the number of nodes as
+        // additional metadata in the file.
+        try {
+            if (configOverridesWrapper != null) {
+                String rcaOverrides = ConfigOverridesHelper.serialize(configOverridesWrapper.getCurrentClusterConfigOverrides());
+                value.append(rcaOverrides);
+            } else {
+                LOG.warn("Overrides wrapper is null. Check NodeDetailsCollector instantiation.");
+            }
+        } catch (IOException ioe) {
+            LOG.error("Unable to serialize rca config overrides.", ioe);
+        }
+        value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+        
+        // line#3 denotes when the timestamp when the config override happened.
+        if (configOverridesWrapper != null) {
+            value.append(configOverridesWrapper.getLastUpdatedTimestamp());
+        } else {
+            value.append(0L);
+        }
+        value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
 
         DiscoveryNodes discoveryNodes = ESResources.INSTANCE.getClusterService().state().nodes();
 
