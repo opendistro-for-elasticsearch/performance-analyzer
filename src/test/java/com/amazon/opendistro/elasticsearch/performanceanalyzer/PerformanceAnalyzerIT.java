@@ -174,12 +174,15 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
      */
     public Response enableComponent(Component component) throws Exception {
         String endpoint;
-        if (component == Component.PA) {
-            endpoint = "_opendistro/_performanceanalyzer/cluster/config";
-        } else if (component == Component.RCA) {
-            endpoint = "_opendistro/_performanceanalyzer/rca/cluster/config";
-        } else {
-            throw new IllegalArgumentException("Unrecognized component value " + component.toString());
+        switch (component) {
+            case PA:
+                endpoint = "_opendistro/_performanceanalyzer/cluster/config";
+                break;
+            case RCA:
+                endpoint = "_opendistro/_performanceanalyzer/rca/cluster/config";
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized component value " + component.toString());
         }
         Request request = new Request("POST", endpoint);
         request.setJsonEntity("{\"enabled\": true}");
