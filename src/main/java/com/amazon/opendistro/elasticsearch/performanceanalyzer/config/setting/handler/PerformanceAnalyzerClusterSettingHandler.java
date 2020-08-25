@@ -220,6 +220,6 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      * @return true if the bit is set, false otherwise.
      */
     public static boolean checkBit(int clusterSettingValue, int bitPosition) {
-        return ((bitPosition < MAX_ALLOWED_BIT_POS) & (clusterSettingValue & (1 << bitPosition)) == ENABLED_VALUE);
+        return ((bitPosition < MAX_ALLOWED_BIT_POS) && (clusterSettingValue & (1 << bitPosition)) > 0);
     }
 }
