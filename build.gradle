@@ -201,6 +201,10 @@ static def propEnabled(property) {
 
 // The following Gradle tasks are used to create a PA/RCA enabled Elasticsearch cluster
 // Pass the -Dtests.enableIT property to Gradle to run ITs
+/**
+ * cloneGitRepo clones the performance-analyzer-rca repo if the -Dtests.enableIT=true flag is passed
+ * to the Gradle JVM
+ */
 task cloneGitRepo(type: GitClone) {
     onlyIf = {
         propEnabled("tests.enableIT")
@@ -213,6 +217,10 @@ task cloneGitRepo(type: GitClone) {
     enabled = !destination.exists() // to clone only once
 }
 
+/**
+ * setupESCluster spins up a local 2 node ES cluster using the enableRca task in the performance-analyzer-rca
+ * repo. The performance-analyzer-rca repo is cloned as part of the cloneGitRepo task.
+ */
 task setupEsCluster() {
     dependsOn(cloneGitRepo)
     onlyIf = {
@@ -227,6 +235,30 @@ task setupEsCluster() {
     }
 }
 
+/**
+ * integTestRunner is a task provided by the ES test framework, which allows us to spin up clients
+ * and test API calls against a local or remote Elasticsearch cluster.
+ *
+ * The simplest way to run this task in a way that "just works" is to invoke
+ * ./gradlew integTest -Dtests.enableIT=true -Dtests.useDockerCluster=true
+ * which will spin up a local 2 node ES cluster on your machine, then execute the test suite against it
+ *
+ * A full list of options is provided below. Check our gradle.properties file for the defaults for
+ * each of these properties.
+ *
+ * -Dtests.rest.cluster the Elasticsearch REST endpoint that test clients should hit
+ * -Dtests.cluster the Elasticsearch <a href="https://discuss.elastic.co/t/transport-client-vs-rest-client/13936">transport</a>
+ *      endpoint that test clients should hit
+ * -Dtests.enableIT a flag to enable integration testing, by default this is false
+ * -Dtests.useDockerCluster if true, spin up a local 2 node cluster before executing tests
+ *        NOTE: if you specify this, don't specify -Dtests.rest.cluster or -Dtests.cluster
+ * -Dtests.pa.port the port number of the PerformanceAnalyzer REST endpoint
+ * -Dtests.https either true or false, if true, then instantiate REST and transport clients using
+ *      the https:// protocol and basic authentication via the -Dtests.user and -Dtests.password properties
+ * -Dtests.user the username of the admin user, this is used in conjunction with -Dtests.https and
+ *      -Dtests.password to authenticate requests in the opendistro-security context
+ * -Dtests.password the password of the admin user specified by -Dtests.user
+ */
 integTestRunner {
     onlyIf = {
         propEnabled("tests.enableIT")
