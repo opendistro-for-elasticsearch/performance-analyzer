@@ -1,19 +1,36 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.PerformanceAnalyzerClusterSettings.PerformanceAnalyzerFeatureBits;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Objects;
+import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.After;
 import org.junit.Assert;
@@ -29,8 +46,10 @@ import java.util.concurrent.TimeUnit;
 
 public class PerformanceAnalyzerIT extends ESRestTestCase {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIT.class);
-    private static final int PORT = Integer.parseInt(System.getProperty("tests.pa.port"));
+    private int paPort;
     private static final ObjectMapper mapper = new ObjectMapper();
+    // TODO this must be initialized at construction time to avoid NPEs, we should find a way for subclasses to override this
+    private ITConfig config = new ITConfig();
     private static RestClient paClient;
 
     // Don't wipe the cluster after test completion
@@ -39,11 +58,19 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         return true;
     }
 
-    // This method is the same as ESRestTestCase#buildClient, but it attempts to connect
-    // to the provided cluster for 1 minute before giving up. This is useful when we spin up
-    // our own Docker cluster on the local node for Integration Testing
+    protected boolean isHttps() {
+        return config.isHttps();
+    }
+
     @Override
-    protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
+    protected String getProtocol() {
+        if (isHttps()) {
+            return "https";
+        }
+        return super.getProtocol();
+    }
+
+    protected RestClient buildBasicClient(Settings settings, HttpHost[] hosts) throws Exception {
         final RestClient[] restClientArr = new RestClient[1];
         try {
             WaitFor.waitFor(() -> {
@@ -61,40 +88,139 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         return restClientArr[0];
     }
 
+    protected RestClient buildClient(Settings settings, HttpHost[] hosts) throws IOException {
+        RestClientBuilder builder = RestClient.builder(hosts);
+        if (isHttps()) {
+            LOG.info("Setting up https client");
+            configureHttpsClient(builder, settings);
+        } else {
+            configureClient(builder, settings);
+        }
+        builder.setStrictDeprecationMode(true);
+        return builder.build();
+    }
+
+    public static Map<String, String> buildDefaultHeaders(Settings settings) {
+        Settings headers = ThreadContext.DEFAULT_HEADERS_SETTING.get(settings);
+        if (headers == null) {
+            return Collections.emptyMap();
+        } else {
+            Map<String, String> defaultHeader = new HashMap<>();
+            for (String key : headers.names()) {
+                defaultHeader.put(key, headers.get(key));
+            }
+            return Collections.unmodifiableMap(defaultHeader);
+        }
+    }
+
+    protected void configureHttpsClient(RestClientBuilder builder, Settings settings) {
+        Map<String, String> headers = buildDefaultHeaders(settings);
+        Header[] defaultHeaders = new Header[headers.size()];
+        int i = 0;
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            defaultHeaders[i++] = new BasicHeader(entry.getKey(), entry.getValue());
+        }
+        builder.setDefaultHeaders(defaultHeaders);
+        builder.setHttpClientConfigCallback((HttpAsyncClientBuilder httpClientBuilder) -> {
+            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider
+                .setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(config.getUser(), config.getPassword()));
+            try {
+                return httpClientBuilder
+                    .setDefaultCredentialsProvider(credentialsProvider)
+                    .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                    .setSSLContext(SSLContextBuilder
+                        .create()
+                        .loadTrustMaterial(null, (X509Certificate[] chain, String authType) -> true)
+                        .build());
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        String socketTimeoutString = settings.get(CLIENT_SOCKET_TIMEOUT);
+        if (socketTimeoutString == null) {
+            socketTimeoutString = "60s";
+            TimeValue socketTimeout = TimeValue
+                .parseTimeValue(socketTimeoutString, CLIENT_SOCKET_TIMEOUT);
+            builder.setRequestConfigCallback((RequestConfig.Builder conf) ->
+                conf.setSocketTimeout(Math.toIntExact(socketTimeout.millis())));
+            if (settings.hasValue(CLIENT_PATH_PREFIX)) {
+                builder.setPathPrefix(settings.get(CLIENT_PATH_PREFIX));
+            }
+        }
+    }
+
     @Before
-    public void initPaClient() throws IOException {
-        String cluster = System.getProperty("tests.rest.cluster");
+    public void setupIT() throws Exception {
+        String cluster = config.getRestEndpoint();
+        paPort = config.getPaPort();
         logger.info("Cluster is {}", cluster);
         if (cluster == null) {
             throw new RuntimeException("Must specify [tests.rest.cluster] system property with a comma delimited list of [host:port] "
                     + "to which to send REST requests");
         }
         List<HttpHost> hosts = Collections.singletonList(
-                buildHttpHost(cluster.substring(0, cluster.lastIndexOf(":")), PORT));
+                new HttpHost(cluster.substring(0, cluster.lastIndexOf(":")), paPort, "http"));
         logger.info("initializing PerformanceAnalyzer client against {}", hosts);
-        paClient = buildClient(restClientSettings(), hosts.toArray(new HttpHost[0]));
+        paClient = buildBasicClient(restClientSettings(), hosts.toArray(new HttpHost[0]));
+    }
+
+    private enum Component {
+        PA,
+        RCA
+    }
+
+    /**
+     * enableComponent enables PA or RCA on the test cluster
+     * @param component Either PA or RCA
+     * @return The cluster's {@link Response}
+     */
+    public Response enableComponent(Component component) throws Exception {
+        String endpoint;
+        switch (component) {
+            case PA:
+                endpoint = "_opendistro/_performanceanalyzer/cluster/config";
+                break;
+            case RCA:
+                endpoint = "_opendistro/_performanceanalyzer/rca/cluster/config";
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized component value " + component.toString());
+        }
+        Request request = new Request("POST", endpoint);
+        request.setJsonEntity("{\"enabled\": true}");
+        return client().performRequest(request);
     }
 
 
-    public static void ensurePaAndRcaEnabled() throws Exception {
-        // TODO replace with waitFor with a 1min timeout
-        for (int i = 0; i < 60; i++) {
-            Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
-            Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
-                    new TypeReference<Map<String, Object>>(){});
-            if (respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
-                    !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
-                break;
+    /**
+     * ensurePaAndRcaEnabled makes a best effort to enable PA and RCA on the test ES cluster
+     * @throws Exception If the function is unable to enable PA and RCA
+     */
+    public void ensurePaAndRcaEnabled() throws Exception {
+        // Attempt to enable PA and RCA on the cluster
+        WaitFor.waitFor(() -> {
+            try {
+                Response paResp = enableComponent(Component.PA);
+                Response rcaResp = enableComponent(Component.RCA);
+                return paResp.getStatusLine().getStatusCode() == HttpStatus.SC_OK &&
+                    rcaResp.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
+            } catch (Exception e) {
+                return false;
             }
-            Thread.sleep(1000L);
-        }
-        Response resp = client().performRequest(new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
-        Map<String, Object> respMap = mapper.readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
-                new TypeReference<Map<String, Object>>(){});
-        if (!respMap.get("currentPerformanceAnalyzerClusterState").equals(3) &&
-                !respMap.get("currentPerformanceAnalyzerClusterState").equals(7)) {
-            throw new Exception("PA and RCA are not enabled on the target cluster!");
-        }
+        }, 1, TimeUnit.MINUTES);
+
+        // Sanity check that PA and RCA are enabled on the cluster
+        Response resp = client().performRequest(
+            new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
+        Map<String, Object> respMap = mapper
+            .readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
+                new TypeReference<Map<String, Object>>() {
+                });
+        Integer state = (Integer) respMap.get("currentPerformanceAnalyzerClusterState");
+        Assert.assertTrue("PA and RCA are not enabled on the target cluster!",
+            PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerFeatureBits.PA_BIT.ordinal()) &&
+                PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal()));
     }
 
     @Test
