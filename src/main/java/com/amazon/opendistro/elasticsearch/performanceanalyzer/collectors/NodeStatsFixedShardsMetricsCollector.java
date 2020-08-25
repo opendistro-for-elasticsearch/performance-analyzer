@@ -27,6 +27,7 @@ import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.index.shard.IndexShard;
+import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.NodeIndicesStats;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
@@ -51,8 +52,8 @@ public class NodeStatsFixedShardsMetricsCollector extends PerformanceAnalyzerMet
             NodeStatsAllShardsMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 2;
     private static final Logger LOG = LogManager.getLogger(NodeStatsFixedShardsMetricsCollector.class);
-    private HashMap<String, IndexShard> currentShards;
-    private Iterator<HashMap.Entry<String, IndexShard>> currentShardsIter;
+    private HashMap<ShardId, IndexShard> currentShards;
+    private Iterator<HashMap.Entry<ShardId, IndexShard>> currentShardsIter;
     private final PerformanceAnalyzerController controller;
 
     public NodeStatsFixedShardsMetricsCollector(final PerformanceAnalyzerController controller) {
@@ -105,7 +106,7 @@ public class NodeStatsFixedShardsMetricsCollector extends PerformanceAnalyzerMet
     } };
 
     private long getIndexBufferBytes(ShardStats shardStats) {
-        IndexShard shard = currentShards.get(Utils.getUniqueShardIdKey(shardStats.getShardRouting().shardId()));
+        IndexShard shard = currentShards.get(shardStats.getShardRouting().shardId());
 
         if (shard == null) {
             return 0;
