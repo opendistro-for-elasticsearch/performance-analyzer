@@ -177,15 +177,15 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         StringBuilder value = new StringBuilder();
 
         NodeStatsMetricsAllShardsPerCollectionStatus nodeStatsMetrics = new NodeStatsMetricsAllShardsPerCollectionStatus(
-                (currValue.queryCacheHitCount - prevValue.queryCacheHitCount),
-                (currValue.queryCacheMissCount - prevValue.queryCacheMissCount),
-                (currValue.queryCacheInBytes - prevValue.fieldDataInBytes),
-                (currValue.fieldDataEvictions - prevValue.fieldDataEvictions),
-                (currValue.fieldDataInBytes - prevValue.fieldDataInBytes),
-                (currValue.requestCacheHitCount - prevValue.requestCacheHitCount),
-                (currValue.requestCacheMissCount - prevValue.queryCacheMissCount),
-                (currValue.requestCacheEvictions - prevValue.requestCacheEvictions),
-                (currValue.requestCacheInBytes - prevValue.requestCacheInBytes));
+                Math.max((currValue.queryCacheHitCount - prevValue.queryCacheHitCount), 0),
+                Math.max((currValue.queryCacheMissCount - prevValue.queryCacheMissCount), 0),
+                Math.max((currValue.queryCacheInBytes - prevValue.fieldDataInBytes), 0),
+                Math.max((currValue.fieldDataEvictions - prevValue.fieldDataEvictions), 0),
+                Math.max((currValue.fieldDataInBytes - prevValue.fieldDataInBytes), 0),
+                Math.max((currValue.requestCacheHitCount - prevValue.requestCacheHitCount), 0),
+                Math.max((currValue.requestCacheMissCount - prevValue.requestCacheMissCount), 0),
+                Math.max((currValue.requestCacheEvictions - prevValue.requestCacheEvictions), 0),
+                Math.max((currValue.requestCacheInBytes - prevValue.requestCacheInBytes), 0));
 
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
