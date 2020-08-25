@@ -43,6 +43,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * on the performance of the node.
  */
 
+/**
+ * currentShards: Contains the Mapping of the Shard ID to the Shard for the shards currently present on
+ * the cluster in this run of the collector.
+ * currentPerShardStats: Contains the mapping of the Shard Stats and the shards present in this run
+ * of the collector.
+ * prevPerShardStats: Contains the mapping of the Shard Stats and the shards present in the previous
+ * run of the collector.
+ * The diff is calculated between (currentPerShardStats and prevPerShardStats) for each shard in the
+ * currentShards and for shards not present in the prevPerShardStat absolute value of the
+ * currentPerShardStats is updated.
+ */
+
+
 @SuppressWarnings("unchecked")
 public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
