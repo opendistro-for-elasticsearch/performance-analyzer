@@ -50,8 +50,8 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
     private static final int KEYS_PATH_LENGTH = 2;
     private static final Logger LOG = LogManager.getLogger(NodeStatsAllShardsMetricsCollector.class);
     private HashMap<ShardId, IndexShard> currentShards;
-    HashMap<ShardId, ShardStats> currentPerShardStats;
-    HashMap<ShardId, ShardStats> prevPerShardStats;
+    private HashMap<ShardId, ShardStats> currentPerShardStats;
+    private HashMap<ShardId, ShardStats> prevPerShardStats;
     private final PerformanceAnalyzerController controller;
 
 
@@ -64,8 +64,8 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
     }
 
     private void populateCurrentShards() {
-        if (currentShards.size() != 0) {
-            prevPerShardStats = currentPerShardStats;
+        if (!currentShards.isEmpty()) {
+            prevPerShardStats.putAll(currentPerShardStats);
             currentPerShardStats.clear();
         }
         currentShards.clear();
@@ -120,7 +120,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
                     continue;
                 }
                 ShardStats prevShardStats = prevPerShardStats.get(shardId);
-                if (prevShardStats != null) {
+                if (prevShardStats == null) {
                     // Populate value for shards which are new and were not present in the previous run.
                     populateMetricValue(currentShardStats, startTime, shardId.getIndexName(), shardId.id());
                     continue;
@@ -179,7 +179,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         NodeStatsMetricsAllShardsPerCollectionStatus nodeStatsMetrics = new NodeStatsMetricsAllShardsPerCollectionStatus(
                 Math.max((currValue.queryCacheHitCount - prevValue.queryCacheHitCount), 0),
                 Math.max((currValue.queryCacheMissCount - prevValue.queryCacheMissCount), 0),
-                Math.max((currValue.queryCacheInBytes - prevValue.fieldDataInBytes), 0),
+                Math.max((currValue.queryCacheInBytes - prevValue.queryCacheInBytes), 0),
                 Math.max((currValue.fieldDataEvictions - prevValue.fieldDataEvictions), 0),
                 Math.max((currValue.fieldDataInBytes - prevValue.fieldDataInBytes), 0),
                 Math.max((currValue.requestCacheHitCount - prevValue.requestCacheHitCount), 0),
