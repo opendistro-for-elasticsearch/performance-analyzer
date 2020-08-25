@@ -43,7 +43,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     private static final String RCA_ENABLED = "rcaEnabled";
     private static final String PA_LOGGING_ENABLED = "loggingEnabled";
     private static final String BATCH_METRICS_ENABLED = "batchMetricsEnabled";
-    private static final String BATCH_METRICS_RETENTION_PERIOD = "batchMetricsRetentionPeriod";
+    private static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
     private static PerformanceAnalyzerConfigAction instance = null;
     private final PerformanceAnalyzerController performanceAnalyzerController;
     private static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
@@ -138,7 +138,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
                 builder.field(PA_LOGGING_ENABLED, performanceAnalyzerController.isLoggingEnabled());
                 builder.field(SHARDS_PER_COLLECTION, performanceAnalyzerController.getNodeStatsShardsPerCollection());
                 builder.field(BATCH_METRICS_ENABLED, performanceAnalyzerController.isBatchMetricsEnabled());
-                builder.field(BATCH_METRICS_RETENTION_PERIOD, PluginSettings.instance().getBatchMetricsRetentionPeriodMinutes());
+                builder.field(BATCH_METRICS_RETENTION_PERIOD_MINUTES, PluginSettings.instance().getBatchMetricsRetentionPeriodMinutes());
                 builder.endObject();
                 channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder));
             } catch (IOException ioe) {
