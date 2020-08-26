@@ -10,10 +10,10 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     private static final int BIT_ONE = 1;
     private static final int CLUSTER_SETTING_DISABLED_VALUE = 0;
     private static final int ENABLED_VALUE = 1;
-    private static final int MAX_ALLOWED_BIT_POS = Math.min(PerformanceAnalyzerFeatureBits.values().length, Integer.SIZE - 1);
     private static final int RCA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal();
     private static final int PA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.PA_BIT.ordinal();
     private static final int LOGGING_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.LOGGING_BIT.ordinal();
+    private static final int MAX_ALLOWED_BIT_POS = Math.min(PerformanceAnalyzerFeatureBits.values().length, Integer.SIZE - 1);
 
     private final PerformanceAnalyzerController controller;
     private final ClusterSettingsManager clusterSettingsManager;
@@ -219,7 +219,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      * @param bitPosition The position of the bit in the clusterSettingValue
      * @return true if the bit is set, false otherwise.
      */
-    public static boolean checkBit(int clusterSettingValue, int bitPosition) {
-        return ((bitPosition < MAX_ALLOWED_BIT_POS) && (clusterSettingValue & (1 << bitPosition)) > 0);
+    private boolean checkBit(int clusterSettingValue, int bitPosition) {
+        return ((bitPosition < MAX_ALLOWED_BIT_POS) & (clusterSettingValue & (1 << bitPosition)) == ENABLED_VALUE);
     }
 }
