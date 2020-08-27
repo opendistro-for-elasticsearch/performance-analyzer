@@ -85,21 +85,17 @@ public class Utils {
                 });
     }
 
-    public static HashMap<String, IndexShard> getShards() {
-        HashMap<String, IndexShard> shards =  new HashMap<>();
+    public static HashMap<ShardId, IndexShard> getShards() {
+        HashMap<ShardId, IndexShard> shards =  new HashMap<>();
         Iterator<IndexService> indexServices = ESResources.INSTANCE.getIndicesService().iterator();
         while (indexServices.hasNext()) {
             Iterator<IndexShard> indexShards = indexServices.next().iterator();
             while (indexShards.hasNext()) {
                 IndexShard shard = indexShards.next();
-                shards.put(getUniqueShardIdKey(shard.shardId()), shard);
+                shards.put(shard.shardId(), shard);
             }
         }
         return shards;
-    }
-
-    public static String getUniqueShardIdKey(ShardId shardId) {
-        return "[" + shardId.hashCode() + "][" + shardId.getId() + "]";
     }
 
     public static final EnumSet<IndexShardState> CAN_WRITE_INDEX_BUFFER_STATES = EnumSet.of(
