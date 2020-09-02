@@ -47,7 +47,7 @@ Then you provide parameters for metrics, starttime, endtime, and samplingperiod 
 * metrics - comma separated list of metrics you are interested in. For a full list of metrics, see Metrics Reference.
 * starttime - Unix timestamp (difference between the current time and midnight, January 1, 1970 UTC) determining the oldest data point to return. starttime is inclusive — data points from at or after the starttime will be returned. Note, the starttime and endtime supplied by the user with both be rounded down to the nearest samplingperiod.
 * endtime - Unix timestamp determining the freshest data point to return. endtime is exclusive — only datapoints from before the endtime will be returned.
-* samplingperiod - The sampling period in seconds. Must be no less than 5, must be less than the retention period, and must be a multiple of 5. The default is 5s.
+* samplingperiod - The sampling period in seconds. The requested time range will be partitioned according to the sampling period, and data from the first available 5s interval in each partition will be returned to the user. Must be at least 5s, must be less than the retention period, and must be a multiple of 5. The default is 5s.
 
 Note, the maximum number of datapoints that a single query can request for via API is capped at 100,800 datapoints. If a query exceeds this limit, an error is returned. The query parameters can be adjusted on such queries to request for fewer datapoints at a time.
 
