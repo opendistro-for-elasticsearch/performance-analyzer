@@ -40,19 +40,21 @@ public class ConfigOverridesIT extends PerformanceAnalyzerIntegTestBase {
             final Response response = client().performRequest(postRequest);
             Assert.assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
         } catch (Exception e) {
-            logger.error("Encountered exception: {}", e.getMessage(), e);
+            logger.error("Encountered exception", e);
             fail("Failed to set overrides");
         }
 
-        try {
-            Map<String, Object> responseEntity = getAsMap(CONFIG_OVERRIDES_ENDPOINT);
-            String serializedOverrides = (String) responseEntity.get("overrides");
-            final ConfigOverrides computedOverrides = mapper.readValue(serializedOverrides, ConfigOverrides.class);
-            Assert.assertTrue(areEqual(overrides, computedOverrides));
-        } catch (Exception e) {
-            logger.error("Encountered exception: {}", e.getMessage(), e);
-            fail("Failed to retrieve or deserialize retrieved overrides");
-        }
+        WaitFor.waitFor(() -> {
+            try {
+                Map<String, Object> responseEntity = getAsMap(CONFIG_OVERRIDES_ENDPOINT);
+                String serializedOverrides = (String) responseEntity.get("overrides");
+                final ConfigOverrides computedOverrides = mapper.readValue(serializedOverrides, ConfigOverrides.class);
+                return areEqual(overrides, computedOverrides);
+            } catch (Exception e) {
+                logger.error("Encountered exception", e);
+                return false;
+            }
+        }, 2, TimeUnit.MINUTES);
     }
 
     @Test
@@ -69,7 +71,7 @@ public class ConfigOverridesIT extends PerformanceAnalyzerIntegTestBase {
             final Response response = client().performRequest(postRequest);
             Assert.assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
         } catch (Exception e) {
-            logger.error("Encountered exception: {}", e.getMessage(), e);
+            logger.error("Encountered exception:", e);
             fail("Failed to set overrides");
         }
 
@@ -83,7 +85,7 @@ public class ConfigOverridesIT extends PerformanceAnalyzerIntegTestBase {
                 final ConfigOverrides computedOverrides = mapper.readValue(serializedOverrides, ConfigOverrides.class);
                 return areEqual(initialOverrides, computedOverrides);
             } catch (Exception e) {
-                logger.error("Ran into: {}", e.getMessage(), e);
+                logger.error("Encountered exception", e);
                 return false;
             }
         }, 2, TimeUnit.MINUTES);
@@ -98,7 +100,7 @@ public class ConfigOverridesIT extends PerformanceAnalyzerIntegTestBase {
             final Response response = client().performRequest(postRequestAdjusted);
             assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
         } catch (Exception e) {
-            logger.error("Encountered exception: {}", e.getMessage(), e);
+            logger.error("Encountered exception", e);
             fail("Failed to set adjusted overrides");
         }
 
@@ -115,7 +117,7 @@ public class ConfigOverridesIT extends PerformanceAnalyzerIntegTestBase {
                 final ConfigOverrides computedOverrides = mapper.readValue(serializedOverrides, ConfigOverrides.class);
                 return areEqual(expectedOverrides, computedOverrides);
             } catch (Exception e) {
-                logger.error("Encountered exception: {}", e.getMessage(), e);
+                logger.error("Encountered exception", e);
             }
             return false;
         }, 2, TimeUnit.MINUTES);
