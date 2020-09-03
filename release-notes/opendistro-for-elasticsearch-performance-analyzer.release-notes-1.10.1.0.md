@@ -7,10 +7,6 @@ Supported Elasticsearch version 7.9.1
 * Add support for action configs ([#402](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/pull/402))
 * JVM decider ([#326](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/pull/326))
 
-### Enhancements
-
-### Bug fixes
-
 ### Documentation
 * Update INSTALL.md to include accurate security info ([#261](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/pull/261))
 
