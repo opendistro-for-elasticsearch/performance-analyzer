@@ -15,7 +15,7 @@ Supported Elasticsearch version 7.9.1
 * Update INSTALL.md to include accurate security info ([#261](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/pull/261))
 
 ### Maintenance
-* Build against elasticsearch 7.9.1 ([#196](https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/196))
+* Build against elasticsearch 7.9.1 ([#197](https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/197))
 
 ### Refactoring
 * Refactoring the persistence layer to be able to persist any Java Object ([#407](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/pull/407))
