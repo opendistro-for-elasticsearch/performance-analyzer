@@ -26,6 +26,7 @@ import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
 import org.elasticsearch.action.admin.indices.stats.ShardStats;
 import org.elasticsearch.index.shard.IndexShard;
+import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.NodeIndicesStats;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
@@ -42,23 +43,44 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * on the performance of the node.
  */
 
+/**
+ * currentShards: Contains the Mapping of the Shard ID to the Shard for the shards currently present on
+ * the cluster in this run of the collector.
+ * currentPerShardStats: Contains the mapping of the Shard Stats and the shards present in this run
+ * of the collector.
+ * prevPerShardStats: Contains the mapping of the Shard Stats and the shards present in the previous
+ * run of the collector.
+ * The diff is calculated between (currentPerShardStats and prevPerShardStats) for each shard in the
+ * currentShards and for shards not present in the prevPerShardStat absolute value of the
+ * currentPerShardStats is updated.
+ */
+
+
 @SuppressWarnings("unchecked")
 public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(
             NodeStatsAllShardsMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 2;
     private static final Logger LOG = LogManager.getLogger(NodeStatsAllShardsMetricsCollector.class);
-    private HashMap<String, IndexShard> currentShards;
+    private HashMap<ShardId, IndexShard> currentShards;
+    private HashMap<ShardId, ShardStats> currentPerShardStats;
+    private HashMap<ShardId, ShardStats> prevPerShardStats;
     private final PerformanceAnalyzerController controller;
 
 
     public NodeStatsAllShardsMetricsCollector(final PerformanceAnalyzerController controller) {
         super(SAMPLING_TIME_INTERVAL, "NodeStatsMetrics");
         currentShards = new HashMap<>();
+        prevPerShardStats = new HashMap<>();
+        currentPerShardStats = new HashMap<>();
         this.controller = controller;
     }
 
     private void populateCurrentShards() {
+        if (!currentShards.isEmpty()) {
+            prevPerShardStats.putAll(currentPerShardStats);
+            currentPerShardStats.clear();
+        }
         currentShards.clear();
         currentShards = Utils.getShards();
     }
@@ -100,25 +122,28 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
 
         try {
             populateCurrentShards();
-            // Metrics populated for all shards in every collection.
-            for (HashMap.Entry currentShard : currentShards.entrySet() ){
-                IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
-                IndexShardStats currentIndexShardStats = Utils.indexShardStats(indicesService,
-                        currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.QueryCache,
-                                CommonStatsFlags.Flag.FieldData,
-                                CommonStatsFlags.Flag.RequestCache));
-                for (ShardStats shardStats : currentIndexShardStats.getShards()) {
-                    StringBuilder value = new StringBuilder();
+            populatePerShardStats(indicesService);
 
-                    value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
-                    // Populate the result with cache specific metrics only.
-                    value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
-                            .append(new NodeStatsMetricsAllShardsPerCollectionStatus(shardStats).serialize());
-                    saveMetricValues(value.toString(), startTime, currentIndexShardStats.getShardId().getIndexName(),
-                            String.valueOf(currentIndexShardStats.getShardId().id()));
+            for (HashMap.Entry currentShard : currentPerShardStats.entrySet()) {
+                ShardId shardId = (ShardId) currentShard.getKey();
+                ShardStats currentShardStats = (ShardStats) currentShard.getValue();
+                if (prevPerShardStats.size() == 0) {
+                    // Populating value for the first run.
+                    populateMetricValue(currentShardStats, startTime, shardId.getIndexName(), shardId.id());
+                    continue;
                 }
+                ShardStats prevShardStats = prevPerShardStats.get(shardId);
+                if (prevShardStats == null) {
+                    // Populate value for shards which are new and were not present in the previous run.
+                    populateMetricValue(currentShardStats, startTime, shardId.getIndexName(), shardId.id());
+                    continue;
+                }
+                NodeStatsMetricsAllShardsPerCollectionStatus prevValue = new
+                        NodeStatsMetricsAllShardsPerCollectionStatus(prevShardStats);
+                NodeStatsMetricsAllShardsPerCollectionStatus currValue = new
+                        NodeStatsMetricsAllShardsPerCollectionStatus(currentShardStats);
+                populateDiffMetricValue(prevValue, currValue, startTime, shardId.getIndexName(), shardId.id());
             }
-
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting NodesStats Metrics: {} for startTime {} with ExceptionCode: {}",
                     () -> ex.toString(), () -> startTime, () -> StatExceptionCode.NODESTATS_COLLECTION_ERROR.toString());
@@ -131,6 +156,55 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         Field field = NodeIndicesStats.class.getDeclaredField("statsByShard");
         field.setAccessible(true);
         return field;
+    }
+
+    public void populatePerShardStats(IndicesService indicesService) {
+
+        //Populate the shard stats per shard.
+        for (HashMap.Entry currentShard : currentShards.entrySet() ){
+            IndexShard currentIndexShard = (IndexShard)currentShard.getValue();
+            IndexShardStats currentIndexShardStats = Utils.indexShardStats(indicesService,
+                    currentIndexShard, new CommonStatsFlags(CommonStatsFlags.Flag.QueryCache,
+                                                            CommonStatsFlags.Flag.FieldData,
+                                                            CommonStatsFlags.Flag.RequestCache));
+            for (ShardStats shardStats : currentIndexShardStats.getShards()) {
+                currentPerShardStats.put(currentIndexShardStats.getShardId(), shardStats);
+            }
+        }
+        return;
+    }
+
+    public void populateMetricValue(ShardStats shardStats, long startTime, String IndexName, int ShardId) {
+        StringBuilder value = new StringBuilder();
+        value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
+        // Populate the result with cache specific metrics only.
+        value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
+                .append(new NodeStatsMetricsAllShardsPerCollectionStatus(shardStats).serialize());
+        saveMetricValues(value.toString(), startTime, IndexName,
+                String.valueOf(ShardId));
+    }
+
+    public void populateDiffMetricValue(NodeStatsMetricsAllShardsPerCollectionStatus prevValue,
+                                        NodeStatsMetricsAllShardsPerCollectionStatus currValue,
+                                        long startTime, String IndexName, int ShardId) {
+        StringBuilder value = new StringBuilder();
+
+        NodeStatsMetricsAllShardsPerCollectionStatus nodeStatsMetrics = new NodeStatsMetricsAllShardsPerCollectionStatus(
+                Math.max((currValue.queryCacheHitCount - prevValue.queryCacheHitCount), 0),
+                Math.max((currValue.queryCacheMissCount - prevValue.queryCacheMissCount), 0),
+                Math.max((currValue.queryCacheInBytes - prevValue.queryCacheInBytes), 0),
+                Math.max((currValue.fieldDataEvictions - prevValue.fieldDataEvictions), 0),
+                Math.max((currValue.fieldDataInBytes - prevValue.fieldDataInBytes), 0),
+                Math.max((currValue.requestCacheHitCount - prevValue.requestCacheHitCount), 0),
+                Math.max((currValue.requestCacheMissCount - prevValue.requestCacheMissCount), 0),
+                Math.max((currValue.requestCacheEvictions - prevValue.requestCacheEvictions), 0),
+                Math.max((currValue.requestCacheInBytes - prevValue.requestCacheInBytes), 0));
+
+        value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
+                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
+                .append(nodeStatsMetrics.serialize());
+        saveMetricValues(value.toString(), startTime, IndexName,
+                String.valueOf(ShardId));
     }
 
     public class NodeStatsMetricsAllShardsPerCollectionStatus extends MetricStatus {
