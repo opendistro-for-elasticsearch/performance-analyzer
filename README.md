@@ -37,38 +37,40 @@ While the metrics api associated with performance analyzer provides the last 5 s
 In order to access the batch metrics api, first enable it using one of the following HTTP request:
 
 ```
-POST <endpoint>/_opendistro/performanceanalyzer/batch/config -H ‘Content-Type: application/json’ -d ‘{“enabled”: true}’
-POST <endpoint>/_opendistro/performanceanalyzer/batch/cluster/config -H ‘Content-Type: application/json’ -d ‘{“enabled”: true}’
+POST localhost:9200/_opendistro/performanceanalyzer/batch/config -H ‘Content-Type: application/json’ -d ‘{“enabled”: true}’
+POST localhost:9200/_opendistro/performanceanalyzer/batch/cluster/config -H ‘Content-Type: application/json’ -d ‘{“enabled”: true}’
 ```
 
-The former enables batch metrics on a single node, while the latter enables it across the entire cluster. Batch metrics can be disabled using analogous queries, but with `{“enabled”: false}`.
+The former enables batch metrics on a single node, while the latter enables it on nodes across the entire cluster. Batch metrics can be disabled using analogous queries with `{“enabled”: false}`.
 
-You can then query either the config or cluster config apis to see how many minutes worth of batch metrics data will be retained by the cluster (`batchMetricsRetentionPeriodMinutes`):
+You can then query either the config or cluster config apis to see how many minutes worth of batch metrics data will be retained by nodes in the cluster (`batchMetricsRetentionPeriodMinutes`):
 
 ```
-GET <endpoint>/_opendistro/_performanceanalyzer/config
+GET localhost:9200/_opendistro/_performanceanalyzer/config
 
 {"performanceAnalyzerEnabled":true,"rcaEnabled":false,"loggingEnabled":false,"shardsPerCollection":0,"batchMetricsEnabled":true,"batchMetricsRetentionPeriodMinutes":7}
 
-GET <endpoint>/_opendistro/_performanceanalyzer/cluster/config
+GET localhost:9200/_opendistro/_performanceanalyzer/cluster/config
 
 {"currentPerformanceAnalyzerClusterState":9,"shardsPerCollection":0,"batchMetricsRetentionPeriodMinutes":7}
 ```
 
-The default retention period for a cluster is 7 minutes, but the cluster owner can adjust this by setting `batch-metrics-retention-period-minutes` in performance-analyzer.properties. The value must be between 1 and 60 minutes (inclusive) — the range is capped like so in order to prevent excessive data retention on the cluster, which would eat up a lot of storage.
+The default retention period is 7 minutes, but the cluster owner can adjust this by setting `batch-metrics-retention-period-minutes` in performance-analyzer.properties. The value must be between 1 and 60 minutes (inclusive) — the range is capped like so in order to prevent excessive data retention on the cluster, which would eat up a lot of storage.
 
-You can then access batch metrics via HTTP requests to the following URI, along with a few parameters:
+You can then access the batch metrics available at each node via queries of the following format:
 
 ```
-GET <endpoint>/_opendistro/_performanceanalyzer/batch?metrics=<metrics>&starttime=<starttime>&endtime=<endtime>&samplingperiod=<samplingperiod>
+GET localhost:9600/_opendistro/_performanceanalyzer/batch?metrics=<metrics>&starttime=<starttime>&endtime=<endtime>&samplingperiod=<samplingperiod>
 ```
 
 * metrics - Comma separated list of metrics you are interested in. For a full list of metrics, see Metrics Reference.
-* starttime - Unix timestamp (difference between the current time and midnight, January 1, 1970 UTC) determining the oldest data point to return. starttime is inclusive — data points from at or after the starttime will be returned. Note, the starttime and endtime supplied by the user will both be rounded down to the nearest samplingperiod. starttime must be no less than `now - retention_period` and it must be less than the endtime (after the rounding).
-* endtime - Unix timestamp determining the freshest data point to return. endtime is exclusive — only datapoints from before the endtime will be returned. endtime must be no greater than the system time at the node, and it must be greater than the startime (after being rounded down to the nearest samplingperiod).
+* starttime - Unix timestamp (difference between the current time and midnight, January 1, 1970 UTC) in milliseconds determining the oldest data point to return. starttime is inclusive — data points from at or after the starttime will be returned. Note, the starttime and endtime supplied by the user will both be rounded down to the nearest samplingperiod. starttime must be no less than `now - retention_period` and it must be less than the endtime (after the rounding).
+* endtime - Unix timestamp in milliseconds determining the freshest data point to return. endtime is exclusive — only datapoints from before the endtime will be returned. endtime must be no greater than the system time at the node, and it must be greater than the startime (after being rounded down to the nearest samplingperiod).
 * samplingperiod - Optional parameter indicating the sampling period in seconds (default is 5s). The requested time range will be partitioned according to the sampling period, and data from the first available 5s interval in each partition will be returned to the user. Must be at least 5s, must be less than the retention period, and must be a multiple of 5.
 
 Note, the maximum number of datapoints that a single query can request for via API is capped at 100,800 datapoints. If a query exceeds this limit, an error is returned. The query parameters can be adjusted on such queries to request for fewer datapoints at a time.
+
+Note, unlike with the metrics api, there is no `nodes=all` parameter for the batch metrics api. You must query a specific node in order to obtain metrics from that node.
 
 Note, the default retention period is 7 minutes because a typical use-case would be to query for 5 minutes worth of data from the node. In order to do this, a client would actually select a starttime of now-6min and an endtime of now-1min (this one minute offset will give sufficient time for the metrics in the time range to be available at the node). Atop this 6 minutes of retention, we need an extra 1 minute of retention to account for the time that would have passed by the time the query arrives at the node, and for the fact that starttime and endtime will be rounded down to the nearest sampling-period.
 
