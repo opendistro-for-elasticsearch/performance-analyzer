@@ -75,7 +75,7 @@ Note, unlike with the metrics api, there is no `nodes=all` parameter for the bat
 Note, the default retention period is 7 minutes because a typical use-case would be to query for 5 minutes worth of data from the node. In order to do this, a client would actually select a starttime of now-6min and an endtime of now-1min (this one minute offset will give sufficient time for the metrics in the time range to be available at the node). Atop this 6 minutes of retention, we need an extra 1 minute of retention to account for the time that would have passed by the time the query arrives at the node, and for the fact that starttime and endtime will be rounded down to the nearest sampling-period.
 
 ### SAMPLE REQUEST
-GET `_opendistro/_performanceanalyzer/batch?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412650000&endtime=1594412665000&samplingperiod=5`
+GET `_opendistro/_performanceanalyzer/batch?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412250000&endtime=1594412260000&samplingperiod=5`
 
 See the [design doc](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/blob/master/docs/batch-metrics-api.md) for the expected response.
 
