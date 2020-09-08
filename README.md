@@ -68,7 +68,7 @@ GET localhost:9600/_opendistro/_performanceanalyzer/batch?metrics=<metrics>&star
 * endtime - Unix timestamp in milliseconds determining the freshest data point to return. endtime is exclusive — only datapoints from before the endtime will be returned. endtime must be no greater than the system time at the node, and it must be greater than the startime (after being rounded down to the nearest samplingperiod).
 * samplingperiod - Optional parameter indicating the sampling period in seconds (default is 5s). The requested time range will be partitioned according to the sampling period, and data from the first available 5s interval in each partition will be returned to the user. Must be at least 5s, must be less than the retention period, and must be a multiple of 5.
 
-Note, the maximum number of datapoints that a single query can request for via API is capped at 100,800 datapoints. If a query exceeds this limit, an error is returned. The query parameters can be adjusted on such queries to request for fewer datapoints at a time.
+Note, the maximum number of datapoints that a single query can request for via API is capped at 100,800 datapoints (in order to prevent excessive memory consumption by the datapoints). If a query exceeds this limit, an error is returned. The query parameters can be adjusted on such queries to request for fewer datapoints at a time.
 
 Note, unlike with the metrics api, there is no `nodes=all` parameter for the batch metrics api. You must query a specific node in order to obtain metrics from that node.
 
