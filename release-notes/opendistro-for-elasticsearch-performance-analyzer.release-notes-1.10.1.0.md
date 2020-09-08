@@ -43,7 +43,7 @@ Supported Elasticsearch version 7.9.1
 ### Documentation
 * Add release notes for 1.10 release ([#182](https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/182))
 * Update INSTALL.md to include accurate security info ([#261](https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca/pull/261))
-* Update release notes for 1.10.1 release ([#198](https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/198))
+* Update release notes for 1.10.1 release ([#200](https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/200))
 
 ### Maintenance
 * Build against elasticsearch 7.9 and resolve dependency conflicts ([#179](https://github.com/opendistro-for-elasticsearch/performance-analyzer/pull/179))
