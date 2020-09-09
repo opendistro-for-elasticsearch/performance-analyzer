@@ -19,6 +19,7 @@ public class PerformanceAnalyzerController {
     private static final String PERFORMANCE_ANALYZER_ENABLED_CONF = "performance_analyzer_enabled.conf";
     private static final String RCA_ENABLED_CONF = "rca_enabled.conf";
     private static final String LOGGING_ENABLED_CONF = "logging_enabled.conf";
+    // This file should contain "true" or "false", indicating whether batch metrics is currently enabled or not.
     private static final String BATCH_METRICS_ENABLED_CONF = "batch_metrics_enabled.conf";
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerController.class);
     public static final int DEFAULT_NUM_OF_SHARDS_PER_COLLECTION = 0;
@@ -28,10 +29,10 @@ public class PerformanceAnalyzerController {
     private boolean loggingEnabled;
     private boolean batchMetricsEnabled;
     private volatile int shardsPerCollection;
-    private boolean paEnabledDefaultValue = false;
-    private boolean rcaEnabledDefaultValue = false;
-    private boolean loggingEnabledDefaultValue = false;
-    private boolean batchMetricsEnabledDefaultValue = false;
+    private static final boolean paEnabledDefaultValue = false;
+    private static final boolean rcaEnabledDefaultValue = false;
+    private static final boolean loggingEnabledDefaultValue = false;
+    private static final boolean batchMetricsEnabledDefaultValue = false;
     private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
 
     public PerformanceAnalyzerController(final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor) {
