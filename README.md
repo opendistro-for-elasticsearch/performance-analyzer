@@ -55,7 +55,7 @@ GET localhost:9200/_opendistro/_performanceanalyzer/cluster/config
 {"currentPerformanceAnalyzerClusterState":9,"shardsPerCollection":0,"batchMetricsRetentionPeriodMinutes":7}
 ```
 
-The default retention period is 7 minutes, but the cluster owner can adjust this by setting `batch-metrics-retention-period-minutes` in performance-analyzer.properties. The value must be between 1 and 60 minutes (inclusive) — the range is capped like so in order to prevent excessive data retention on the cluster, which would eat up a lot of storage.
+The default retention period is 7 minutes. However, the cluster owner can adjust this by setting `batch-metrics-retention-period-minutes` in performance-analyzer.properties (note, setting this value will require a restart so that the cluster can read the new value upon startup). The value must be between 1 and 60 minutes (inclusive) — the range is capped like so in order to prevent excessive data retention on the cluster, which would eat up a lot of storage.
 
 You can then access the batch metrics available at each node via queries of the following format:
 
