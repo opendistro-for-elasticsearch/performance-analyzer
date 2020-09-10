@@ -71,7 +71,6 @@ ext {
 }
 test {
     enabled = true
-    include '**/*Test.class'
 }
 
 licenseHeaders.enabled = false
