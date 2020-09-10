@@ -14,6 +14,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     private static final int RCA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal();
     private static final int PA_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.PA_BIT.ordinal();
     private static final int LOGGING_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.LOGGING_BIT.ordinal();
+    private static final int BATCH_METRICS_ENABLED_BIT_POS = PerformanceAnalyzerFeatureBits.BATCH_METRICS_BIT.ordinal();
 
     private final PerformanceAnalyzerController controller;
     private final ClusterSettingsManager clusterSettingsManager;
@@ -24,11 +25,11 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
                                                      final ClusterSettingsManager clusterSettingsManager) {
         this.controller = controller;
         this.clusterSettingsManager = clusterSettingsManager;
-        this.currentClusterSetting =
-            initializeClusterSettingValue(
+        this.currentClusterSetting = initializeClusterSettingValue(
                 controller.isPerformanceAnalyzerEnabled(),
                 controller.isRcaEnabled(),
-                controller.isLoggingEnabled());
+                controller.isLoggingEnabled(),
+                controller.isBatchMetricsEnabled());
     }
 
     /**
@@ -62,6 +63,16 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     }
 
     /**
+     * Updates the Batch Metrics setting across the cluster.
+     *
+     * @param state The desired state for batch metrics.
+     */
+    public void updateBatchMetricsSetting(final boolean state) {
+        final Integer settingIntValue = getBatchMetricsSettingValueFromState(state);
+        clusterSettingsManager.updateSetting(COMPOSITE_PA_SETTING, settingIntValue);
+    }
+
+    /**
      * Handler that gets called when there is a new value for the setting that this listener
      * is listening to.
      *
@@ -74,6 +85,7 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
             controller.updatePerformanceAnalyzerState(getPAStateFromSetting(newSettingValue));
             controller.updateRcaState(getRcaStateFromSetting(newSettingValue));
             controller.updateLoggingState(getLoggingStateFromSetting(newSettingValue));
+            controller.updateBatchMetricsState(getBatchMetricsStateFromSetting(newSettingValue));
         }
     }
 
@@ -95,13 +107,15 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
     * @return the cluster setting value
     */
     private Integer initializeClusterSettingValue(
-            final boolean paEnabled, final boolean rcaEnabled, final boolean loggingEnabled) {
+            final boolean paEnabled, final boolean rcaEnabled, final boolean loggingEnabled,
+            final boolean batchMetricsEnabled) {
         int clusterSetting = CLUSTER_SETTING_DISABLED_VALUE;
 
         clusterSetting = paEnabled ? setBit(clusterSetting, PA_ENABLED_BIT_POS) : clusterSetting;
         if (paEnabled) {
             clusterSetting = rcaEnabled ? setBit(clusterSetting, RCA_ENABLED_BIT_POS) : clusterSetting;
             clusterSetting = loggingEnabled ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
+            clusterSetting = batchMetricsEnabled ? setBit(clusterSetting, BATCH_METRICS_ENABLED_BIT_POS) : clusterSetting;
         }
         return clusterSetting;
     }
@@ -118,10 +132,10 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
 
     /**
      * Converts the boolean PA state to composite cluster setting.
-     * If Performance Analyzer is being turned off, it will also turn RCA off.
+     * If Performance Analyzer is being turned off, it will also turn off RCA, logging, and batch metrics.
      *
      * @param state the state of performance analyzer. Will enable performance analyzer if true,
-     *              disables both RCA and performance analyzer if false.
+     *              disables performance analyzer, RCA, logging, and batch metrics.
      * @return composite cluster setting as an integer.
      */
     private Integer getPASettingValueFromState(final boolean state) {
@@ -130,7 +144,8 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
         if (state) {
             return setBit(clusterSetting, PA_ENABLED_BIT_POS);
         } else {
-            return resetBit(resetBit(resetBit(clusterSetting, PA_ENABLED_BIT_POS), RCA_ENABLED_BIT_POS), LOGGING_ENABLED_BIT_POS);
+            return resetBit(resetBit(resetBit(resetBit(clusterSetting, PA_ENABLED_BIT_POS), RCA_ENABLED_BIT_POS),
+                    LOGGING_ENABLED_BIT_POS), BATCH_METRICS_ENABLED_BIT_POS);
         }
     }
 
@@ -152,6 +167,16 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
      */
     private boolean getLoggingStateFromSetting(final int settingValue) {
         return ((settingValue >> LOGGING_ENABLED_BIT_POS) & BIT_ONE) == ENABLED_VALUE;
+    }
+
+    /**
+     * Extracts the boolean value for batch metrics state from the cluster setting.
+     *
+     * @param settingValue The composite setting value.
+     * @return true if the BATCH_METRICS bit is set, false otherwise.
+     */
+    private boolean getBatchMetricsStateFromSetting(final int settingValue) {
+        return ((settingValue >> BATCH_METRICS_ENABLED_BIT_POS) & BIT_ONE) == ENABLED_VALUE;
     }
 
     /**
@@ -187,6 +212,24 @@ public class PerformanceAnalyzerClusterSettingHandler implements ClusterSettingL
                 ? setBit(clusterSetting, LOGGING_ENABLED_BIT_POS) : clusterSetting;
         } else {
             return resetBit(clusterSetting, LOGGING_ENABLED_BIT_POS);
+        }
+    }
+
+    /**
+     * Converts the boolean batch metrics state to composite cluster setting.
+     * Enables batch metrics only if performance analyzer is also set. Otherwise, results in a no-op.
+     *
+     * @param shouldEnable the state of batch metrics. Will try to enable if true, disables batch metrics if false.
+     * @return composite cluster setting as an integer.
+     */
+    private Integer getBatchMetricsSettingValueFromState(final boolean shouldEnable) {
+        int clusterSetting = currentClusterSetting;
+
+        if (shouldEnable) {
+            return checkBit(currentClusterSetting, PA_ENABLED_BIT_POS)
+                    ? setBit(clusterSetting, BATCH_METRICS_ENABLED_BIT_POS) : clusterSetting;
+        } else {
+            return resetBit(clusterSetting, BATCH_METRICS_ENABLED_BIT_POS);
         }
     }
 

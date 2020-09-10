@@ -120,6 +120,20 @@ public class PerformanceAnalyzerResourceProviderTest {
   }
 
 
+  private void assertAgentUriWithBatchRedirection(final String protocolScheme) throws IOException {
+    initPerformanceAnalyzerResourceProvider(protocolScheme.equals("https://"));
+
+    String requestUri = protocolScheme + "localhost:9200/_opendistro/_performanceanalyzer/_agent/batch" +
+            "?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412650000&endtime=1594412665000&samplingperiod=5";
+    String expectedResponseUri = protocolScheme + "localhost:9650/_opendistro/_performanceanalyzer/batch" +
+            "?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412650000&endtime=1594412665000&samplingperiod=5";
+
+    RestRequest restRequest = generateRestRequest(requestUri, "batch");
+    URL actualResponseURI = performanceAnalyzerRp.getAgentUri(restRequest);
+    assertEquals(new URL(expectedResponseUri), actualResponseURI);
+  }
+
+
   @Test
   public void testGetAgentUri_WithHttp_WithMetricRedirection() throws Exception {
     assertAgentUriWithMetricsRedirection("http://");
@@ -138,6 +152,16 @@ public class PerformanceAnalyzerResourceProviderTest {
   @Test
   public void testGetAgentUri_WithHttps_WithRcaRedirection() throws Exception {
     assertAgentUriWithRcaRedirection("https://");
+  }
+
+  @Test
+  public void testGetAgentUri_WithHttp_WithBatchRedirection() throws Exception {
+    assertAgentUriWithBatchRedirection("http://");
+  }
+
+  @Test
+  public void testGetAgentUri_WithHttps_WithBatchRedirection() throws Exception {
+    assertAgentUriWithBatchRedirection("https://");
   }
 
   @Test
