@@ -37,11 +37,11 @@ While the metrics api associated with performance analyzer provides the last 5 s
 In order to access the batch metrics api, first enable it using one of the following HTTP request:
 
 ```
-POST localhost:9200/_opendistro/performanceanalyzer/batch/config -H ‘Content-Type: application/json’ -d ‘{“enabled”: true}’
-POST localhost:9200/_opendistro/performanceanalyzer/batch/cluster/config -H ‘Content-Type: application/json’ -d ‘{“enabled”: true}’
+POST localhost:9200/_opendistro/performanceanalyzer/batch/config -H ‘Content-Type: application/json’ -d ‘{"enabled": true}’
+POST localhost:9200/_opendistro/performanceanalyzer/batch/cluster/config -H ‘Content-Type: application/json’ -d ‘{"enabled": true}’
 ```
 
-The former enables batch metrics on a single node, while the latter enables it on nodes across the entire cluster. Batch metrics can be disabled using analogous queries with `{“enabled”: false}`.
+The former enables batch metrics on a single node, while the latter enables it on nodes across the entire cluster. Batch metrics can be disabled using analogous queries with `{"enabled": false}`.
 
 You can then query either the config or cluster config apis to see how many minutes worth of batch metrics data will be retained by nodes in the cluster (`batchMetricsRetentionPeriodMinutes`):
 

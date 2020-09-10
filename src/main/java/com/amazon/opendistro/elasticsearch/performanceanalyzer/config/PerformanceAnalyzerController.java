@@ -216,11 +216,12 @@ public class PerformanceAnalyzerController {
             boolean batchMetricsEnabledFromConf;
             try {
                 batchMetricsEnabledFromConf = readBooleanFromFile(filePath);
+            } catch (NoSuchFileException e) {
+                LOG.debug("Error reading Performance Analyzer state from Conf file", e);
+                saveStateToConf(batchMetricsEnabledDefaultValue, BATCH_METRICS_ENABLED_CONF);
+                batchMetricsEnabledFromConf = batchMetricsEnabledDefaultValue;
             } catch (Exception e) {
                 LOG.debug("Error reading Performance Analyzer state from Conf file", e);
-                if (e instanceof NoSuchFileException) {
-                    saveStateToConf(batchMetricsEnabledDefaultValue, BATCH_METRICS_ENABLED_CONF);
-                }
                 batchMetricsEnabledFromConf = batchMetricsEnabledDefaultValue;
             }
 
