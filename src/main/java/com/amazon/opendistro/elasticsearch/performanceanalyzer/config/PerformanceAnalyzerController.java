@@ -30,7 +30,7 @@ public class PerformanceAnalyzerController {
     private boolean batchMetricsEnabled;
     private volatile int shardsPerCollection;
     private static final boolean paEnabledDefaultValue = false;
-    private static final boolean rcaEnabledDefaultValue = false;
+    private static final boolean rcaEnabledDefaultValue = true;
     private static final boolean loggingEnabledDefaultValue = false;
     private static final boolean batchMetricsEnabledDefaultValue = false;
     private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
