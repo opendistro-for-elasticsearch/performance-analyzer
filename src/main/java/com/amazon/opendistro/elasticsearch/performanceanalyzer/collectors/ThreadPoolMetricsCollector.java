@@ -86,8 +86,8 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) threadPool.executor(threadPoolName);
                     Object queue = threadPoolExecutor.getQueue();
                     // TODO: we might want to read the capacity of SifiResizableBlockingQueue in the future.
-                    // But that requires a new PerformanceAnalyzerLibrary to be created which contains all
-                    // ES specific changes
+                    // In order to do that we can create a new PerformanceAnalyzerLibrary package and push
+                    // all the code which depends on core ES specific changes into that library.
                     if (queue instanceof SizeBlockingQueue) {
                         return ((SizeBlockingQueue)queue).capacity();
                     }
