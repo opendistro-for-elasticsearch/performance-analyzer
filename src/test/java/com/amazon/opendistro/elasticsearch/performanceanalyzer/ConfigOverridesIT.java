@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 public class ConfigOverridesIT extends PerformanceAnalyzerIntegTestBase {
     private static final String CONFIG_OVERRIDES_ENDPOINT = PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/override/cluster/config";
-    private static final String METHOD_GET = "GET";
-    private static final String METHOD_POST = "POST";
 
     private static final List<String> EMPTY_LIST = Collections.emptyList();
     public static final String HOT_SHARD_RCA = "HotShardRca";

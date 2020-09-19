@@ -48,6 +48,8 @@ public abstract class PerformanceAnalyzerIntegTestBase extends ESRestTestCase {
     // TODO this must be initialized at construction time to avoid NPEs, we should find a way for subclasses to override this
     protected ITConfig config = new ITConfig();
     protected static RestClient paClient;
+    protected static final String METHOD_GET = "GET";
+    protected static final String METHOD_POST = "POST";
 
     // Don't wipe the cluster after test completion
     @Override
@@ -230,7 +232,6 @@ public abstract class PerformanceAnalyzerIntegTestBase extends ESRestTestCase {
         ESRestTestCase.closeClients();
         paClient.close();
         LOG.debug("AfterClass has run");
-        cleanUpCluster();
     }
 
     protected static class TestUtils {
