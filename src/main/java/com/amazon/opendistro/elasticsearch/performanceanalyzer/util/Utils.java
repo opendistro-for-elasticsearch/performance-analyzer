@@ -17,6 +17,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.util;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
@@ -51,7 +52,7 @@ public class Utils {
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsFixedShardsMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, cdefault);
-        
+        MetricsConfiguration.CONFIG_MAP.put(ShardStatsCollector.class, cdefault);
     }
 
     // These methods are utility functions for the Node Stat Metrics Collectors. These methods are used by both the all
