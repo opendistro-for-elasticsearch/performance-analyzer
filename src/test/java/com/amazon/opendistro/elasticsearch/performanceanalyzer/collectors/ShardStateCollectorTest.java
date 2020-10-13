@@ -4,13 +4,11 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLoca
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Ignore
 public class ShardStateCollectorTest extends CustomMetricsLocationTestBase {
 
     @Test
@@ -34,3 +32,4 @@ public class ShardStateCollectorTest extends CustomMetricsLocationTestBase {
         }
     }
 }
+

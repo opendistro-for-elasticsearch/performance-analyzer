@@ -196,10 +196,10 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 NodeStatsFixedShardsMetricsCollector(performanceAnalyzerController));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector());
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();

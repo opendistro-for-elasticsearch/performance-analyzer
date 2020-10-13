@@ -9,9 +9,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.routing.ShardRouting;
 import org.elasticsearch.cluster.routing.ShardRoutingState;
 import org.jooq.tools.StringUtils;
+import org.jooq.tools.json.JSONObject;
+
+import java.util.List;
 
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics.SHARD_PRIMARY;
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics.SHARD_REPLICA;
@@ -33,34 +37,51 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
             return;
         }
         ClusterState clusterState = ESResources.INSTANCE.getClusterService().state();
-
+        boolean inActiveShard = false;
         try {
             value.setLength(0);
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
-                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-            for(ShardRouting shard : clusterState.routingTable().allShards()) {
-                String nodeName = StringUtils.EMPTY;
-                if (shard.assignedToNode()) {
-                    nodeName = clusterState.nodes().get(shard.currentNodeId()).getName();
+            .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+            RoutingTable routingTable = clusterState.routingTable();
+            String[] indices = routingTable.indicesRouting().keys().toArray(String.class);
+            for (String index : indices) {
+                List<ShardRouting> allShardsIndex = routingTable.allShards(index);
+                value.append(createJsonObject(AllMetrics.ShardStateDimension.INDEX_NAME.toString(), index));
+                for (ShardRouting shard :allShardsIndex) {
+                    String nodeName = StringUtils.EMPTY;
+                    if (shard.assignedToNode()) {
+                        nodeName = clusterState.nodes().get(shard.currentNodeId()).getName();
+                    }
+                    if (shard.state() != ShardRoutingState.STARTED) {
+                        inActiveShard = true;
+                        value
+                                .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
+                                .append(new ShardStateMetrics(
+                                        shard.getId(),
+                                        shard.primary() ? SHARD_PRIMARY : SHARD_REPLICA,
+                                        nodeName,
+                                        shard.state().name())
+                                        .serialize());
+
+                    }
                 }
-                value
-                        .append(new ShardStateMetrics(
-                                shard.getIndexName(),
-                                shard.getId(),
-                                shard.primary()?SHARD_PRIMARY:SHARD_REPLICA,
-                                nodeName,
-                                shard.state() == ShardRoutingState.STARTED?1:0,
-                                shard.state() == ShardRoutingState.INITIALIZING?1:0,
-                                shard.state() == ShardRoutingState.UNASSIGNED?1:0)
-                                .serialize())
-                        .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
             }
-            saveMetricValues(value.toString(), startTime);
+            value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+            if(inActiveShard) {
+                saveMetricValues(value.toString(), startTime);
+            }
 
         } catch (Exception ex) {
             LOG.debug("Exception in Collecting Shard Metrics: {} for startTime {}", () -> ex.toString(),
                     () -> startTime);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private String createJsonObject(String key, String value) {
+        JSONObject json = new JSONObject();
+        json.put(key,value);
+        return json.toString();
     }
 
     @Override
@@ -74,28 +95,16 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
 
     public static class ShardStateMetrics extends MetricStatus {
 
-        private final String indexName;
         private final int shardId;
         private final String shardType;
         private final String nodeName;
-        private final int activeShardState;
-        private final int initializingShardState;
-        private final int unassignedShardState;
+        private final String shardState;
 
-        public ShardStateMetrics(String indexName, int shardId, String shardType, String nodeName, int activeShardState,
-                               int initializingShardState, int unassignedShardState) {
-            this.indexName = indexName;
+        public ShardStateMetrics(int shardId, String shardType, String nodeName, String shardState) {
             this.shardId = shardId;
             this.shardType = shardType;
             this.nodeName = nodeName;
-            this.activeShardState = activeShardState;
-            this.initializingShardState = initializingShardState;
-            this.unassignedShardState = unassignedShardState;
-        }
-
-        @JsonProperty(AllMetrics.CommonDimension.Constants.INDEX_NAME_VALUE)
-        public String getIndexName() {
-            return indexName;
+            this.shardState = shardState;
         }
 
         @JsonProperty(AllMetrics.CommonDimension.Constants.SHARDID_VALUE)
@@ -113,19 +122,9 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
             return nodeName;
         }
 
-        @JsonProperty(AllMetrics.ShardStateValue.Constants.SHARD_STATE_ACTIVE)
-        public int getActiveShardState() {
-            return activeShardState;
-        }
-
-        @JsonProperty(AllMetrics.ShardStateValue.Constants.SHARD_STATE_INITIALIZING)
-        public int getInitializingShardState() {
-            return initializingShardState;
-        }
-
-        @JsonProperty(AllMetrics.ShardStateValue.Constants.SHARD_STATE_UNASSIGNED)
-        public int getUnassignedShardState() {
-            return unassignedShardState;
+        @JsonProperty(AllMetrics.ShardStateValue.Constants.SHARD_STATE)
+        public String getShardState() {
+            return shardState;
         }
     }
 
