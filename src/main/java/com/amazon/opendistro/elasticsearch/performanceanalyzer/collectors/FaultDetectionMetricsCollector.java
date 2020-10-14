@@ -11,9 +11,7 @@ import org.jooq.tools.StringUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 
@@ -49,42 +47,6 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
         }
 
         try {
-            ClusterFaultDetectionStatsHandler h = new ClusterFaultDetectionStatsHandler();
-            Map<String, String> preFollowerCheckAttributes1 = new HashMap<String, String>();
-            preFollowerCheckAttributes1.put("sourceNodeId", "c765a93a762cd59dda8d3379b09a752a");
-            preFollowerCheckAttributes1.put("targetNodeId", "b2a5a93a762cd59dda8d3379b09a752a");
-            preFollowerCheckAttributes1.put("startTime", "1566413973072");
-            preFollowerCheckAttributes1.put("type", "follower_check");
-            preFollowerCheckAttributes1.put("threadId", "6544");
-
-            Map<String, String> preFollowerCheckAttributes2 = new HashMap<String, String>();
-            preFollowerCheckAttributes2.put("sourceNodeId", "g52i9a93a762cd59dda8d3379b09a752a");
-            preFollowerCheckAttributes2.put("targetNodeId", "b2a5a93a762cd59dda8d3379b09a752a");
-            preFollowerCheckAttributes2.put("startTime", "1566413973072");
-            preFollowerCheckAttributes2.put("type", "follower_check");
-            preFollowerCheckAttributes2.put("threadId", "7627");
-
-            Map<String, String> postFollowerCheckAttributes1 = new HashMap<String, String>();
-            postFollowerCheckAttributes1.put("sourceNodeId", "g52i9a93a762cd59dda8d3379b09a752a");
-            postFollowerCheckAttributes1.put("targetNodeId", "b2a5a93a762cd59dda8d3379b09a752a");
-            postFollowerCheckAttributes1.put("finishTime", "1566413986732");
-            postFollowerCheckAttributes1.put("type", "follower_check");
-            postFollowerCheckAttributes1.put("threadId", "7627");
-            postFollowerCheckAttributes1.put("error", "1");
-
-            Map<String, String> postFollowerCheckAttributes2 = new HashMap<String, String>();
-            postFollowerCheckAttributes2.put("sourceNodeId", "c765a93a762cd59dda8d3379b09a752a");
-            postFollowerCheckAttributes2.put("targetNodeId", "b2a5a93a762cd59dda8d3379b09a752a");
-            postFollowerCheckAttributes2.put("finishTime", "1566413987986");
-            postFollowerCheckAttributes2.put("type", "follower_check");
-            postFollowerCheckAttributes2.put("threadId", "6544");
-            postFollowerCheckAttributes2.put("error", "0");
-
-            h.publishStats(preFollowerCheckAttributes1);
-            h.publishStats(postFollowerCheckAttributes1);
-            h.publishStats(preFollowerCheckAttributes2);
-            h.publishStats(postFollowerCheckAttributes2);
-
             BlockingQueue<String> metricQueue = (BlockingQueue<String>)
                     getFaultDetectionHandlerMetricsQueue(faultDetectionHandler).get(null);
             List<String> metrics = new ArrayList<>();
