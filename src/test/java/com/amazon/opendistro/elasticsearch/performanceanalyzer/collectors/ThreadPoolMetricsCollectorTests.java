@@ -23,10 +23,15 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Thread
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
@@ -37,6 +42,7 @@ import org.mockito.Mockito;
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     private ThreadPoolMetricsCollector threadPoolMetricsCollector;
+    protected final Logger logger = LogManager.getLogger(getClass());
 
     @Mock
     private ThreadPool mockThreadPool;
@@ -126,6 +132,12 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
 
     private ThreadPoolStatus readMetrics() throws IOException {
         List<Event> metrics = readEvents();
+        try {
+            WaitFor.waitFor(() -> metrics.size() == 1, 5,
+                    TimeUnit.SECONDS);
+        } catch (Exception e) {
+            logger.error("Encountered exception", e);
+        }
         assert metrics.size() == 1;
         ObjectMapper objectMapper = new ObjectMapper();
         String[] jsonStrs = metrics.get(0).value.split("\n");
