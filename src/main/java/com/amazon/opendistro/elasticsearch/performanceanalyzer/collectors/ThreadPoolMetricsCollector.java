@@ -21,19 +21,23 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.annotations.VisibleForTesting;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.common.util.concurrent.SizeBlockingQueue;
+import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats.Stats;
 
 public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
+    private static final Logger LOG = LogManager.getLogger(ThreadPoolMetricsCollector.class);
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ThreadPoolMetricsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 0;
     private StringBuilder value;
@@ -75,33 +79,27 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             }
             statsRecordMap.put(threadPoolName, new ThreadPoolStatsRecord(startTime, stats.getRejected()));
             final long finalRejectionDelta = rejectionDelta;
-            ThreadPoolStatus threadPoolStatus = AccessController.doPrivileged((PrivilegedAction<ThreadPoolStatus>) () -> {
-                Integer capacity;
-                Double latency;
-                //This is for backward compatibility. core ES may or may not emit latency metric
-                // (depending on whether the patch has been applied or not)
-                // so we need to use reflection to check whether getCapacity() method exist in ThreadPoolStats.java.
+            final int capacity = AccessController.doPrivileged((PrivilegedAction<Integer>) () -> {
                 try {
-                    // call stats.getCapacity()
-                    Method getCapacityMethod = Stats.class.getMethod("getCapacity");
-                    capacity = (Integer) getCapacityMethod.invoke(stats);
-                }
-                catch (Exception e) {
-                    //core ES does not have the latency patch. send the threadpool metrics without adding latency.
-                    capacity = null;
-                }
-                try {
-                    // call stats.getLatency()
-                    Method getLantencyMethod = Stats.class.getMethod("getLatency");
-                    latency = (Double) getLantencyMethod.invoke(stats);
+                    ThreadPool threadPool = (ThreadPool) FieldUtils.readField(
+                        ESResources.INSTANCE.getIndicesService(), "threadPool", true);
+                    ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) threadPool.executor(threadPoolName);
+                    Object queue = threadPoolExecutor.getQueue();
+                    // TODO: we might want to read the capacity of SifiResizableBlockingQueue in the future.
+                    // In order to do that we can create a new PerformanceAnalyzerLibrary package and push
+                    // all the code which depends on core ES specific changes into that library.
+                    if (queue instanceof SizeBlockingQueue) {
+                        return ((SizeBlockingQueue)queue).capacity();
+                    }
                 } catch (Exception e) {
-                    latency = null;
+                    LOG.warn("Fail to read queue capacity via reflection");
                 }
-                return new ThreadPoolStatus(stats.getName(),
-                    stats.getQueue(), finalRejectionDelta,
-                    stats.getThreads(), stats.getActive(),
-                    latency, capacity);
+                return -1;
             });
+            ThreadPoolStatus threadPoolStatus = new ThreadPoolStatus(stats.getName(),
+                stats.getQueue(), finalRejectionDelta,
+                stats.getThreads(), stats.getActive(),
+                -1.0, capacity);
             value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                     .append(threadPoolStatus.serialize());
         }
@@ -142,32 +140,16 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         public final long rejected;
         public final int threadsCount;
         public final int threadsActive;
-        @JsonInclude(Include.NON_NULL)
-        public final Double queueLatency;
-        @JsonInclude(Include.NON_NULL)
-        public final Integer queueCapacity;
-
-          public ThreadPoolStatus(String type,
-            int queueSize,
-            long rejected,
-            int threadsCount,
-            int threadsActive) {
-            this.type = type;
-            this.queueSize = queueSize;
-            this.rejected = rejected;
-            this.threadsCount = threadsCount;
-            this.threadsActive = threadsActive;
-            this.queueLatency = null;
-            this.queueCapacity = null;
-        }
+        public final double queueLatency;
+        public final int queueCapacity;
 
         public ThreadPoolStatus(String type,
             int queueSize,
             long rejected,
             int threadsCount,
             int threadsActive,
-            Double queueLatency,
-            Integer queueCapacity) {
+            double queueLatency,
+            int queueCapacity) {
             this.type = type;
             this.queueSize = queueSize;
             this.rejected = rejected;
@@ -186,8 +168,8 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             this.rejected = -1;
             this.threadsCount = -1;
             this.threadsActive = -1;
-            this.queueLatency = null;
-            this.queueCapacity = null;
+            this.queueLatency = -1.0;
+            this.queueCapacity = -1;
         }
 
         @JsonProperty(ThreadPoolDimension.Constants.TYPE_VALUE)
@@ -216,12 +198,12 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
         }
 
         @JsonProperty(ThreadPoolValue.Constants.QUEUE_LATENCY_VALUE)
-        public Double getQueueLatency() {
+        public double getQueueLatency() {
             return queueLatency;
         }
 
         @JsonProperty(ThreadPoolValue.Constants.QUEUE_CAPACITY_VALUE)
-        public Integer getQueueCapacity() {
+        public int getQueueCapacity() {
             return queueCapacity;
         }
     }
