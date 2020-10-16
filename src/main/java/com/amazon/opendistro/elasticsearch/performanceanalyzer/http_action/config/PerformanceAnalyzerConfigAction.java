@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.rest.BaseRestHandler;
@@ -80,8 +79,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
     }
 
     @Inject
-    public PerformanceAnalyzerConfigAction(final Settings settings,
-                                           final RestController controller,
+    public PerformanceAnalyzerConfigAction(final RestController controller,
                                            final PerformanceAnalyzerController performanceAnalyzerController) {
         this.performanceAnalyzerController = performanceAnalyzerController;
         LOG.info("PerformanceAnalyzer Enabled: {}", performanceAnalyzerController::isPerformanceAnalyzerEnabled);
