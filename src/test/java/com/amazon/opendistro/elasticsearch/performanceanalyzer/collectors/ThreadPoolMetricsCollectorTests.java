@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+@Ignore
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     private ThreadPoolMetricsCollector threadPoolMetricsCollector;
@@ -74,7 +75,6 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         }
     }
 
-    @Ignore
     @Test
     public void testCollectMetrics() throws IOException {
         long startTimeInMills = 1453724339;
