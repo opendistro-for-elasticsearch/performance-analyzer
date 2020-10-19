@@ -22,7 +22,7 @@ public class MasterThrottlingMetricsCollector extends PerformanceAnalyzerMetrics
             "org.elasticsearch.action.support.master.MasterThrottlingRetryListener";
     private static final String THROTTLED_PENDING_TASK_COUNT_METHOD_NAME = "numberOfThrottledPendingTasks";
     private static final String RETRYING_TASK_COUNT_METHOD_NAME = "getRetryingTasksCount";
-    private StringBuilder value;
+    private final StringBuilder value;
 
     public MasterThrottlingMetricsCollector() {
         super(SAMPLING_TIME_INTERVAL, "MasterThrottlingMetricsCollector");
@@ -37,7 +37,7 @@ public class MasterThrottlingMetricsCollector extends PerformanceAnalyzerMetrics
                 return;
             }
             if(!isMasterThrottlingFeatureAvailable()) {
-                LOG.error("master throttling is not available");
+                LOG.debug("Master Throttling Feature is not available for this domain");
                 return;
             }
 
@@ -56,16 +56,10 @@ public class MasterThrottlingMetricsCollector extends PerformanceAnalyzerMetrics
     }
 
     private boolean isMasterThrottlingFeatureAvailable() {
-        Class throttlingRetryListener = null;
-        Method getThrottledTasksCount = null;
         try {
-            throttlingRetryListener = Class.forName(MASTER_THROTTLING_RETRY_LISTENER_PATH);
-            getThrottledTasksCount = MasterService.class.getMethod(THROTTLED_PENDING_TASK_COUNT_METHOD_NAME);
+            Class.forName(MASTER_THROTTLING_RETRY_LISTENER_PATH);
+            MasterService.class.getMethod(THROTTLED_PENDING_TASK_COUNT_METHOD_NAME);
         } catch (ClassNotFoundException | NoSuchMethodException e) {
-            return false;
-        }
-
-        if(throttlingRetryListener == null || getThrottledTasksCount == null){
             return false;
         }
         return true;
