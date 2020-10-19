@@ -1,10 +1,13 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,6 +36,7 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
 
     @Override
     void collectMetrics( long startTime) {
+        long mCurrT = System.currentTimeMillis();
         if (ESResources.INSTANCE.getClusterService() == null) {
             return;
         }
@@ -70,8 +74,12 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
             if(inActiveShard) {
                 saveMetricValues(value.toString(), startTime);
             }
-
+            PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
+                    WriterMetrics.SHARD_STATE_COLLECTOR_EXECUTION_TIME, "",
+                    System.currentTimeMillis() - mCurrT);
         } catch (Exception ex) {
+            PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
+                    ExceptionsAndErrors.SHARD_STATE_COLLECTOR_ERROR, "", 1);
             LOG.debug("Exception in Collecting Shard Metrics: {} for startTime {}", () -> ex.toString(),
                     () -> startTime);
         }
