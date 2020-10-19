@@ -74,7 +74,7 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
             if(inActiveShard) {
                 saveMetricValues(value.toString(), startTime);
             }
-            PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
+            PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.SHARD_STATE_COLLECTOR_EXECUTION_TIME, "",
                     System.currentTimeMillis() - mCurrT);
         } catch (Exception ex) {
