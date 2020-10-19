@@ -30,10 +30,12 @@ import java.util.List;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+@Ignore
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     private ThreadPoolMetricsCollector threadPoolMetricsCollector;
