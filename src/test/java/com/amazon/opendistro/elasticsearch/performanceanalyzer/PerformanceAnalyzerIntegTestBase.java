@@ -4,11 +4,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.Pe
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.PerformanceAnalyzerClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.Objects;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
@@ -35,22 +31,25 @@ import org.elasticsearch.test.rest.ESRestTestCase;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class PerformanceAnalyzerIT extends ESRestTestCase {
-    private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIT.class);
+public abstract class PerformanceAnalyzerIntegTestBase extends ESRestTestCase {
+    private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerIntegTestBase.class);
+    protected static final String PERFORMANCE_ANALYZER_BASE_ENDPOINT = "/_opendistro/_performanceanalyzer";
     private int paPort;
-    private static final ObjectMapper mapper = new ObjectMapper();
+    protected static final ObjectMapper mapper = new ObjectMapper();
     // TODO this must be initialized at construction time to avoid NPEs, we should find a way for subclasses to override this
-    private ITConfig config = new ITConfig();
-    private static RestClient paClient;
+    protected ITConfig config = new ITConfig();
+    protected static RestClient paClient;
+    protected static final String METHOD_GET = "GET";
+    protected static final String METHOD_POST = "POST";
 
     // Don't wipe the cluster after test completion
     @Override
@@ -150,17 +149,21 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         }
     }
 
-    @Before
-    public void setupIT() throws Exception {
+    protected List<HttpHost> getHosts(int port) {
         String cluster = config.getRestEndpoint();
-        paPort = config.getPaPort();
         logger.info("Cluster is {}", cluster);
         if (cluster == null) {
             throw new RuntimeException("Must specify [tests.rest.cluster] system property with a comma delimited list of [host:port] "
                     + "to which to send REST requests");
         }
-        List<HttpHost> hosts = Collections.singletonList(
-                new HttpHost(cluster.substring(0, cluster.lastIndexOf(":")), paPort, "http"));
+        return Collections.singletonList(
+                new HttpHost(cluster.substring(0, cluster.lastIndexOf(":")), port, "http"));
+    }
+
+    @Before
+    public void setupIT() throws Exception {
+        paPort = config.getPaPort();
+        List<HttpHost> hosts = getHosts(paPort);
         logger.info("initializing PerformanceAnalyzer client against {}", hosts);
         paClient = buildBasicClient(restClientSettings(), hosts.toArray(new HttpHost[0]));
     }
@@ -179,10 +182,10 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         String endpoint;
         switch (component) {
             case PA:
-                endpoint = "_opendistro/_performanceanalyzer/cluster/config";
+                endpoint = PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/cluster/config";
                 break;
             case RCA:
-                endpoint = "_opendistro/_performanceanalyzer/rca/cluster/config";
+                endpoint = PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/rca/cluster/config";
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognized component value " + component.toString());
@@ -212,7 +215,7 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
 
         // Sanity check that PA and RCA are enabled on the cluster
         Response resp = client().performRequest(
-            new Request("GET", "_opendistro/_performanceanalyzer/cluster/config"));
+            new Request("GET", PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/cluster/config"));
         Map<String, Object> respMap = mapper
             .readValue(EntityUtils.toString(resp.getEntity(), "UTF-8"),
                 new TypeReference<Map<String, Object>>() {
@@ -223,53 +226,6 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
                 PerformanceAnalyzerClusterSettingHandler.checkBit(state, PerformanceAnalyzerFeatureBits.RCA_BIT.ordinal()));
     }
 
-    @Test
-    public void checkMetrics() throws Exception {
-        ensurePaAndRcaEnabled();
-        final String[] jsonString = new String[1];
-        WaitFor.waitFor(() -> {
-            Request request = new Request("GET",
-                    "/_opendistro/_performanceanalyzer/metrics/?metrics=Disk_Utilization&agg=max&dim=&nodes=all");
-            Response resp = paClient.performRequest(request);
-            Assert.assertEquals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
-            jsonString[0] = EntityUtils.toString(resp.getEntity());
-            JsonNode root = mapper.readTree(jsonString[0]);
-            for (Iterator<JsonNode> it = root.elements(); it.hasNext(); ) {
-                JsonNode entry = it.next();
-                JsonNode data = entry.get(TestUtils.DATA);
-                if (data.get(TestUtils.FIELDS) == null) {
-                    return false;
-                }
-            }
-            return jsonString[0] != null && !jsonString[0].isEmpty();
-        }, 1, TimeUnit.MINUTES);
-        logger.info("jsonString is {}", jsonString[0]);
-        JsonNode root = mapper.readTree(jsonString[0]);
-        root.forEach( entry -> {
-            JsonNode data = entry.get(TestUtils.DATA);
-            Assert.assertEquals(1, data.get(TestUtils.FIELDS).size());
-            JsonNode field = data.get(TestUtils.FIELDS).get(0);
-            Assert.assertEquals(TestUtils.M_DISKUTIL, field.get(TestUtils.FIELD_NAME).asText());
-            Assert.assertEquals(TestUtils.DOUBLE_TYPE, field.get(TestUtils.FIELD_TYPE).asText());
-            JsonNode records = data.get(TestUtils.RECORDS);
-            Assert.assertEquals(1, records.size());
-            records.get(0).forEach(record -> Assert.assertTrue(record.asDouble() >= 0));
-        });
-    }
-
-    @Test
-    public void testRcaIsRunning() throws Exception {
-        ensurePaAndRcaEnabled();
-        WaitFor.waitFor(() -> {
-            Request request = new Request("GET", "/_opendistro/_performanceanalyzer/rca");
-            try {
-                Response resp = paClient.performRequest(request);
-                return Objects.equals(HttpStatus.SC_OK, resp.getStatusLine().getStatusCode());
-            } catch (Exception e) { // 404, RCA context hasn't been set up yet
-                return false;
-            }
-        }, 2, TimeUnit.MINUTES);
-    }
 
     @After
     public void closePaClient() throws Exception {
@@ -278,7 +234,7 @@ public class PerformanceAnalyzerIT extends ESRestTestCase {
         LOG.debug("AfterClass has run");
     }
 
-    private static class TestUtils {
+    protected static class TestUtils {
         public static final String DATA = "data";
         public static final String RECORDS = "records";
 

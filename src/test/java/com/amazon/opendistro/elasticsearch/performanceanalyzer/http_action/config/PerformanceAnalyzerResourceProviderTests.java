@@ -43,7 +43,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PluginSettings.class})
 @SuppressStaticInitializationFor({"PluginSettings"})
-public class PerformanceAnalyzerResourceProviderTest {
+public class PerformanceAnalyzerResourceProviderTests {
   @Mock
   RestController mockRestController;
   PerformanceAnalyzerResourceProvider performanceAnalyzerRp;
@@ -133,6 +133,17 @@ public class PerformanceAnalyzerResourceProviderTest {
     assertEquals(new URL(expectedResponseUri), actualResponseURI);
   }
 
+  private void assertAgentUriWithActionsRedirection(final String protocolScheme) throws IOException {
+    initPerformanceAnalyzerResourceProvider(protocolScheme.equals("https://"));
+
+    String requestUri = protocolScheme + "localhost:9200/_opendistro/_performanceanalyzer/_agent/actions";
+    String expectedResponseUri = protocolScheme + "localhost:9650/_opendistro/_performanceanalyzer/actions";
+
+    RestRequest restRequest = generateRestRequest(requestUri, "actions");
+    URL actualResponseURI = performanceAnalyzerRp.getAgentUri(restRequest);
+    assertEquals(new URL(expectedResponseUri), actualResponseURI);
+  }
+
 
   @Test
   public void testGetAgentUri_WithHttp_WithMetricRedirection() throws Exception {
@@ -162,6 +173,16 @@ public class PerformanceAnalyzerResourceProviderTest {
   @Test
   public void testGetAgentUri_WithHttps_WithBatchRedirection() throws Exception {
     assertAgentUriWithBatchRedirection("https://");
+  }
+
+  @Test
+  public void testGetAgentUri_WithHttp_WithActionsRedirection() throws Exception {
+    assertAgentUriWithActionsRedirection("http://");
+  }
+
+  @Test
+  public void testGetAgentUri_WithHttps_WithActionsRedirection() throws Exception {
+    assertAgentUriWithActionsRedirection("https://");
   }
 
   @Test
