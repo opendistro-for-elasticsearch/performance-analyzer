@@ -1,3 +1,18 @@
+/*
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ * permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
@@ -20,8 +35,8 @@ import org.jooq.tools.json.JSONObject;
 
 import java.util.List;
 
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics.SHARD_PRIMARY;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics.SHARD_REPLICA;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_PRIMARY;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
 
 public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ShardStateCollector.class).samplingInterval;
@@ -62,7 +77,7 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
                                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
                                 .append(new ShardStateMetrics(
                                         shard.getId(),
-                                        shard.primary() ? SHARD_PRIMARY : SHARD_REPLICA,
+                                        shard.primary() ? SHARD_PRIMARY.toString() : SHARD_REPLICA.toString(),
                                         nodeName,
                                         shard.state().name())
                                         .serialize());
