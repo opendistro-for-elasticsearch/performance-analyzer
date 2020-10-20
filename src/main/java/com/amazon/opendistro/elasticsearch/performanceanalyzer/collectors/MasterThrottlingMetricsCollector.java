@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License").
+ *  You may not use this file except in compliance with the License.
+ *  A copy of the License is located at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  or in the "license" file accompanying this file. This file is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ *  express or implied. See the License for the specific language governing
+ *  permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -7,6 +22,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.elasticsearch.cluster.service.MasterService;
 
@@ -32,12 +50,15 @@ public class MasterThrottlingMetricsCollector extends PerformanceAnalyzerMetrics
     @Override
     void collectMetrics(long startTime) {
         try {
+            long mCurrT = System.currentTimeMillis();
             if (ESResources.INSTANCE.getClusterService() == null
                     || ESResources.INSTANCE.getClusterService().getMasterService() == null) {
                 return;
             }
             if(!isMasterThrottlingFeatureAvailable()) {
                 LOG.debug("Master Throttling Feature is not available for this domain");
+                PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                        WriterMetrics.MASTER_THROTTLING_COLLECTOR_NOT_AVAILABLE, "", 1);
                 return;
             }
 
@@ -50,7 +71,13 @@ public class MasterThrottlingMetricsCollector extends PerformanceAnalyzerMetrics
 
             saveMetricValues(value.toString(), startTime);
 
+            PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                    WriterMetrics.MASTER_THROTTLING_COLLECTOR_EXECUTION_TIME, "",
+                    System.currentTimeMillis() - mCurrT);
+
         } catch (Exception ex) {
+            PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
+                    ExceptionsAndErrors.MASTER_THROTTLING_COLLECTOR_ERROR, "", 1);
             LOG.debug("Exception in Collecting Master Throttling Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
         }
     }
