@@ -14,7 +14,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQu
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
-public class EventLogFileHandlerTest {
+public class EventLogFileHandlerTests {
     @Mock
     private PerformanceAnalyzerController mockController;
 
