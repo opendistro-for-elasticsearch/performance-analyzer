@@ -1,9 +1,27 @@
+/*
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * You may not use this file except in compliance with the License.
+ * A copy of the License is located at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * or in the "license" file accompanying this file. This file is distributed
+ * on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing
+ *  permissions and limitations under the License.
+ */
+
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +41,7 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
     private static final int KEYS_PATH_LENGTH = 3;
     private static final Logger LOG = LogManager.getLogger(FaultDetectionMetricsCollector.class);
     private static final String FAULT_DETECTION_HANDLER_NAME =
-            "com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ClusterFaultDetectionStatsHandler";
+            "com.amazon.opendistro.elasticsearch.performanceanalyzer.handler.ClusterFaultDetectionStatsHandler";
     private static final String FAULT_DETECTION_HANDLER_METRIC_QUEUE = "metricQueue";
     private StringBuilder value;
 
@@ -35,17 +53,14 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
     @Override
     @SuppressWarnings("unchecked")
     void collectMetrics(long startTime) {
+        long mCurrT = System.currentTimeMillis();
         Class<?> faultDetectionHandler = null;
         try {
             faultDetectionHandler = Class.forName(FAULT_DETECTION_HANDLER_NAME);
         } catch (ClassNotFoundException e) {
             LOG.debug("No Handler Detected for Fault Detection. Skipping FaultDetectionMetricsCollector");
-        }
-
-        if(faultDetectionHandler == null) {
             return;
         }
-
         try {
             BlockingQueue<String> metricQueue = (BlockingQueue<String>)
                     getFaultDetectionHandlerMetricsQueue(faultDetectionHandler).get(null);
@@ -67,18 +82,24 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
                 if(StringUtils.isEmpty(clusterFaultDetectionContext.getStartTime())) {
                     addMetricEntry(value, AllMetrics.CommonMetric.FINISH_TIME.toString(),
                             clusterFaultDetectionContext.getFinishTime());
-                    addMetricEntry(value, PerformanceAnalyzerMetrics.ERROR,
-                            clusterFaultDetectionContext.getError());
+                    addMetricEntry(value, PerformanceAnalyzerMetrics.FAULT,
+                            clusterFaultDetectionContext.getFault());
                     saveMetricValues(value.toString(), startTime, clusterFaultDetectionContext.getType(),
-                            clusterFaultDetectionContext.getThreadId(), PerformanceAnalyzerMetrics.FINISH_FILE_NAME);
+                            clusterFaultDetectionContext.getRequestId(), PerformanceAnalyzerMetrics.FINISH_FILE_NAME);
                 } else {
                     addMetricEntry(value, AllMetrics.CommonMetric.START_TIME.toString(),
                             clusterFaultDetectionContext.getStartTime());
                     saveMetricValues(value.toString(), startTime, clusterFaultDetectionContext.getType(),
-                            clusterFaultDetectionContext.getThreadId(), PerformanceAnalyzerMetrics.START_FILE_NAME);
+                            clusterFaultDetectionContext.getRequestId(), PerformanceAnalyzerMetrics.START_FILE_NAME);
                 }
             }
+            PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                    WriterMetrics.FAULT_DETECTION_COLLECTOR_EXECUTION_TIME, "",
+                    System.currentTimeMillis() - mCurrT);
         } catch (Exception ex) {
+            PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
+                    ExceptionsAndErrors.FAULT_DETECTION_COLLECTOR_ERROR, "",
+                    System.currentTimeMillis() - mCurrT);
             LOG.debug("Exception in Collecting FaultDetection Metrics: {} for startTime {}",
                     () -> ex.toString(), () -> startTime);
         }
@@ -92,14 +113,14 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
 
     /** Sample Event
      * ^fault_detection/follower_check/7627/finish
-     * current_time":1601486201861
+     * current_time:1601486201861
      * SourceNodeID:g52i9a93a762cd59dda8d3379b09a752a
      * TargetNodeID:b2a5a93a762cd59dda8d3379b09a752a
      * FinishTime:1566413987986
-     * Error:0$
+     * fault:0$
      *
      * @param startTime time at which collector is called
-     * @param keysPath
+     * @param keysPath List of string that would make up the metrics path
      * @return metric path
      */
     @Override
@@ -116,8 +137,8 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
         String type;
         String sourceNodeId;
         String targetNodeId;
-        String threadId;
-        String error;
+        String requestId;
+        String fault;
         String startTime;
         String finishTime;
 
@@ -133,8 +154,8 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
             return this.targetNodeId;
         }
 
-        public String getError() {
-            return this.error;
+        public String getFault() {
+            return this.fault;
         }
 
         public String getStartTime() {
@@ -145,8 +166,8 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
             return this.finishTime;
         }
 
-        public String getThreadId() {
-            return this.threadId;
+        public String getRequestId() {
+            return this.requestId;
         }
 
     }
