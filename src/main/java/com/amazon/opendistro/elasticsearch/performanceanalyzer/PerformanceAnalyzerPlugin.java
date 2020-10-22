@@ -290,6 +290,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp, paOverridesConfigClusterAction);
     }
 
+
+
     @Override
     @SuppressWarnings("checkstyle:parameternumber")
     public Collection<Object> createComponents(Client client, ClusterService clusterService, ThreadPool threadPool,
@@ -318,6 +320,10 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         ESResources.INSTANCE.setCircuitBreakerService(circuitBreakerService);
         return Collections.emptyMap();
     }
+
+
+
+
 
     /**
      * Returns a list of additional {@link Setting} definitions for this plugin.
