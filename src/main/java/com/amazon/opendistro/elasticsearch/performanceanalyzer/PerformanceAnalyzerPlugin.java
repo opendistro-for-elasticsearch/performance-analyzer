@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStateCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.ConfigOverridesClusterSettingHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
@@ -198,6 +199,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
+                performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();
