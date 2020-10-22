@@ -17,6 +17,8 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
@@ -42,15 +44,23 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ShardStateCollector.class).samplingInterval;
     private static final Logger LOG = LogManager.getLogger(ShardStateCollector.class);
     private static final int KEYS_PATH_LENGTH = 0;
+    private final ConfigOverridesWrapper configOverridesWrapper;
+    private final PerformanceAnalyzerController controller;
     private StringBuilder value;
 
-    public ShardStateCollector() {
+    public ShardStateCollector(PerformanceAnalyzerController controller,
+                               ConfigOverridesWrapper configOverridesWrapper) {
         super(SAMPLING_TIME_INTERVAL, "ShardsStateCollector");
         value = new StringBuilder();
+        this.controller = controller;
+        this.configOverridesWrapper = configOverridesWrapper;
     }
 
     @Override
     void collectMetrics( long startTime) {
+        if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
+            return;
+        }
         long mCurrT = System.currentTimeMillis();
         if (ESResources.INSTANCE.getClusterService() == null) {
             return;

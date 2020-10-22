@@ -16,10 +16,13 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -31,7 +34,11 @@ public class ShardStateCollectorTest extends CustomMetricsLocationTestBase {
         MetricsConfiguration.CONFIG_MAP.put(ShardStateCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
-        ShardStateCollector shardsStateCollector = new ShardStateCollector();
+        PerformanceAnalyzerController controller = Mockito.mock(PerformanceAnalyzerController.class);
+        ConfigOverridesWrapper configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
+        Mockito.when(controller.isCollectorEnabled(configOverrides, "ShardStateCollector"))
+                .thenReturn(true);
+        ShardStateCollector shardsStateCollector = new ShardStateCollector(controller, configOverrides);
         shardsStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills);
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation()
                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/shard_state_metrics/");
