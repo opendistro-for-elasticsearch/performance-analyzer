@@ -126,6 +126,8 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         WaitFor.waitFor(() -> PerformanceAnalyzerMetrics.metricQueue.size() == 1 , 10, TimeUnit.SECONDS);
         int va = PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
         System.out.println("Val  " + va);
+        System.out.println("Metrics \n" + metrics.toString());
+        System.out.println("Metrics Size \n" + metrics.size());
         return metrics;
     }
 
