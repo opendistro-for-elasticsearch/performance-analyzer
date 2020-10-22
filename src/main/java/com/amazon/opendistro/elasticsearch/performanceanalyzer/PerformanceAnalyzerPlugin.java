@@ -16,6 +16,8 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.GCInfoCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterThrottlingMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStateCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.ConfigOverridesClusterSettingHandler;
@@ -24,6 +26,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ha
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerOverridesClusterConfigAction;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerResourceProvider;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -55,6 +59,7 @@ import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.discovery.Discovery;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.IndexModule;
@@ -107,6 +112,9 @@ import static java.util.Collections.singletonList;
 public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
     public static final String PLUGIN_NAME = "opendistro_performance_analyzer";
+    private static final String ADD_FAULT_DETECTION_METHOD = "addFaultDetectionListener";
+    private static final String LISTENER_INJECTOR_CLASS_PATH =
+            "com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.ListenerInjector";
     public static final int QUEUE_PURGE_INTERVAL_MS = 1000;
     private static SecurityManager sm = null;
     private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
@@ -124,6 +132,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
             sm.checkPermission(new SpecialPermission());
         }
     }
+
+
 
     public static void invokePrivileged(Runnable runner) {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
@@ -201,7 +211,11 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new GCInfoCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new FaultDetectionMetricsCollector(
+                performanceAnalyzerController, configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
+                performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.start();
 
@@ -232,6 +246,22 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PerformanceAnalyzerSearchListener performanceanalyzerSearchListener =
             new PerformanceAnalyzerSearchListener(performanceAnalyzerController);
         indexModule.addSearchOperationListener(performanceanalyzerSearchListener);
+    }
+
+    //follower check, leader check
+    public void onDiscovery(Discovery discovery) {
+        try {
+            Class<?> listenerInjector = Class.forName(LISTENER_INJECTOR_CLASS_PATH);
+            Object listenerInjectorInstance = listenerInjector.getDeclaredConstructor().newInstance();
+            Method addListenerMethod = listenerInjectorInstance.getClass().getMethod(ADD_FAULT_DETECTION_METHOD,
+                    Discovery.class);
+            addListenerMethod.invoke(listenerInjectorInstance, discovery);
+        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException  |
+                IllegalAccessException e) {
+            LOG.debug("Exception while calling addFaultDetectionListener in Discovery");
+        } catch (ClassNotFoundException e) {
+            LOG.debug("No Class for ListenerInjector detected");
+        }
     }
 
     //- shardbulk
@@ -300,4 +330,3 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     }
 
 }
-
