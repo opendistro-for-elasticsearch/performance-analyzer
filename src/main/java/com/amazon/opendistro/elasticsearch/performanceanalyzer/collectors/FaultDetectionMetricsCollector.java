@@ -24,7 +24,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsPr
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
-import com.google.gson.Gson;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.tools.StringUtils;
@@ -33,7 +33,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.stream.Collectors;
 
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics.addMetricEntry;
 
@@ -48,6 +47,7 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
     private final ConfigOverridesWrapper configOverridesWrapper;
     private final PerformanceAnalyzerController controller;
     private StringBuilder value;
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public FaultDetectionMetricsCollector(PerformanceAnalyzerController controller,
                                           ConfigOverridesWrapper configOverridesWrapper) {
@@ -76,10 +76,11 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
                     getFaultDetectionHandlerMetricsQueue(faultDetectionHandler).get(null);
             List<String> metrics = new ArrayList<>();
             metricQueue.drainTo(metrics);
-            Gson gson = new Gson();
-            List<ClusterFaultDetectionContext> faultDetectionContextsList = metrics.stream()
-                    .map(string -> gson.fromJson(string, ClusterFaultDetectionContext.class))
-                    .collect(Collectors.toList());
+
+            List<ClusterFaultDetectionContext> faultDetectionContextsList = new ArrayList<>();
+            for(String metric : metrics) {
+                faultDetectionContextsList.add(mapper.readValue(metric, ClusterFaultDetectionContext.class));
+            }
 
             for(ClusterFaultDetectionContext clusterFaultDetectionContext : faultDetectionContextsList) {
                 value.setLength(0);
