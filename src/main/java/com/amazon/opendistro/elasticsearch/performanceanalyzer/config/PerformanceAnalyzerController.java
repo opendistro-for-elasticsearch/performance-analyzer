@@ -261,11 +261,11 @@ public class PerformanceAnalyzerController {
     }
 
     public boolean isCollectorEnabled(ConfigOverridesWrapper configOverridesWrapper, String collectorName) {
+        if(configOverridesWrapper == null) {
+            return false;
+        }
         List<String> enabledCollectorsList = configOverridesWrapper.getCurrentClusterConfigOverrides().getEnable()
                 .getCollectors();
-        if(enabledCollectorsList.contains(collectorName)) {
-            return true;
-        }
-        return false;
+        return enabledCollectorsList.contains(collectorName) ? true: false;
     }
 }
