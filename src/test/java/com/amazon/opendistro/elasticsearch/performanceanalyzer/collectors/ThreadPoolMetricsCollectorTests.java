@@ -50,7 +50,7 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
     }
 
-    @Test
+
     public void testThreadPoolMetrics() {
         long startTimeInMills = 1453724339;
         threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
@@ -73,7 +73,7 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         }
     }
 
-    @Test
+
     public void testCollectMetrics() throws IOException {
         long startTimeInMills = 1453724339;
         Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(2));
