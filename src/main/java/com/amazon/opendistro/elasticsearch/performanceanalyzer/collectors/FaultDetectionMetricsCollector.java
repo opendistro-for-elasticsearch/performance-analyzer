@@ -16,6 +16,8 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
@@ -43,16 +45,24 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
     private static final String FAULT_DETECTION_HANDLER_NAME =
             "com.amazon.opendistro.elasticsearch.performanceanalyzer.handler.ClusterFaultDetectionStatsHandler";
     private static final String FAULT_DETECTION_HANDLER_METRIC_QUEUE = "metricQueue";
+    private final ConfigOverridesWrapper configOverridesWrapper;
+    private final PerformanceAnalyzerController controller;
     private StringBuilder value;
 
-    public FaultDetectionMetricsCollector() {
-        super(SAMPLING_TIME_INTERVAL, "FaultDetectionMetrics");
+    public FaultDetectionMetricsCollector(PerformanceAnalyzerController controller,
+                                          ConfigOverridesWrapper configOverridesWrapper) {
+        super(SAMPLING_TIME_INTERVAL, "FaultDetectionMetricsCollector");
         value = new StringBuilder();
+        this.configOverridesWrapper = configOverridesWrapper;
+        this.controller = controller;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     void collectMetrics(long startTime) {
+        if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
+            return;
+        }
         long mCurrT = System.currentTimeMillis();
         Class<?> faultDetectionHandler = null;
         try {

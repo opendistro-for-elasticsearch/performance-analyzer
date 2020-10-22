@@ -207,7 +207,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new FaultDetectionMetricsCollector());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new FaultDetectionMetricsCollector(
+                performanceAnalyzerController, configOverridesWrapper));
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();

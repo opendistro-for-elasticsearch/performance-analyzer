@@ -16,10 +16,14 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.fasterxml.jackson.databind.cfg.ConfigOverrides;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,7 +34,12 @@ public class FaultDetectionMetricsCollectorTest extends CustomMetricsLocationTes
         MetricsConfiguration.CONFIG_MAP.put(FaultDetectionMetricsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
-        FaultDetectionMetricsCollector faultDetectionMetricsCollector = new FaultDetectionMetricsCollector();
+        PerformanceAnalyzerController controller = Mockito.mock(PerformanceAnalyzerController.class);
+        ConfigOverridesWrapper configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
+        Mockito.when(controller.isCollectorEnabled(configOverrides, "FaultDetectionMetricsCollector"))
+                .thenReturn(true);
+        FaultDetectionMetricsCollector faultDetectionMetricsCollector = new FaultDetectionMetricsCollector(
+                controller, configOverrides);
         faultDetectionMetricsCollector.saveMetricValues("fault_detection", startTimeInMills,
                 "follower_check", "65432", "start");
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation()
