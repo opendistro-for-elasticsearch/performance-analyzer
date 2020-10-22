@@ -5,8 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Scanner;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -256,5 +258,14 @@ public class PerformanceAnalyzerController {
                 LOG.error(ex.toString(), ex);
             }
         });
+    }
+
+    public boolean isCollectorEnabled(ConfigOverridesWrapper configOverridesWrapper, String collectorName) {
+        if(configOverridesWrapper == null) {
+            return false;
+        }
+        List<String> enabledCollectorsList = configOverridesWrapper.getCurrentClusterConfigOverrides().getEnable()
+                .getCollectors();
+        return enabledCollectorsList.contains(collectorName) ? true: false;
     }
 }

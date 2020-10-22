@@ -36,10 +36,16 @@ public class ConfigOverridesTestHelper {
     public static final String DECIDER2 = "dec2";
     public static final String DECIDER3 = "dec3";
     public static final String DECIDER4 = "dec4";
+    public static final String COLLECTOR1 = "collector1";
+    public static final String COLLECTOR2 = "collector2";
+    public static final String COLLECTOR3 = "collector3";
+    public static final String COLLECTOR4 = "collector4";
     public static final List<String> DISABLED_RCAS_LIST = Arrays.asList(RCA1, RCA2);
     public static final List<String> ENABLED_RCAS_LIST = Arrays.asList(RCA3, RCA4);
     public static final List<String> DISABLED_ACTIONS_LIST = Arrays.asList(ACTION1, ACTION2);
     public static final List<String> ENABLED_DECIDERS_LIST = Arrays.asList(DECIDER3, DECIDER4);
+    public static final List<String> DISABLED_COLLECTORS_LIST = Arrays.asList(COLLECTOR1, COLLECTOR2);
+    public static final List<String> ENABLED_COLLECTORS_LIST = Arrays.asList(COLLECTOR3, COLLECTOR4);
 
     public static ConfigOverrides buildValidConfigOverrides() {
         ConfigOverrides overrides = new ConfigOverrides();
@@ -47,6 +53,8 @@ public class ConfigOverridesTestHelper {
         overrides.getDisable().setActions(DISABLED_ACTIONS_LIST);
         overrides.getEnable().setRcas(ENABLED_RCAS_LIST);
         overrides.getEnable().setDeciders(ENABLED_DECIDERS_LIST);
+        overrides.getEnable().setCollectors(ENABLED_COLLECTORS_LIST);
+        overrides.getDisable().setCollectors(DISABLED_COLLECTORS_LIST);
 
         return overrides;
     }

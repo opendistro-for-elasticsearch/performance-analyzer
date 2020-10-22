@@ -175,6 +175,12 @@ public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHan
             isValid = Collections.disjoint(requestedOverrides.getEnable().getActions(), requestedOverrides.getDisable().getActions());
         }
 
+        if (isValid
+                && requestedOverrides.getEnable().getCollectors() != null
+                && requestedOverrides.getDisable().getCollectors() != null) {
+            isValid = Collections.disjoint(requestedOverrides.getEnable().getCollectors(), requestedOverrides.getDisable().getCollectors());
+        }
+
         return isValid;
     }
 
