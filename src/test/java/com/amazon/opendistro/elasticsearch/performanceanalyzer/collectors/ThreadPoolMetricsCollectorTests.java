@@ -23,10 +23,12 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Thread
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.WaitFor;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
@@ -50,8 +52,8 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
     }
 
-
-    public void testThreadPoolMetrics() {
+    @Test
+    public void testThreadPoolMetrics() throws Exception {
         long startTimeInMills = 1453724339;
         threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
         List<Event> metrics = readEvents();
@@ -73,8 +75,8 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         }
     }
 
-
-    public void testCollectMetrics() throws IOException {
+    @Test
+    public void testCollectMetrics() throws Exception {
         long startTimeInMills = 1453724339;
         Mockito.when(mockThreadPool.stats()).thenReturn(generateThreadPoolStat(2));
         threadPoolMetricsCollector.collectMetrics(startTimeInMills);
@@ -118,13 +120,15 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         return new ThreadPoolStats(stats);
     }
 
-    private List<Event> readEvents() {
+    private List<Event> readEvents() throws Exception {
         List<Event> metrics = new ArrayList<>();
+        System.out.println("Metric Queue " + PerformanceAnalyzerMetrics.metricQueue.toString());
+        WaitFor.waitFor(() -> PerformanceAnalyzerMetrics.metricQueue.size() == 1 , 10, TimeUnit.SECONDS);
         PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
         return metrics;
     }
 
-    private ThreadPoolStatus readMetrics() throws IOException {
+    private ThreadPoolStatus readMetrics() throws Exception {
         List<Event> metrics = readEvents();
         assert metrics.size() == 1;
         ObjectMapper objectMapper = new ObjectMapper();
