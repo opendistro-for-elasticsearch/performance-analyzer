@@ -22,11 +22,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLoca
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
 
 @Ignore
 public class MasterServiceMetricsTests extends CustomMetricsLocationTestBase {

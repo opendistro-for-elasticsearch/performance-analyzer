@@ -112,10 +112,10 @@ public class ConfigOverridesClusterSettingHandler implements ClusterSettingListe
                 .orElseGet(ConfigOverrides.Overrides::new);
         ConfigOverrides.Overrides optionalNewDisable = Optional.ofNullable(other.getDisable())
                 .orElseGet(ConfigOverrides.Overrides::new);
-
         mergeRcas(merged, optionalCurrentEnabled, optionalNewEnable, optionalCurrentDisabled, optionalNewDisable);
         mergeDeciders(merged, optionalCurrentEnabled, optionalNewEnable, optionalCurrentDisabled, optionalNewDisable);
         mergeActions(merged, optionalCurrentEnabled, optionalNewEnable, optionalCurrentDisabled, optionalNewDisable);
+        mergeCollectors(merged, optionalCurrentEnabled, optionalNewEnable, optionalCurrentDisabled, optionalNewDisable);
 
         return merged;
     }
@@ -181,6 +181,29 @@ public class ConfigOverridesClusterSettingHandler implements ClusterSettingListe
 
         merged.getEnable().setActions(mergedActionsEnabled);
         merged.getDisable().setActions(mergedActionsDisabled);
+    }
+
+    private void mergeCollectors(final ConfigOverrides merged,
+                              final ConfigOverrides.Overrides baseEnabled,
+                              final ConfigOverrides.Overrides newEnabled,
+                              final ConfigOverrides.Overrides baseDisabled,
+                              final ConfigOverrides.Overrides newDisabled) {
+        List<String> currentCollectorsEnabled = Optional.ofNullable(baseEnabled.getCollectors())
+                .orElseGet(ArrayList::new);
+        List<String> currentCollectorsDisabled = Optional.ofNullable(baseDisabled.getCollectors())
+                .orElseGet(ArrayList::new);
+        List<String> requestedCollectorsEnabled = Optional.ofNullable(newEnabled.getCollectors())
+                .orElseGet(ArrayList::new);
+        List<String> requestedCollectorsDisabled = Optional.ofNullable(newDisabled.getCollectors())
+                .orElseGet(ArrayList::new);
+
+        List<String> mergedCollectorsEnabled = combineLists(currentCollectorsEnabled, requestedCollectorsEnabled,
+                requestedCollectorsDisabled);
+        List<String> mergedCollectorsDisabled = combineLists(currentCollectorsDisabled, requestedCollectorsDisabled,
+                requestedCollectorsEnabled);
+
+        merged.getEnable().setCollectors(mergedCollectorsEnabled);
+        merged.getDisable().setCollectors(mergedCollectorsDisabled);
     }
 
     /**

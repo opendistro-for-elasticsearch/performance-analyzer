@@ -34,6 +34,10 @@ import java.util.Collections;
 
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.ACTION1;
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.ACTION2;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.COLLECTOR1;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.COLLECTOR2;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.COLLECTOR3;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.COLLECTOR4;
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.DECIDER1;
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.DECIDER2;
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.config.ConfigOverridesTestHelper.DECIDER3;
@@ -127,8 +131,14 @@ public class ConfigOverridesClusterSettingHandlerTests {
         additionalOverrides.getDisable().setDeciders(Arrays.asList(DECIDER3, DECIDER1));
         additionalOverrides.getEnable().setDeciders(Collections.singletonList(DECIDER2));
 
+        additionalOverrides.getDisable().setCollectors(Arrays.asList(COLLECTOR3, COLLECTOR1));
+        additionalOverrides.getEnable().setCollectors(Collections.singletonList(COLLECTOR2));
+
         expectedOverrides.getEnable().setDeciders(Arrays.asList(DECIDER2, DECIDER4));
         expectedOverrides.getDisable().setDeciders(Arrays.asList(DECIDER3, DECIDER1));
+
+        expectedOverrides.getEnable().setCollectors(Arrays.asList(COLLECTOR2, COLLECTOR4));
+        expectedOverrides.getDisable().setCollectors(Arrays.asList(COLLECTOR3, COLLECTOR1));
 
         // current enabled actions: none. current disabled actions: 1,2
         additionalOverrides.getEnable().setActions(Arrays.asList(ACTION1, ACTION2));
@@ -154,6 +164,10 @@ public class ConfigOverridesClusterSettingHandlerTests {
         Collections.sort(actual.getEnable().getDeciders());
         assertEquals(expected.getEnable().getDeciders(), actual.getEnable().getDeciders());
 
+        Collections.sort(expected.getEnable().getCollectors());
+        Collections.sort(actual.getEnable().getCollectors());
+        assertEquals(expected.getEnable().getCollectors(), actual.getEnable().getCollectors());
+
         Collections.sort(expected.getDisable().getRcas());
         Collections.sort(actual.getDisable().getRcas());
         assertEquals(expected.getDisable().getRcas(), actual.getDisable().getRcas());
@@ -165,6 +179,10 @@ public class ConfigOverridesClusterSettingHandlerTests {
         Collections.sort(expected.getDisable().getDeciders());
         Collections.sort(actual.getDisable().getDeciders());
         assertEquals(expected.getDisable().getDeciders(), actual.getDisable().getDeciders());
+
+        Collections.sort(expected.getDisable().getCollectors());
+        Collections.sort(actual.getDisable().getCollectors());
+        assertEquals(expected.getDisable().getCollectors(), actual.getDisable().getCollectors());
 
         return true;
     }
