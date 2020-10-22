@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterThrottlingMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStateCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.ConfigOverridesClusterSettingHandler;
@@ -212,6 +213,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 performanceAnalyzerController, configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
                 performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
+                performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();
@@ -325,4 +328,3 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
     }
 
 }
-
