@@ -85,14 +85,17 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                         ESResources.INSTANCE.getIndicesService(), "threadPool", true);
                     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) threadPool.executor(threadPoolName);
                     Object queue = threadPoolExecutor.getQueue();
+                    System.out.println("Queue in String " + queue.toString());
                     // TODO: we might want to read the capacity of SifiResizableBlockingQueue in the future.
                     // In order to do that we can create a new PerformanceAnalyzerLibrary package and push
                     // all the code which depends on core ES specific changes into that library.
                     if (queue instanceof SizeBlockingQueue) {
+                        System.out.println("Blocking Queue Capacity " + ((SizeBlockingQueue)queue).capacity());
                         return ((SizeBlockingQueue)queue).capacity();
                     }
                 } catch (Exception e) {
-                    LOG.warn("Fail to read queue capacity via reflection");
+                    System.out.println("Exception Stack trace " + e.getStackTrace());
+                    LOG.warn("Fail to read queue capacity via reflection" + e.getStackTrace());
                 }
                 return -1;
             });
