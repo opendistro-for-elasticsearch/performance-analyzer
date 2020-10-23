@@ -43,7 +43,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({PluginSettings.class})
 @SuppressStaticInitializationFor({"PluginSettings"})
-public class PerformanceAnalyzerResourceProviderTest {
+public class PerformanceAnalyzerResourceProviderTests {
   @Mock
   RestController mockRestController;
   PerformanceAnalyzerResourceProvider performanceAnalyzerRp;
