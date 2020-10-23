@@ -17,17 +17,20 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ShardStateCollectorTest extends CustomMetricsLocationTestBase {
+public class ShardStateCollectorTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testShardsStateMetrics() {
@@ -40,11 +43,11 @@ public class ShardStateCollectorTest extends CustomMetricsLocationTestBase {
                 .thenReturn(true);
         ShardStateCollector shardsStateCollector = new ShardStateCollector(controller, configOverrides);
         shardsStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills);
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/shard_state_metrics/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("shard_state_metrics", fetchedValue);
+        List<Event> metrics =  new ArrayList<>();
+        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
+
+        assertEquals(1, metrics.size());
+        assertEquals("shard_state_metrics", metrics.get(0).value);
 
         try {
             shardsStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills, "123");

@@ -17,35 +17,40 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class FaultDetectionMetricsCollectorTest extends CustomMetricsLocationTestBase {
+public class FaultDetectionMetricsCollectorTests extends CustomMetricsLocationTestBase {
+
     @Test
-    public void testShardsStateMetrics() {
+    public void testFaultDetectionMetrics() {
         MetricsConfiguration.CONFIG_MAP.put(FaultDetectionMetricsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
         PerformanceAnalyzerController controller = Mockito.mock(PerformanceAnalyzerController.class);
         ConfigOverridesWrapper configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
-        Mockito.when(controller.isCollectorEnabled(configOverrides, "FaultDetectionMetricsCollector"))
-                .thenReturn(true);
         FaultDetectionMetricsCollector faultDetectionMetricsCollector = new FaultDetectionMetricsCollector(
                 controller, configOverrides);
+        Mockito.when(controller.isCollectorEnabled(configOverrides, "FaultDetectionMetricsCollector"))
+                .thenReturn(true);
         faultDetectionMetricsCollector.saveMetricValues("fault_detection", startTimeInMills,
                 "follower_check", "65432", "start");
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/fault_detection/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("fault_detection", fetchedValue);
+        List<Event> metrics =  new ArrayList<>();
+        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
+
+        assertEquals(1, metrics.size());
+        assertEquals("fault_detection", metrics.get(0).value);
 
         try {
             faultDetectionMetricsCollector.saveMetricValues("fault_detection_metrics", startTimeInMills);
