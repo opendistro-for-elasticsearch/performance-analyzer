@@ -25,7 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-public class PerformanceAnalyzerClusterSettingHandlerTests {
+public class PerformanceAnalyzerClusterSettingHandlerTest {
     private static final Boolean DISABLED_STATE = Boolean.FALSE;
     private static final Boolean ENABLED_STATE = Boolean.TRUE;
 
