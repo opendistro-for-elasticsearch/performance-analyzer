@@ -94,7 +94,7 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                         return ((SizeBlockingQueue)queue).capacity();
                     }
                 } catch (Exception e) {
-                    System.out.println("Exception Stack trace " + e.getStackTrace());
+                    System.out.println("Exception Stack trace " + e.toString());
                     LOG.warn("Fail to read queue capacity via reflection" + e.getStackTrace());
                 }
                 return -1;
