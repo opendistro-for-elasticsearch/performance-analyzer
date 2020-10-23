@@ -52,28 +52,28 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         threadPoolMetricsCollector = new ThreadPoolMetricsCollector();
     }
 
-    @Test
-    public void testThreadPoolMetrics() throws Exception {
-        long startTimeInMills = 1453724339;
-        threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
-        List<Event> metrics = readEvents();
-        assertEquals(1, metrics.size());
-        assertEquals("12321.5464", metrics.get(0).value);
-
-        try {
-            threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills, "123");
-            assertEquals(true, true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...1 values passed; 0 expected
-        }
-
-        try {
-            threadPoolMetricsCollector.getMetricsPath(startTimeInMills, "123", "x");
-            assertEquals(true, true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...2 values passed; 0 expected
-        }
-    }
+//    @Test
+//    public void testThreadPoolMetrics() throws Exception {
+//        long startTimeInMills = 1453724339;
+//        threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
+//        List<Event> metrics = readEvents();
+//        assertEquals(1, metrics.size());
+//        assertEquals("12321.5464", metrics.get(0).value);
+//
+//        try {
+//            threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills, "123");
+//            assertEquals(true, true);
+//        } catch (RuntimeException ex) {
+//            //- expecting exception...1 values passed; 0 expected
+//        }
+//
+//        try {
+//            threadPoolMetricsCollector.getMetricsPath(startTimeInMills, "123", "x");
+//            assertEquals(true, true);
+//        } catch (RuntimeException ex) {
+//            //- expecting exception...2 values passed; 0 expected
+//        }
+//    }
 
     @Test
     public void testCollectMetrics() throws Exception {
