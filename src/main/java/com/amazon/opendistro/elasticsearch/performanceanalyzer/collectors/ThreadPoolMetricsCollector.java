@@ -95,7 +95,7 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                     }
                 } catch (Exception e) {
                     System.out.println("Exception Stack trace " + e.toString());
-                    LOG.warn("Fail to read queue capacity via reflection" + e.getStackTrace());
+                    LOG.warn("Fail to read queue capacity via reflection" + e.toString());
                 }
                 return -1;
             });
