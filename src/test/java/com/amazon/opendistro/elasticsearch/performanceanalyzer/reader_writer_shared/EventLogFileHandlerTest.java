@@ -28,6 +28,7 @@ public class EventLogFileHandlerTest {
 
     @Before
     public void init() throws Exception  {
+        
         initMocks(this);
         if (!Files.exists(METRICS_LOCATION)) {
             Files.createDirectories(METRICS_LOCATION.getParent());
