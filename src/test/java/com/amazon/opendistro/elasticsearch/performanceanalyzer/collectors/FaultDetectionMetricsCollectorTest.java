@@ -21,7 +21,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSett
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.fasterxml.jackson.databind.cfg.ConfigOverrides;
 import org.junit.Test;
 import org.mockito.Mockito;
 
