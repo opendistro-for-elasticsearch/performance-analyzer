@@ -1,7 +1,11 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -20,9 +24,18 @@ public class EventLogFileHandlerTest {
 
     String pathToTestMetricsDir;
 
+    private static final Path METRICS_LOCATION = Paths.get("build/tmp/junit_metrics");
+
     @Before
-    public void init() {
+    public void init() throws Exception  {
         initMocks(this);
+        if (!Files.exists(METRICS_LOCATION)) {
+            Files.createDirectories(METRICS_LOCATION.getParent());
+            Files.createDirectory(METRICS_LOCATION);
+        }
+
+        PluginSettings.instance().setMetricsLocation(METRICS_LOCATION + File.separator);
+
         pathToTestMetricsDir = "/tmp/testMetrics/";
         deleteDirectory(new File(pathToTestMetricsDir));
         boolean newDir = new File(pathToTestMetricsDir).mkdir();
