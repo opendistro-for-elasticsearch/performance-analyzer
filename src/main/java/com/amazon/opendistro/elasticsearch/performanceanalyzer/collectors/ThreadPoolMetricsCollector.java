@@ -68,6 +68,7 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
                 // if the timestamp in previous record is greater than 15s (3 * intervals),
                 // then the scheduler might hang or freeze due to long GC etc. We simply drop
                 // previous record here and set rejectionDelta to 0.
+                System.out.println("Threadpool Stats" + lastRecord.toString());
                 if (startTime - lastRecord.getTimestamp() <= SAMPLING_TIME_INTERVAL * 3) {
                     rejectionDelta = stats.getRejected() - lastRecord.getRejected();
                     // we might not run into this as rejection is a LongAdder which never decrement its count.
