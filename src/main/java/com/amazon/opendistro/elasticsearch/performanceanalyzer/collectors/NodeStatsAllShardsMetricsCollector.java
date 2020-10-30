@@ -192,13 +192,13 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         NodeStatsMetricsAllShardsPerCollectionStatus nodeStatsMetrics = new NodeStatsMetricsAllShardsPerCollectionStatus(
                 Math.max((currValue.queryCacheHitCount - prevValue.queryCacheHitCount), 0),
                 Math.max((currValue.queryCacheMissCount - prevValue.queryCacheMissCount), 0),
-                Math.max((currValue.queryCacheInBytes - prevValue.queryCacheInBytes), 0),
+                currValue.queryCacheInBytes,
                 Math.max((currValue.fieldDataEvictions - prevValue.fieldDataEvictions), 0),
-                Math.max((currValue.fieldDataInBytes - prevValue.fieldDataInBytes), 0),
+                currValue.fieldDataInBytes,
                 Math.max((currValue.requestCacheHitCount - prevValue.requestCacheHitCount), 0),
                 Math.max((currValue.requestCacheMissCount - prevValue.requestCacheMissCount), 0),
                 Math.max((currValue.requestCacheEvictions - prevValue.requestCacheEvictions), 0),
-                Math.max((currValue.requestCacheInBytes - prevValue.requestCacheInBytes), 0));
+                currValue.requestCacheInBytes);
 
         value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor)
