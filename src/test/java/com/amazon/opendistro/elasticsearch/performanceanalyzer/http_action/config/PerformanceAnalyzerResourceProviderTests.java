@@ -62,7 +62,7 @@ public class PerformanceAnalyzerResourceProviderTests {
     PowerMockito.when(PluginSettings.instance()).thenReturn(config);
 
     performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(Settings.EMPTY, mockRestController);
-    performanceAnalyzerRp.setPortNumber("9650");
+    performanceAnalyzerRp.setPortNumber("9600");
   }
 
   private RestRequest generateRestRequest(String requestUri, String redirectEndpoint) {
@@ -97,7 +97,7 @@ public class PerformanceAnalyzerResourceProviderTests {
 
     String requestURI = protocolScheme + "localhost:9200/_opendistro/_performanceanalyzer/_agent/metrics" +
             "?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all";
-    String expectedResponseURI = protocolScheme + "localhost:9650/_opendistro/_performanceanalyzer/metrics" +
+    String expectedResponseURI = protocolScheme + "localhost:9600/_opendistro/_performanceanalyzer/metrics" +
             "?metrics=Latency,CPU_Utilization&agg=avg,max&dim=ShardID&nodes=all";
 
     RestRequest restRequest = generateRestRequest(requestURI, "metrics");
@@ -111,7 +111,7 @@ public class PerformanceAnalyzerResourceProviderTests {
 
     String requestUri = protocolScheme + "localhost:9200/_opendistro/_performanceanalyzer/_agent/rca" +
             "?rca=highShardCPU&startTime=2019-10-11";
-    String expectedResponseUri = protocolScheme + "localhost:9650/_opendistro/_performanceanalyzer/rca" +
+    String expectedResponseUri = protocolScheme + "localhost:9600/_opendistro/_performanceanalyzer/rca" +
             "?rca=highShardCPU&startTime=2019-10-11";
 
     RestRequest restRequest = generateRestRequest(requestUri, "rca");
@@ -125,7 +125,7 @@ public class PerformanceAnalyzerResourceProviderTests {
 
     String requestUri = protocolScheme + "localhost:9200/_opendistro/_performanceanalyzer/_agent/batch" +
             "?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412650000&endtime=1594412665000&samplingperiod=5";
-    String expectedResponseUri = protocolScheme + "localhost:9650/_opendistro/_performanceanalyzer/batch" +
+    String expectedResponseUri = protocolScheme + "localhost:9600/_opendistro/_performanceanalyzer/batch" +
             "?metrics=CPU_Utilization,IO_TotThroughput&starttime=1594412650000&endtime=1594412665000&samplingperiod=5";
 
     RestRequest restRequest = generateRestRequest(requestUri, "batch");
@@ -137,7 +137,7 @@ public class PerformanceAnalyzerResourceProviderTests {
     initPerformanceAnalyzerResourceProvider(protocolScheme.equals("https://"));
 
     String requestUri = protocolScheme + "localhost:9200/_opendistro/_performanceanalyzer/_agent/actions";
-    String expectedResponseUri = protocolScheme + "localhost:9650/_opendistro/_performanceanalyzer/actions";
+    String expectedResponseUri = protocolScheme + "localhost:9600/_opendistro/_performanceanalyzer/actions";
 
     RestRequest restRequest = generateRestRequest(requestUri, "actions");
     URL actualResponseURI = performanceAnalyzerRp.getAgentUri(restRequest);
