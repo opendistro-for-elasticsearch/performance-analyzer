@@ -129,33 +129,43 @@ jacoco {
 
 jacocoTestReport {
     reports {
-        xml.enabled false
+        xml.enabled true
+        html.enabled true
         csv.enabled false
-        html.destination file("${buildDir}/jacocoHtml")
     }
+    afterEvaluate {
+        classDirectories.from = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    include: [
+                            '**/com/amazon/opendistro/elasticsearch/performanceanalyzer/**',
+                    ],
+                    exclude: [
+                    ])
+        })
+    }
+
 }
 
 jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories.from = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    include: [
+                            '**/com/amazon/opendistro/elasticsearch/performanceanalyzer/**',
+                    ],
+                    exclude: [
+                    ])
+        })
+    }
     violationRules {
         rule {
             limit {
                 minimum = 0.0
             }
         }
-
-        rule {
-            enabled = false
-            element = 'CLASS'
-            includes = ['org.gradle.*']
-
-            limit {
-                counter = 'LINE'
-                value = 'TOTALCOUNT'
-                maximum = 0.0
-            }
-        }
     }
 }
+
 
 // to run coverage verification during the build (and fail when appropriate)
 check.dependsOn jacocoTestCoverageVerification
