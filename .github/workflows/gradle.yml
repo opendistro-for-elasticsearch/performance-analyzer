@@ -57,5 +57,5 @@ jobs:
     - name: Upload coverage report
       working-directory: ./tmp/pa
       env:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      CODECOV_TOKEN: ${{secrets.CODECOV_TOKEN}}
       run: bash <(curl -s https://codecov.io/bash) -f ./build/reports/jacoco/test/jacocoTestReport.xml
