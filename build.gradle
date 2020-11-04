@@ -34,6 +34,7 @@ plugins {
     id 'java'
     id 'nebula.ospackage' version "8.2.0"
     id 'com.github.spotbugs' version '4.0.0'
+    id 'jacoco'
 }
 
 spotbugsMain {
@@ -91,8 +92,8 @@ compileJava {
     }
 }
 
- javadoc {
-     options.addStringOption("-add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED")
+javadoc {
+    options.addStringOption("-add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED")
 }
 
 project.afterEvaluate {
@@ -121,6 +122,54 @@ configurations {
 tasks.withType(JavaCompile) {
     options.warnings = false
 }
+
+jacoco {
+    toolVersion = "0.8.5"
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled true
+        csv.enabled false
+    }
+    afterEvaluate {
+        classDirectories.from = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    include: [
+                            '**/com/amazon/opendistro/elasticsearch/performanceanalyzer/**',
+                    ],
+                    exclude: [
+                    ])
+        })
+    }
+
+}
+
+jacocoTestCoverageVerification {
+    afterEvaluate {
+        classDirectories.from = files(classDirectories.files.collect {
+            fileTree(dir: it,
+                    include: [
+                            '**/com/amazon/opendistro/elasticsearch/performanceanalyzer/**',
+                    ],
+                    exclude: [
+                    ])
+        })
+    }
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.0
+            }
+        }
+    }
+}
+
+
+// to run coverage verification during the build (and fail when appropriate)
+check.dependsOn jacocoTestCoverageVerification
+
 
 dependencies {
     if (JavaVersion.current() <= JavaVersion.VERSION_1_8) {
@@ -330,6 +379,6 @@ afterEvaluate {
     }
 
     task buildPackages(type: GradleBuild) {
-         tasks = ['build', 'buildRpm', 'buildDeb']
+        tasks = ['build', 'buildRpm', 'buildDeb']
     }
 }

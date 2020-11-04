@@ -1,5 +1,6 @@
 [![Java CI](https://github.com/opendistro-for-elasticsearch/performance-analyzer/workflows/Java%20CI/badge.svg)](https://github.com/opendistro-for-elasticsearch/performance-analyzer/actions?query=workflow%3A%22Java+CI%22)
 [![CD](https://github.com/opendistro-for-elasticsearch/performance-analyzer/workflows/CD/badge.svg)](https://github.com/opendistro-for-elasticsearch/performance-analyzer/actions?query=workflow%3ACD)
+[![codecov](https://codecov.io/gh/opendistro-for-elasticsearch/performance-analyzer/branch/master/graph/badge.svg)](https://codecov.io/gh/opendistro-for-elasticsearch/performance-analyzer)
 [![Documentation](https://img.shields.io/badge/api-reference-blue.svg)](https://opendistro.github.io/for-elasticsearch-docs/docs/pa/)
 [![Chat](https://img.shields.io/badge/chat-on%20forums-blue)](https://discuss.opendistrocommunity.dev/c/performance-analyzer/)
 ![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
