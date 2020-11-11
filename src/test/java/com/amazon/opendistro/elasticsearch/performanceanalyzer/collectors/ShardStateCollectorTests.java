@@ -52,14 +52,14 @@ public class ShardStateCollectorTests {
     private static final int NUMBER_OF_REPLICAS = 1;
 
     private ShardStateCollector shardStateCollector;
-    private ClusterService mockedClusterService;
+    private ClusterService clusterService;
     private PerformanceAnalyzerController controller;
     private ConfigOverridesWrapper configOverrides;
 
     @Before
     public void init() {
-        mockedClusterService = Mockito.mock(ClusterService.class);
-        ESResources.INSTANCE.setClusterService(mockedClusterService);
+        clusterService = Mockito.mock(ClusterService.class);
+        ESResources.INSTANCE.setClusterService(clusterService);
 
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         MetricsConfiguration.CONFIG_MAP.put(ShardStateCollector.class, MetricsConfiguration.cdefault);
@@ -73,7 +73,7 @@ public class ShardStateCollectorTests {
         long startTimeInMills = 1153721339;
         Mockito.when(controller.isCollectorEnabled(configOverrides, "ShardsStateCollector"))
                 .thenReturn(true);
-        Mockito.when(mockedClusterService.state()).thenReturn(generateClusterState());
+        Mockito.when(clusterService.state()).thenReturn(generateClusterState());
         shardStateCollector.collectMetrics(startTimeInMills);
         List<ShardStateCollector.ShardStateMetrics> metrics = readMetrics();
         assertEquals(NUMBER_OF_PRIMARY_SHARDS + NUMBER_OF_REPLICAS, metrics.size());
