@@ -26,6 +26,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.ClusterState;
@@ -138,6 +139,16 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
             this.shardType = shardType;
             this.nodeName = nodeName;
             this.shardState = shardState;
+        }
+
+        // default constructor for jackson to de-serialize this class
+        // from json string in unit test
+        @VisibleForTesting
+        private ShardStateMetrics() {
+            this.shardId = -1;
+            this.shardType = SHARD_PRIMARY.toString();
+            this.nodeName = "";
+            this.shardState = ShardRoutingState.UNASSIGNED.toString();
         }
 
         @JsonProperty(AllMetrics.CommonDimension.Constants.SHARDID_VALUE)
