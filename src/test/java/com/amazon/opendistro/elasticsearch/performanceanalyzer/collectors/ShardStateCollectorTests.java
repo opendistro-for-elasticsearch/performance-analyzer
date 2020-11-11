@@ -15,7 +15,6 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
@@ -45,10 +44,9 @@ import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Al
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
 import static org.elasticsearch.test.ESTestCase.settings;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(RandomizedRunner.class)
-public class ShardStateCollectorTests extends CustomMetricsLocationTestBase {
+public class ShardStateCollectorTests {
     private static final String TEST_INDEX = "test";
     private static final int NUMBER_OF_PRIMARY_SHARDS = 1;
     private static final int NUMBER_OF_REPLICAS = 1;
@@ -68,27 +66,6 @@ public class ShardStateCollectorTests extends CustomMetricsLocationTestBase {
         controller = Mockito.mock(PerformanceAnalyzerController.class);
         configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
         shardStateCollector = new ShardStateCollector(controller, configOverrides);
-    }
-
-    @Test
-    public void testShardsStateMetrics() {
-        long startTimeInMills = 1153721339;
-        Mockito.when(controller.isCollectorEnabled(configOverrides, "ShardsStateCollector"))
-                .thenReturn(true);
-
-        shardStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills);
-        List<Event> metrics =  new ArrayList<>();
-        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
-
-        assertEquals(1, metrics.size());
-        assertEquals("shard_state_metrics", metrics.get(0).value);
-
-        try {
-            shardStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills, "123");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...1 values passed; 0 expected
-        }
     }
 
     @Test
