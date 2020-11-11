@@ -1,6 +1,10 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
@@ -35,28 +39,28 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
     private static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
 
+    private static final List<Route> ROUTES =
+        unmodifiableList(
+            asList(
+                new Route(RestRequest.Method.GET, PA_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, PA_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.GET, RCA_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.GET, LOGGING_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, LOGGING_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.GET, BATCH_METRICS_CLUSTER_CONFIG_PATH),
+                new Route(RestRequest.Method.POST, BATCH_METRICS_CLUSTER_CONFIG_PATH)));
+
     private final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler;
     private final NodeStatsSettingHandler nodeStatsSettingHandler;
 
     public PerformanceAnalyzerClusterConfigAction(final Settings settings, final RestController restController,
                                                   final PerformanceAnalyzerClusterSettingHandler clusterSettingHandler,
                                                   final NodeStatsSettingHandler nodeStatsSettingHandler) {
-        super(settings);
         this.clusterSettingHandler = clusterSettingHandler;
         this.nodeStatsSettingHandler = nodeStatsSettingHandler;
-        registerHandlers(restController);
     }
 
-    private void registerHandlers(final RestController controller) {
-        controller.registerHandler(RestRequest.Method.GET, PA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, PA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, RCA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, RCA_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, LOGGING_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, LOGGING_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.GET, BATCH_METRICS_CLUSTER_CONFIG_PATH, this);
-        controller.registerHandler(RestRequest.Method.POST, BATCH_METRICS_CLUSTER_CONFIG_PATH, this);
-    }
 
     /**
      * @return the name of this handler. The name should be human readable and
@@ -66,6 +70,11 @@ public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     @Override
     public String getName() {
         return PerformanceAnalyzerClusterConfigAction.class.getSimpleName();
+    }
+
+    @Override
+    public List<Route> routes() {
+        return ROUTES;
     }
 
     /**
