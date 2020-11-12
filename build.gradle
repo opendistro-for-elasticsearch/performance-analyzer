@@ -191,7 +191,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.9'
     compile 'org.bouncycastle:bcprov-jdk15on:1.66'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.66'
-    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.10'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.11'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
     compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
@@ -277,7 +277,7 @@ task buildRca() {
         exec {
             def licenseDir = "$projectDir/licenses"
             workingDir("$licenseDir")
-            commandLine 'rm', "performanceanalyzer-rca-1.10.jar.sha1"
+            commandLine 'rm', "performanceanalyzer-rca-1.11.jar.sha1"
         }
         exec {
             workingDir("$projectDir")
