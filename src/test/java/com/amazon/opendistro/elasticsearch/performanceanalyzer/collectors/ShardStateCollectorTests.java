@@ -84,7 +84,10 @@ public class ShardStateCollectorTests {
 
     private ClusterState generateClusterState() {
         MetaData metaData = MetaData.builder()
-                .put(IndexMetaData.builder(TEST_INDEX).settings(settings(Version.CURRENT)).numberOfShards(NUMBER_OF_PRIMARY_SHARDS).numberOfReplicas(NUMBER_OF_REPLICAS))
+                .put(IndexMetaData.builder(TEST_INDEX)
+                                .settings(settings(Version.CURRENT))
+                                .numberOfShards(NUMBER_OF_PRIMARY_SHARDS)
+                                .numberOfReplicas(NUMBER_OF_REPLICAS))
                 .build();
 
         RoutingTable testRoutingTable = new RoutingTable.Builder()
