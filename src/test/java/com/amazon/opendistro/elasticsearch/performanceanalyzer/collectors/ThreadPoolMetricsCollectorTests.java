@@ -15,8 +15,6 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import static org.junit.Assert.assertEquals;
-
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector.ThreadPoolStatus;
@@ -24,15 +22,19 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
@@ -127,7 +129,7 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
     private ThreadPoolStatus readMetrics() throws IOException {
         List<Event> metrics = readEvents();
         assert metrics.size() == 1;
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
         String[] jsonStrs = metrics.get(0).value.split("\n");
         assert jsonStrs.length == 2;
         return objectMapper.readValue(jsonStrs[1], ThreadPoolStatus.class);

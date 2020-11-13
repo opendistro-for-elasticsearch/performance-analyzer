@@ -190,7 +190,7 @@ dependencies {
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.10'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
+    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.11.3'
 
     // JDK9+ has to run powermock 2+. https://github.com/powermock/powermock/issues/888
     testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.0'

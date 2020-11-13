@@ -23,6 +23,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
@@ -104,7 +105,7 @@ public class ShardStateCollectorTests {
     private List<ShardStateCollector.ShardStateMetrics> readMetrics() throws IOException {
         List<Event> metrics = readEvents();
         assert metrics.size() == 1;
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
         String[] jsonStrs = metrics.get(0).value.split("\n");
         assert jsonStrs.length == 4;
         List<ShardStateCollector.ShardStateMetrics> list = new ArrayList<>();
