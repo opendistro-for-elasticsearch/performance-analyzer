@@ -52,7 +52,7 @@ public class PerformanceAnalyzerResourceProvider extends BaseRestHandler {
 
   private static final int HTTP_CLIENT_CONNECTION_TIMEOUT_MILLIS = 200;
   private static final String AGENT_PATH = "/_opendistro/_performanceanalyzer/_agent/";
-  private static final String DEFAULT_PORT_NUMBER = "9650";
+  private static final String DEFAULT_PORT_NUMBER = "9600";
 
   private String portNumber;
   private final boolean isHttpsEnabled;
