@@ -27,6 +27,7 @@ grant {
   permission java.lang.RuntimePermission "loadLibrary.attach";
   permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
   permission java.lang.RuntimePermission "accessClassInPackage.sun.tools.attach";
+  permission java.lang.RuntimePermission "createClassLoader";
 };
 
 
