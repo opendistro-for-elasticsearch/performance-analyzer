@@ -15,42 +15,35 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import org.junit.Ignore;
+import org.junit.Test;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-//@Ignore
+@Ignore
 public class NodeStatsFixedShardsMetricsCollectorTests extends CustomMetricsLocationTestBase {
-    private NodeStatsFixedShardsMetricsCollector nodeStatsFixedShardsMetricsCollector;
-
-    @Before
-    public void init() {
-
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
-
-        nodeStatsFixedShardsMetricsCollector = new NodeStatsFixedShardsMetricsCollector(null);
-    }
 
     @Test
     public void testNodeStatsMetrics() {
-//        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1253722339;
 
+        MetricsConfiguration.CONFIG_MAP.put(NodeStatsFixedShardsMetricsCollector.class, MetricsConfiguration.cdefault);
+
+        NodeStatsFixedShardsMetricsCollector nodeStatsFixedShardsMetricsCollector = new NodeStatsFixedShardsMetricsCollector(null);
         nodeStatsFixedShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
+            PluginSettings.instance().getMetricsLocation()
+                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
         PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("89123.23", fetchedValue);
 
 
@@ -82,11 +75,4 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends CustomMetricsLoca
         }
 
     }
-
-    @Test
-    public void testCollectMetrics() {
-        long startTimeInMills = 1153721339;
-        nodeStatsFixedShardsMetricsCollector.collectMetrics(startTimeInMills);
-    }
-
 }
