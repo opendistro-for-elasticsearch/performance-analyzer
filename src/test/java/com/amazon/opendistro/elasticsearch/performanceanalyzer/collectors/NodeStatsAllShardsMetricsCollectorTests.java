@@ -15,27 +15,43 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import org.junit.Ignore;
-import org.junit.Test;
-
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 
-@Ignore
-public class NodeStatsAllShardsMetricsCollectorTests extends CustomMetricsLocationTestBase {
+//@Ignore
+public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
+    private NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector;
 
+    @Before
+    public void init() {
+        ESResources.INSTANCE.setIndicesService(getInstanceFromNode(IndicesService.class));
+
+        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
+        nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
+
+    @Ignore
     @Test
     public void testNodeStatsMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1253722339;
         
-        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
 
-        NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
+
+
         nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
 
 
@@ -73,4 +89,13 @@ public class NodeStatsAllShardsMetricsCollectorTests extends CustomMetricsLocati
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
         }
     }
+
+    @Test
+    public void testCollectMetrics() {
+        long startTimeInMills = 1153721339;
+        nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills);
+        nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills + 500) ;
+    }
+
+
 }
