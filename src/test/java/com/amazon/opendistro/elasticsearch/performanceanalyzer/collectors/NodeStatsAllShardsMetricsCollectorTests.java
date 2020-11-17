@@ -17,9 +17,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +29,6 @@ import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
@@ -51,48 +48,6 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
     @After
     public void tearDown() throws Exception {
         super.tearDown();
-    }
-
-    @Ignore
-    @Test
-    public void testNodeStatsMetrics() {
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = 1253722339;
-        nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
-
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("89123.23", fetchedValue);
-
-        try {
-            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 1 values passed; 2 expected
-        }
-
-        try {
-            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills);
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 0 values passed; 2 expected
-        }
-
-        try {
-            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 3 values passed; 2 expected
-        }
-
-        try {
-            nodeStatsAllShardsMetricsCollector.getNodeIndicesStatsByShardField();
-        } catch (Exception exception) {
-            assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
-        }
     }
 
     @Test
