@@ -264,23 +264,6 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
             this.requestCacheEvictions = requestCacheEvictions;
             this.requestCacheInBytes = requestCacheInBytes;
         }
-//
-//        @VisibleForTesting
-//        public NodeStatsMetricsAllShardsPerCollectionStatus() {
-////            super();
-////            this.shardStats = null;
-//
-//            this.queryCacheHitCount = -1;
-//            this.queryCacheMissCount = -1;
-//            this.queryCacheInBytes = -1;
-//            this.fieldDataEvictions = -1;
-//            this.fieldDataInBytes = -1;
-//            this.requestCacheHitCount = -1;
-//            this.requestCacheMissCount = -1;
-//            this.requestCacheEvictions = -1;
-//            this.requestCacheInBytes = -1;
-//        }
-
 
         private long calculate(ShardStatsValue nodeMetric) {
             return valueCalculators.get(nodeMetric.toString()).calculateValue(shardStats);
