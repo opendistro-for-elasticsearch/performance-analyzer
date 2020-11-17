@@ -16,9 +16,17 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.junit.After;
@@ -26,13 +34,15 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-//@Ignore
 public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
+    private static final String TEST_INDEX = "test";
     private NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector;
+    private IndicesService indicesService;
 
     @Before
     public void init() {
-        ESResources.INSTANCE.setIndicesService(getInstanceFromNode(IndicesService.class));
+        indicesService = getInstanceFromNode(IndicesService.class);
+        ESResources.INSTANCE.setIndicesService(indicesService);
 
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
         nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
@@ -48,12 +58,7 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
     public void testNodeStatsMetrics() {
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1253722339;
-        
-
-
-
         nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
-
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
                 PluginSettings.instance().getMetricsLocation()
@@ -91,11 +96,29 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
     }
 
     @Test
-    public void testCollectMetrics() {
+    public void testCollectMetrics() throws IOException {
         long startTimeInMills = 1153721339;
+        createIndex(TEST_INDEX);
+
         nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills);
-        nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills + 500) ;
+        startTimeInMills += 500;
+        nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills);
+
+        List<NodeStatsMetricsAllShardsPerCollectionStatus> metrics = readMetrics();
+        assertEquals(2, metrics.size());
     }
 
+    private List<NodeStatsMetricsAllShardsPerCollectionStatus> readMetrics() throws IOException {
+        List<Event> metrics = TestUtil.readEvents();
+        assert metrics.size() == 2;
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());;
 
+        List<NodeStatsMetricsAllShardsPerCollectionStatus> list = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            String[] jsonStrs = metrics.get(0).value.split("\n");
+            assert jsonStrs.length == 2;
+            list.add(objectMapper.readValue(jsonStrs[1], NodeStatsMetricsAllShardsPerCollectionStatus.class));
+        }
+        return list;
+    }
 }

@@ -22,6 +22,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMe
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics.MasterPendingStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.GCType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
@@ -149,7 +150,7 @@ public class AbstractReaderTests extends AbstractTests {
                 bitsetMemory, shardSizeInBytes)).serialize();
 
         NodeStatsAllShardsMetricsCollector dummyCollectorAllShards = new NodeStatsAllShardsMetricsCollector(null);
-        str += (dummyCollectorAllShards.new NodeStatsMetricsAllShardsPerCollectionStatus(
+        str += (new NodeStatsMetricsAllShardsPerCollectionStatus(
                 queryCacheHitCount,
                 queryCacheMissCount,
                 queryCacheInBytes,
