@@ -34,11 +34,10 @@ import org.junit.Test;
 public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
     private static final String TEST_INDEX = "test";
     private NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector;
-    private IndicesService indicesService;
 
     @Before
     public void init() {
-        indicesService = getInstanceFromNode(IndicesService.class);
+        IndicesService indicesService = getInstanceFromNode(IndicesService.class);
         ESResources.INSTANCE.setIndicesService(indicesService);
 
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
@@ -77,7 +76,7 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
     private List<NodeStatsMetricsAllShardsPerCollectionStatus> readMetrics() throws IOException {
         List<Event> metrics = TestUtil.readEvents();
         assert metrics.size() == 2;
-        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());;
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
 
         List<NodeStatsMetricsAllShardsPerCollectionStatus> list = new ArrayList<>();
         for (int i = 0; i < 2; i++) {

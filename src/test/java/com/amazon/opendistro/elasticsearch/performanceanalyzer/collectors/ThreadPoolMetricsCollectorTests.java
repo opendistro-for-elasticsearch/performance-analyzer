@@ -15,26 +15,25 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static org.junit.Assert.assertEquals;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector.ThreadPoolStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
@@ -56,7 +55,7 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
     public void testThreadPoolMetrics() {
         long startTimeInMills = 1453724339;
         threadPoolMetricsCollector.saveMetricValues("12321.5464", startTimeInMills);
-        List<Event> metrics = readEvents();
+        List<Event> metrics = TestUtil.readEvents();
         assertEquals(1, metrics.size());
         assertEquals("12321.5464", metrics.get(0).value);
 
@@ -120,14 +119,8 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
         return new ThreadPoolStats(stats);
     }
 
-    private List<Event> readEvents() {
-        List<Event> metrics = new ArrayList<>();
-        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
-        return metrics;
-    }
-
     private ThreadPoolStatus readMetrics() throws IOException {
-        List<Event> metrics = readEvents();
+        List<Event> metrics = TestUtil.readEvents();
         assert metrics.size() == 1;
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
         String[] jsonStrs = metrics.get(0).value.split("\n");

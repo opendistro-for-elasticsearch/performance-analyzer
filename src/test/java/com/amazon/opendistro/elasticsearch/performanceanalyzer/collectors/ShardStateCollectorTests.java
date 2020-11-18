@@ -15,15 +15,23 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_PRIMARY;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
+import static org.elasticsearch.test.ESTestCase.settings;
+import static org.junit.Assert.assertEquals;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
@@ -36,15 +44,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_PRIMARY;
-import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
-import static org.elasticsearch.test.ESTestCase.settings;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(RandomizedRunner.class)
 public class ShardStateCollectorTests {
@@ -99,14 +98,8 @@ public class ShardStateCollectorTests {
                 .getDefault(Settings.EMPTY)).metaData(metaData).routingTable(testRoutingTable).build();
     }
 
-    private List<Event> readEvents() {
-        List<Event> metrics = new ArrayList<>();
-        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
-        return metrics;
-    }
-
     private List<ShardStateCollector.ShardStateMetrics> readMetrics() throws IOException {
-        List<Event> metrics = readEvents();
+        List<Event> metrics = TestUtil.readEvents();
         assert metrics.size() == 1;
         ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
         String[] jsonStrs = metrics.get(0).value.split("\n");
