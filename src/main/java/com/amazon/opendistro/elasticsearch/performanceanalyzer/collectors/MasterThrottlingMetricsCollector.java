@@ -55,7 +55,7 @@ public class MasterThrottlingMetricsCollector extends PerformanceAnalyzerMetrics
     }
 
     @Override
-    void collectMetrics(long startTime) {
+    public void collectMetrics(long startTime) {
         if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
             return;
         }

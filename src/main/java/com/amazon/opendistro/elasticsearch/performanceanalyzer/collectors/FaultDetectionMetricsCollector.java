@@ -59,7 +59,7 @@ public class FaultDetectionMetricsCollector extends PerformanceAnalyzerMetricsCo
 
     @Override
     @SuppressWarnings("unchecked")
-    void collectMetrics(long startTime) {
+    public void collectMetrics(long startTime) {
         if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
             return;
         }
