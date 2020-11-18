@@ -24,6 +24,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Performan
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         currentShards = Utils.getShards();
     }
 
-    private static Map<String, ValueCalculator> valueCalculators = new HashMap<String, ValueCalculator>() { {
+    private static final Map<String, ValueCalculator> maps = new HashMap<String, ValueCalculator>() { {
         put(ShardStatsValue.INDEXING_THROTTLE_TIME.toString(),
                 (shardStats) -> shardStats.getStats().getIndexing().getTotal().getThrottleTime().millis());
 
@@ -102,6 +103,8 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         put(ShardStatsValue.CACHE_REQUEST_SIZE.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getMemorySizeInBytes());
 
     } };
+
+    private static final ImmutableMap<String, ValueCalculator> valueCalculators = ImmutableMap.copyOf(maps);
 
     @Override
     public String getMetricsPath(long startTime, String... keysPath) {
