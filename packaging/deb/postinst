@@ -1,6 +1,28 @@
 #!/bin/sh
 set -e
 
+# Make sure the ES_HOME environment variable is set
+if [ -z "$ES_HOME" ]; then
+    ES_HOME=/usr/share/elasticsearch
+fi
+
+# Prepare the RCA reader process for execution
+cp -r "$ES_HOME"/plugins/opendistro_performance_analyzer/performance-analyzer-rca $ES_HOME
+if [ -f "$ES_HOME"/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli ]; then
+  mv "$ES_HOME"/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli "$ES_HOME"/bin
+  rm -rf "$ES_HOME"/bin/opendistro_performance_analyzer
+fi
+mkdir -p "$ES_HOME"/data
+mkdir -p "/var/lib/elasticsearch"
+touch "$ES_HOME"/data/rca_enabled.conf
+echo 'true' > "$ES_HOME"/data/rca_enabled.conf
+echo 'true' > /var/lib/elasticsearch/performance_analyzer_enabled.conf
+echo 'true' > /var/lib/elasticsearch/rca_enabled.conf
+chown elasticsearch /var/lib/elasticsearch/performance_analyzer_enabled.conf
+chown elasticsearch /var/lib/elasticsearch/rca_enabled.conf
+chown -R elasticsearch "$ES_HOME/performance-analyzer-rca"
+chmod a+rw /tmp
+
 if ! grep -q '## OpenDistro Performance Analyzer' /etc/elasticsearch/jvm.options; then
    CLK_TCK=`/usr/bin/getconf CLK_TCK`
    echo >> /etc/elasticsearch/jvm.options

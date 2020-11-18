@@ -15,10 +15,16 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableList;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverrides;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesHelper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.handler.ConfigOverridesClusterSettingHandler;
+
+import java.util.List;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.client.node.NodeClient;
@@ -40,28 +46,36 @@ import java.util.Collections;
  */
 public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHandler {
 
-    private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerOverridesClusterConfigAction.class);
-    private static final String PA_CONFIG_OVERRIDES_PATH = "/_opendistro/_performanceanalyzer/override/cluster/config";
+    private static final Logger LOG =
+            LogManager.getLogger(PerformanceAnalyzerOverridesClusterConfigAction.class);
+    private static final String PA_CONFIG_OVERRIDES_PATH =
+            "/_opendistro/_performanceanalyzer/override/cluster/config";
     private static final String OVERRIDES_FIELD = "overrides";
     private static final String REASON_FIELD = "reason";
     private static final String OVERRIDE_TRIGGERED_FIELD = "override triggered";
+
+    private static final List<Route> ROUTES =
+            unmodifiableList(
+                    asList(
+                            new Route(RestRequest.Method.GET, PA_CONFIG_OVERRIDES_PATH),
+                            new Route(RestRequest.Method.POST, PA_CONFIG_OVERRIDES_PATH)));
 
     private final ConfigOverridesClusterSettingHandler configOverridesClusterSettingHandler;
     private final ConfigOverridesWrapper overridesWrapper;
 
     public PerformanceAnalyzerOverridesClusterConfigAction(
-            final Settings settings, final RestController restController,
+            final Settings settings,
+            final RestController restController,
             final ConfigOverridesClusterSettingHandler configOverridesClusterSettingHandler,
             final ConfigOverridesWrapper overridesWrapper) {
-        super(settings);
+        super();
         this.configOverridesClusterSettingHandler = configOverridesClusterSettingHandler;
         this.overridesWrapper = overridesWrapper;
-        registerHandlers(restController);
     }
 
-    private void registerHandlers(final RestController restController) {
-        restController.registerHandler(RestRequest.Method.GET, PA_CONFIG_OVERRIDES_PATH, this);
-        restController.registerHandler(RestRequest.Method.POST, PA_CONFIG_OVERRIDES_PATH, this);
+    @Override
+    public List<Route> routes() {
+        return ROUTES;
     }
 
     /**
@@ -93,7 +107,8 @@ public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHan
         } else if (request.method() == RestRequest.Method.POST) {
             consumer = handlePost(request);
         } else {
-            String reason = "Unsupported method:" + request.method().toString() + " Supported: [GET, POST]";
+            String reason =
+                    "Unsupported method:" + request.method().toString() + " Supported: [GET, POST]";
             consumer = sendErrorResponse(reason, RestStatus.METHOD_NOT_ALLOWED);
         }
 
@@ -157,27 +172,35 @@ public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHan
 
         // Check if any RCA nodes are present in both enabled and disabled lists.
         if (requestedOverrides.getEnable().getRcas() != null
-                && requestedOverrides.getDisable().getRcas() != null) {
-            isValid = Collections.disjoint(requestedOverrides.getEnable().getRcas(), requestedOverrides.getDisable().getRcas());
+                    && requestedOverrides.getDisable().getRcas() != null) {
+            isValid =
+                    Collections.disjoint(
+                            requestedOverrides.getEnable().getRcas(), requestedOverrides.getDisable().getRcas());
         }
 
         // Check if any deciders are present in both enabled and disabled lists.
         if (isValid
-                && requestedOverrides.getEnable().getDeciders() != null
-                && requestedOverrides.getDisable().getDeciders() != null) {
-            isValid = Collections.disjoint(requestedOverrides.getEnable().getDeciders(), requestedOverrides.getDisable().getDeciders());
+                    && requestedOverrides.getEnable().getDeciders() != null
+                    && requestedOverrides.getDisable().getDeciders() != null) {
+            isValid =
+                    Collections.disjoint(
+                            requestedOverrides.getEnable().getDeciders(),
+                            requestedOverrides.getDisable().getDeciders());
         }
 
         // Check if any remediation actions are in both enabled and disabled lists.
         if (isValid
-                && requestedOverrides.getEnable().getActions() != null
-                && requestedOverrides.getDisable().getActions() != null) {
-            isValid = Collections.disjoint(requestedOverrides.getEnable().getActions(), requestedOverrides.getDisable().getActions());
+                    && requestedOverrides.getEnable().getActions() != null
+                    && requestedOverrides.getDisable().getActions() != null) {
+            isValid =
+                    Collections.disjoint(
+                            requestedOverrides.getEnable().getActions(),
+                            requestedOverrides.getDisable().getActions());
         }
 
         if (isValid
-                && requestedOverrides.getEnable().getCollectors() != null
-                && requestedOverrides.getDisable().getCollectors() != null) {
+                    && requestedOverrides.getEnable().getCollectors() != null
+                    && requestedOverrides.getDisable().getCollectors() != null) {
             isValid = Collections.disjoint(requestedOverrides.getEnable().getCollectors(), requestedOverrides.getDisable().getCollectors());
         }
 
