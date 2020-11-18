@@ -61,6 +61,17 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
 
         List<NodeStatsMetricsAllShardsPerCollectionStatus> metrics = readMetrics();
         assertEquals(2, metrics.size());
+
+        NodeStatsMetricsAllShardsPerCollectionStatus diffMetricValue = metrics.get(1);
+        assertEquals(0, diffMetricValue.getFieldDataEvictions());
+        assertEquals(0, diffMetricValue.getFieldDataInBytes());
+        assertEquals(0, diffMetricValue.getQueryCacheHitCount());
+        assertEquals(0, diffMetricValue.getQueryCacheInBytes());
+        assertEquals(0, diffMetricValue.getQueryCacheMissCount());
+        assertEquals(0, diffMetricValue.getRequestCacheEvictions());
+        assertEquals(0, diffMetricValue.getRequestCacheHitCount());
+        assertEquals(0, diffMetricValue.getRequestCacheInBytes());
+        assertEquals(0, diffMetricValue.getRequestCacheMissCount());
     }
 
     private List<NodeStatsMetricsAllShardsPerCollectionStatus> readMetrics() throws IOException {
