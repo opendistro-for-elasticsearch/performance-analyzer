@@ -41,7 +41,7 @@ jobs:
       # Explicitly set the docker-compose program path so that our build scripts in RCA can run the program
       # This is necessary because of the Github Actions environment and the workingDir of the Gradle environment
     - name: Set docker-compose path
-      run: echo ::set-env name=DOCKER_COMPOSE_LOCATION::$(which docker-compose)
+      run:  echo $(which docker-compose) >> $DOCKER_COMPOSE_LOCATION
       # Set the vm.max_map_count system property to the minimum required to run Elasticsearch
     - name: Set vm.max_map_count
       run: sudo sysctl -w vm.max_map_count=262144
