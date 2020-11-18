@@ -34,7 +34,7 @@ jobs:
       run: ./gradlew publishToMavenLocal
     - name: Build PA gradle using the new RCA jar
       working-directory: ./tmp/pa
-      run: rm licenses/performanceanalyzer-rca-1.10.jar.sha1
+      run: rm licenses/performanceanalyzer-rca-1.11.jar.sha1
     - name: Update SHA
       working-directory: ./tmp/pa
       run: ./gradlew updateShas
@@ -50,7 +50,7 @@ jobs:
       run: ./gradlew build
     - name: Run Integration Tests
       working-directory: ./tmp/pa
-      run: ./gradlew integTest -Dtests.enableIT=true -Dtests.useDockerCluster=true
+      run: ./gradlew integTest -Dtests.enableIT -Dtests.useDockerCluster
     - name: Generate Jacoco coverage report
       working-directory: ./tmp/pa
       run: ./gradlew jacocoTestReport

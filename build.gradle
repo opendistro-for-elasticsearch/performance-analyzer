@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "7.3.2")
+        es_version = System.getProperty("es.version", "7.9.1")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -32,7 +32,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'nebula.ospackage' version "8.2.0"
+    id 'nebula.ospackage' version "8.3.0"
     id 'com.github.spotbugs' version '4.0.0'
     id 'jacoco'
 }
@@ -40,7 +40,7 @@ plugins {
 spotbugsMain {
     excludeFilter = file("checkstyle/findbugs-exclude.xml")
     effort = 'max'
-    ignoreFailures = false
+    ignoreFailures = true
 
     reports {
         xml.enabled = false
@@ -53,7 +53,7 @@ spotbugsTest {
 }
 
 ext {
-    opendistroVersion = '1.10.0'
+    opendistroVersion = '1.11.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -70,11 +70,13 @@ ext {
     licenseFile = rootProject.file('LICENSE.txt')
     noticeFile = rootProject.file('NOTICE.txt')
 }
+
 test {
     enabled = true
 }
 
 licenseHeaders.enabled = false
+validateNebulaPom.enabled = false
 
 esplugin {
     name 'opendistro_performance_analyzer'
@@ -93,7 +95,7 @@ compileJava {
 }
 
 javadoc {
-    options.addStringOption("-add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED")
+     options.addStringOption("-add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED")
 }
 
 project.afterEvaluate {
@@ -182,27 +184,46 @@ dependencies {
         all*.exclude group: "org.elasticsearch", module: "securemock"
     }
 
-    compile 'com.google.guava:guava:27.0.1-jre'
+    compile ('com.google.guava:guava:28.2-jre') {
+        force = 'true'
+    }
     compile 'org.jooq:jooq:3.10.8'
-    compile 'org.apache.commons:commons-lang3:3.6'
-    compile 'org.bouncycastle:bcprov-jdk15on:1.60'
-    compile 'org.bouncycastle:bcpkix-jdk15on:1.60'
-    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.10'
-    compile 'com.fasterxml.jackson.core:jackson-annotations:2.8.11'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.11'
+    compile 'org.apache.commons:commons-lang3:3.9'
+    compile 'org.bouncycastle:bcprov-jdk15on:1.66'
+    compile 'org.bouncycastle:bcpkix-jdk15on:1.66'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.11'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
     compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.11.3'
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
+        force = 'true'
+    }
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1') {
+        force = 'true'
+    }
 
     // JDK9+ has to run powermock 2+. https://github.com/powermock/powermock/issues/888
     testCompile group: 'org.powermock', name: 'powermock-api-mockito2', version: '2.0.0'
-    testCompile group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.0'
+    testCompile(group: 'org.powermock', name: 'powermock-module-junit4', version: '2.0.0') {
+        exclude(group: 'org.hamcrest', module: 'hamcrest-core')
+    }
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.0'
     testCompile group: 'org.powermock', name: 'powermock-core', version: '2.0.0'
     testCompile group: 'org.powermock', name: 'powermock-api-support', version: '2.0.0'
-    testCompile group: 'org.powermock', name: 'powermock-module-junit4-common', version: '2.0.0'
+    testCompile(group: 'org.powermock', name: 'powermock-module-junit4-common', version: '2.0.0') {
+        exclude(group: 'org.hamcrest', module: 'hamcrest-core')
+    }
     testCompile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
     testCompile group: 'org.powermock', name: 'powermock-reflect', version: '2.0.0'
-    testCompile group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.3'
-    testCompile group: 'org.objenesis', name: 'objenesis', version: '3.0.1'
+    testCompile(group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.3') {
+        force = 'true'
+    }
+    testCompile(group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.9.3') {
+        force = 'true'
+    }
+    testCompile(group: 'org.objenesis', name: 'objenesis', version: '3.0.1') {
+        force = 'true'
+    }
     testCompile group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
 }
 
@@ -214,36 +235,15 @@ dependencyLicenses.doFirst {
     updateShas.updateShas()
 }
 
-bundlePlugin {
-    from ("pa_config") {
-        into "pa_config"
-    }
-    from ("pa_bin") {
-        into "pa_bin"
-        include "performance-analyzer-agent"
-    }
-    from ("pa_bin") {
-        into "extensions"
-        include "performance-analyzer-agent"
-    }
-    from ('build/resources/main/') {
-        include "plugin-security.policy"
-    }
-    exclude ('tools.jar')
-    from ("config/opendistro_performance_analyzer") {
-        into "config"
-    }
-}
-
 gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "forbiddenApisTest",
                                              "thirdPartyAudit",
                                              "testingConventions"]
-
 import java.nio.file.Paths
 import org.ajoberstar.gradle.git.tasks.GitClone
 
 String rcaDir
+String rcaArtifactsDir
 
 static def propEnabled(property) {
     return System.getProperty(property) != null && System.getProperty(property).toLowerCase().equals("true")
@@ -256,15 +256,76 @@ static def propEnabled(property) {
  * to the Gradle JVM
  */
 task cloneGitRepo(type: GitClone) {
-    onlyIf = {
-        propEnabled("tests.enableIT")
-    }
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
     uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
     destinationPath = destination
     bare = false
     enabled = !destination.exists() // to clone only once
+}
+
+task buildRca() {
+    dependsOn(cloneGitRepo)
+    doLast {
+        exec {
+            workingDir("$rcaDir")
+            commandLine './gradlew', 'build', '-x', 'test'
+        }
+        exec {
+            workingDir("$rcaDir")
+            commandLine './gradlew', 'publishToMavenLocal'
+        }
+        exec {
+            def licenseDir = "$projectDir/licenses"
+            workingDir("$licenseDir")
+            commandLine 'rm', "performanceanalyzer-rca-1.11.jar.sha1"
+        }
+        exec {
+            workingDir("$projectDir")
+            commandLine './gradlew', 'updateShas'
+        }
+    }
+}
+
+task unpackRca(type: Copy) {
+    dependsOn(buildRca)
+    from(zipTree("$rcaDir/build/distributions/performance-analyzer-rca.zip")) {
+    }
+    into "$rcaDir/build/distributions"
+    rcaArtifactsDir = "$rcaDir/build/distributions/performance-analyzer-rca/"
+}
+
+bundlePlugin {
+    dependsOn 'cloneGitRepo'
+    from("$rcaArtifactsDir/pa_config") {
+        into "pa_config"
+    }
+    from("$rcaArtifactsDir/pa_bin") {
+        into "pa_bin"
+        include "performance-analyzer-agent"
+    }
+    from("$rcaArtifactsDir/pa_bin") {
+        into "extensions"
+        include "performance-analyzer-agent"
+    }
+    from("$rcaArtifactsDir") {
+        into "performance-analyzer-rca"
+    }
+    from("packaging") {
+        include "performance-analyzer-agent-cli"
+        into "bin"
+    }
+    from("packaging") {
+        include "deb/**", "rpm/**"
+        into "install"
+    }
+    from('build/resources/main/') {
+        include "plugin-security.policy"
+    }
+    exclude('tools.jar')
+    from("config/opendistro_performance_analyzer") {
+        into "config"
+    }
 }
 
 /**
@@ -367,6 +428,7 @@ afterEvaluate {
     buildRpm {
         arch = 'NOARCH'
         postInstall file('packaging/rpm/postinst')
+        postUninstall file('packaging/rpm/postrm')
         archiveName "${packageName}-${version}.rpm"
         dependsOn 'assemble'
     }
@@ -374,6 +436,7 @@ afterEvaluate {
     buildDeb {
         arch = 'amd64'
         postInstall file('packaging/deb/postinst')
+        postUninstall file('packaging/deb/postrm')
         archiveName "${packageName}-${version}.deb"
         dependsOn 'assemble'
     }
@@ -382,3 +445,6 @@ afterEvaluate {
         tasks = ['build', 'buildRpm', 'buildDeb']
     }
 }
+
+bundlePlugin.mustRunAfter unpackRca
+build.dependsOn unpackRca
