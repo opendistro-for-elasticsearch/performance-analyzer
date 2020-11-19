@@ -34,8 +34,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.ClusterState;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.cluster.metadata.MetaData;
+import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.cluster.metadata.Metadata;
 import org.elasticsearch.cluster.routing.IndexRoutingTable;
 import org.elasticsearch.cluster.routing.RoutingTable;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -82,8 +82,8 @@ public class ShardStateCollectorTests {
     }
 
     private ClusterState generateClusterState() {
-        MetaData metaData = MetaData.builder()
-                .put(IndexMetaData.builder(TEST_INDEX)
+        Metadata metaData = Metadata.builder()
+                .put(IndexMetadata.builder(TEST_INDEX)
                                 .settings(settings(Version.CURRENT))
                                 .numberOfShards(NUMBER_OF_PRIMARY_SHARDS)
                                 .numberOfReplicas(NUMBER_OF_REPLICAS))
@@ -95,7 +95,7 @@ public class ShardStateCollectorTests {
                 .build();
 
         return ClusterState.builder(org.elasticsearch.cluster.ClusterName.CLUSTER_NAME_SETTING
-                .getDefault(Settings.EMPTY)).metaData(metaData).routingTable(testRoutingTable).build();
+                .getDefault(Settings.EMPTY)).metadata(metaData).routingTable(testRoutingTable).build();
     }
 
     private List<ShardStateCollector.ShardStateMetrics> readMetrics() throws IOException {
