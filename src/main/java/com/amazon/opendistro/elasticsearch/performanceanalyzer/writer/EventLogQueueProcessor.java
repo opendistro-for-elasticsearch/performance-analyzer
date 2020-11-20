@@ -1,5 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.writer;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -114,9 +116,8 @@ public class EventLogQueueProcessor {
             } else if (entry.epoch == nextTimeBucket) {
                 nextMetrics.add(entry);
             } else {
-                LOG.info("UNEXPECTED entry ({}) with epoch '{}' arrived" +
-                                " when the current bucket is '{}'",
-                        entry.key, entry.epoch, timeBucket);
+                PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                    WriterMetrics.STALE_METRICS, "", 1);
             }
         }
 
