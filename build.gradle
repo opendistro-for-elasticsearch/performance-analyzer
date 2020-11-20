@@ -73,6 +73,7 @@ ext {
 
 test {
     enabled = true
+    systemProperty 'tests.security.manager', 'false'
 }
 
 licenseHeaders.enabled = false
