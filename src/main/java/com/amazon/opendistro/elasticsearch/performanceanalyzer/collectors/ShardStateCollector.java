@@ -57,7 +57,7 @@ public class ShardStateCollector extends PerformanceAnalyzerMetricsCollector imp
     }
 
     @Override
-    void collectMetrics( long startTime) {
+    public void collectMetrics( long startTime) {
         if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
             return;
         }
