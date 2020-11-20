@@ -21,6 +21,7 @@ grant {
   //permission java.io.FilePermission "/dev/shm/-","read,readlink,write,delete,execute";
   //permission java.io.FilePermission "/proc/-","read,readlink,execute,write,delete";
   //permission java.io.FilePermission "/sys/block/-","read,readlink,execute,write,delete";
+  permission java.io.FilePermission "build/tmp/junit_metrics", "read";
   permission com.sun.tools.attach.AttachPermission "attachVirtualMachine";
   permission com.sun.tools.attach.AttachPermission "createAttachProvider";
   permission java.lang.RuntimePermission "manageProcess";
@@ -28,6 +29,8 @@ grant {
   permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.misc";
   permission java.lang.RuntimePermission "accessClassInPackage.sun.tools.attach";
   permission java.lang.RuntimePermission "createClassLoader";
+  permission java.lang.RuntimePermission "defineClass";
+
 };
 
 
