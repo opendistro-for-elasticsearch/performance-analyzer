@@ -15,17 +15,21 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.sqlite;
 
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.sql.DriverManager;
+import org.junit.Test;
 
 public class PerformanceAnalyzerSqliteTests {
 
     public PerformanceAnalyzerSqliteTests() {
-        System.setProperty("java.io.tmpdir", "/tmp");
+        PerformanceAnalyzerPlugin.invokePrivileged(() -> {
+            System.setProperty("java.io.tmpdir", "/tmp");
+        });
     }
 
 
