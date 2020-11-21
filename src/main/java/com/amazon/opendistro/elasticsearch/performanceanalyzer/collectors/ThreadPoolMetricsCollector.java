@@ -22,19 +22,19 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.annotations.VisibleForTesting;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.util.concurrent.SizeBlockingQueue;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats.Stats;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 
 public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     private static final Logger LOG = LogManager.getLogger(ThreadPoolMetricsCollector.class);
@@ -157,19 +157,6 @@ public class ThreadPoolMetricsCollector extends PerformanceAnalyzerMetricsCollec
             this.threadsActive = threadsActive;
             this.queueLatency = queueLatency;
             this.queueCapacity = queueCapacity;
-        }
-
-        // default constructor for jackson to de-serialize this class
-        // from json string in unit test
-        @VisibleForTesting
-        public ThreadPoolStatus() {
-            this.type = "testing";
-            this.queueSize = -1;
-            this.rejected = -1;
-            this.threadsCount = -1;
-            this.threadsActive = -1;
-            this.queueLatency = -1.0;
-            this.queueCapacity = -1;
         }
 
         @JsonProperty(ThreadPoolDimension.Constants.TYPE_VALUE)

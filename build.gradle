@@ -73,6 +73,7 @@ ext {
 
 test {
     enabled = true
+    systemProperty 'tests.security.manager', 'false'
 }
 
 licenseHeaders.enabled = false
@@ -163,7 +164,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.0
+                minimum = 0.19
             }
         }
     }
@@ -195,6 +196,7 @@ dependencies {
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.12'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
+    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.4'
     compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
         force = 'true'
     }
@@ -215,10 +217,11 @@ dependencies {
     }
     testCompile group: 'org.javassist', name: 'javassist', version: '3.24.0-GA'
     testCompile group: 'org.powermock', name: 'powermock-reflect', version: '2.0.0'
-    testCompile(group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.3') {
+    //minimum byte-buddy version to be compatible with mockito-core 2.23.0 is 1.9.7+. https://github.com/mockito/mockito/issues/1606
+    testCompile(group: 'net.bytebuddy', name: 'byte-buddy', version: '1.9.7') {
         force = 'true'
     }
-    testCompile(group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.9.3') {
+    testCompile(group: 'net.bytebuddy', name: 'byte-buddy-agent', version: '1.9.7') {
         force = 'true'
     }
     testCompile(group: 'org.objenesis', name: 'objenesis', version: '3.0.1') {
