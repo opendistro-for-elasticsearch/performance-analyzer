@@ -15,46 +15,98 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_PRIMARY;
+import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
+import static org.elasticsearch.test.ESTestCase.settings;
+import static org.junit.Assert.assertEquals;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
-import org.junit.Test;
-import org.mockito.Mockito;
-
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.elasticsearch.Version;
+import org.elasticsearch.cluster.ClusterState;
+import org.elasticsearch.cluster.metadata.IndexMetadata;
+import org.elasticsearch.cluster.metadata.Metadata;
+import org.elasticsearch.cluster.routing.IndexRoutingTable;
+import org.elasticsearch.cluster.routing.RoutingTable;
+import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.common.settings.Settings;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+@RunWith(RandomizedRunner.class)
+public class ShardStateCollectorTests {
+    private static final String TEST_INDEX = "test";
+    private static final int NUMBER_OF_PRIMARY_SHARDS = 1;
+    private static final int NUMBER_OF_REPLICAS = 1;
 
-public class ShardStateCollectorTests extends CustomMetricsLocationTestBase {
+    private ShardStateCollector shardStateCollector;
+    private ClusterService clusterService;
+    private PerformanceAnalyzerController controller;
+    private ConfigOverridesWrapper configOverrides;
+
+    @Before
+    public void init() {
+        clusterService = Mockito.mock(ClusterService.class);
+        ESResources.INSTANCE.setClusterService(clusterService);
+
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+        MetricsConfiguration.CONFIG_MAP.put(ShardStateCollector.class, MetricsConfiguration.cdefault);
+        controller = Mockito.mock(PerformanceAnalyzerController.class);
+        configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
+        shardStateCollector = new ShardStateCollector(controller, configOverrides);
+    }
 
     @Test
-    public void testShardsStateMetrics() {
-        MetricsConfiguration.CONFIG_MAP.put(ShardStateCollector.class, MetricsConfiguration.cdefault);
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+    public void testCollectMetrics() throws IOException {
         long startTimeInMills = 1153721339;
-        PerformanceAnalyzerController controller = Mockito.mock(PerformanceAnalyzerController.class);
-        ConfigOverridesWrapper configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
-        Mockito.when(controller.isCollectorEnabled(configOverrides, "ShardStateCollector"))
+        Mockito.when(controller.isCollectorEnabled(configOverrides, "ShardsStateCollector"))
                 .thenReturn(true);
-        ShardStateCollector shardsStateCollector = new ShardStateCollector(controller, configOverrides);
-        shardsStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills);
-        List<Event> metrics =  new ArrayList<>();
-        PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
+        Mockito.when(clusterService.state()).thenReturn(generateClusterState());
+        shardStateCollector.collectMetrics(startTimeInMills);
+        List<ShardStateCollector.ShardStateMetrics> metrics = readMetrics();
+        assertEquals(NUMBER_OF_PRIMARY_SHARDS + NUMBER_OF_REPLICAS, metrics.size());
+        assertEquals(SHARD_PRIMARY.toString(), metrics.get(0).getShardType());
+        assertEquals(SHARD_REPLICA.toString(), metrics.get(1).getShardType());
+    }
 
-        assertEquals(1, metrics.size());
-        assertEquals("shard_state_metrics", metrics.get(0).value);
+    private ClusterState generateClusterState() {
+        Metadata metaData = Metadata.builder()
+                .put(IndexMetadata.builder(TEST_INDEX)
+                                .settings(settings(Version.CURRENT))
+                                .numberOfShards(NUMBER_OF_PRIMARY_SHARDS)
+                                .numberOfReplicas(NUMBER_OF_REPLICAS))
+                .build();
 
-        try {
-            shardsStateCollector.saveMetricValues("shard_state_metrics", startTimeInMills, "123");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...1 values passed; 0 expected
-        }
+        RoutingTable testRoutingTable = new RoutingTable.Builder()
+                .add(new IndexRoutingTable.Builder(metaData.index(TEST_INDEX).
+                        getIndex()).initializeAsNew(metaData.index(TEST_INDEX)).build())
+                .build();
+
+        return ClusterState.builder(org.elasticsearch.cluster.ClusterName.CLUSTER_NAME_SETTING
+                .getDefault(Settings.EMPTY)).metadata(metaData).routingTable(testRoutingTable).build();
+    }
+
+    private List<ShardStateCollector.ShardStateMetrics> readMetrics() throws IOException {
+        List<Event> metrics = TestUtil.readEvents();
+        assert metrics.size() == 1;
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
+        String[] jsonStrs = metrics.get(0).value.split("\n");
+        assert jsonStrs.length == 4;
+        List<ShardStateCollector.ShardStateMetrics> list = new ArrayList<>();
+        list.add(objectMapper.readValue(jsonStrs[2], ShardStateCollector.ShardStateMetrics.class));
+        list.add(objectMapper.readValue(jsonStrs[3], ShardStateCollector.ShardStateMetrics.class));
+        return list;
     }
 }
-

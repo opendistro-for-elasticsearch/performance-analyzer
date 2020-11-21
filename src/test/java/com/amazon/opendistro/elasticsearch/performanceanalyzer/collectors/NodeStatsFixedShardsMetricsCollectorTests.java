@@ -40,10 +40,10 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends CustomMetricsLoca
 
 
         String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
+            PluginSettings.instance().getMetricsLocation()
+                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
         PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
         assertEquals("89123.23", fetchedValue);
 
 

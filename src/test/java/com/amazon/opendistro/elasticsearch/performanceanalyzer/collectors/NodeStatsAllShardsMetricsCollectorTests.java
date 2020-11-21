@@ -15,62 +15,75 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import org.junit.Ignore;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.paranamer.ParanamerModule;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
+    private static final String TEST_INDEX = "test";
+    private NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector;
 
-@Ignore
-public class NodeStatsAllShardsMetricsCollectorTests extends CustomMetricsLocationTestBase {
+    @Before
+    public void init() {
+        IndicesService indicesService = getInstanceFromNode(IndicesService.class);
+        ESResources.INSTANCE.setIndicesService(indicesService);
+
+        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
+        nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
 
     @Test
-    public void testNodeStatsMetrics() {
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = 1253722339;
-        
-        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
+    public void testCollectMetrics() throws IOException {
+        long startTimeInMills = 1153721339;
+        createIndex(TEST_INDEX);
 
-        NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
-        nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
+        nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills);
+        startTimeInMills += 500;
+        nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills);
 
+        List<NodeStatsMetricsAllShardsPerCollectionStatus> metrics = readMetrics();
+        assertEquals(2, metrics.size());
 
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("89123.23", fetchedValue);
+        NodeStatsMetricsAllShardsPerCollectionStatus diffMetricValue = metrics.get(1);
+        assertEquals(0, diffMetricValue.getFieldDataEvictions());
+        assertEquals(0, diffMetricValue.getFieldDataInBytes());
+        assertEquals(0, diffMetricValue.getQueryCacheHitCount());
+        assertEquals(0, diffMetricValue.getQueryCacheInBytes());
+        assertEquals(0, diffMetricValue.getQueryCacheMissCount());
+        assertEquals(0, diffMetricValue.getRequestCacheEvictions());
+        assertEquals(0, diffMetricValue.getRequestCacheHitCount());
+        assertEquals(0, diffMetricValue.getRequestCacheInBytes());
+        assertEquals(0, diffMetricValue.getRequestCacheMissCount());
+    }
 
-        try {
-            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 1 values passed; 2 expected
+    private List<NodeStatsMetricsAllShardsPerCollectionStatus> readMetrics() throws IOException {
+        List<Event> metrics = TestUtil.readEvents();
+        assert metrics.size() == 2;
+        ObjectMapper objectMapper = new ObjectMapper().registerModule(new ParanamerModule());
+
+        List<NodeStatsMetricsAllShardsPerCollectionStatus> list = new ArrayList<>();
+        for (int i = 0; i < 2; i++) {
+            String[] jsonStrs = metrics.get(0).value.split("\n");
+            assert jsonStrs.length == 2;
+            list.add(objectMapper.readValue(jsonStrs[1], NodeStatsMetricsAllShardsPerCollectionStatus.class));
         }
-
-        try {
-            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills);
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 0 values passed; 2 expected
-        }
-
-        try {
-            nodeStatsAllShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 3 values passed; 2 expected
-        }
-
-        try {
-            nodeStatsAllShardsMetricsCollector.getNodeIndicesStatsByShardField();
-        } catch (Exception exception) {
-            assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
-        }
+        return list;
     }
 }

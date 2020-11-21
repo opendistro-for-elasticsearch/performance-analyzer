@@ -15,11 +15,19 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.collect.ImmutableMap;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
@@ -29,13 +37,6 @@ import org.elasticsearch.index.shard.IndexShard;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.indices.IndicesService;
 import org.elasticsearch.indices.NodeIndicesStats;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * This collector collects metrics for all shards on a node in a single run.
@@ -85,7 +86,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         currentShards = Utils.getShards();
     }
 
-    private Map<String, ValueCalculator> valueCalculators = new HashMap<String, ValueCalculator>() { {
+    private static final Map<String, ValueCalculator> maps = new HashMap<String, ValueCalculator>() { {
         put(ShardStatsValue.INDEXING_THROTTLE_TIME.toString(),
                 (shardStats) -> shardStats.getStats().getIndexing().getTotal().getThrottleTime().millis());
 
@@ -102,6 +103,8 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
         put(ShardStatsValue.CACHE_REQUEST_SIZE.toString(), (shardStats) -> shardStats.getStats().getRequestCache().getMemorySizeInBytes());
 
     } };
+
+    private static final ImmutableMap<String, ValueCalculator> valueCalculators = ImmutableMap.copyOf(maps);
 
     @Override
     public String getMetricsPath(long startTime, String... keysPath) {
@@ -207,7 +210,7 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
                 String.valueOf(ShardId));
     }
 
-    public class NodeStatsMetricsAllShardsPerCollectionStatus extends MetricStatus {
+    public static class NodeStatsMetricsAllShardsPerCollectionStatus extends MetricStatus {
 
         @JsonIgnore
         private ShardStats shardStats;
@@ -264,7 +267,6 @@ public class NodeStatsAllShardsMetricsCollector extends PerformanceAnalyzerMetri
             this.requestCacheEvictions = requestCacheEvictions;
             this.requestCacheInBytes = requestCacheInBytes;
         }
-
 
         private long calculate(ShardStatsValue nodeMetric) {
             return valueCalculators.get(nodeMetric.toString()).calculateValue(shardStats);
