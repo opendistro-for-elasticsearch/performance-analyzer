@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "7.9.1")
+        es_version = System.getProperty("es.version", "7.10.0")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -53,7 +53,7 @@ spotbugsTest {
 }
 
 ext {
-    opendistroVersion = '1.11.0'
+    opendistroVersion = '1.12.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -78,6 +78,7 @@ test {
 
 licenseHeaders.enabled = false
 validateNebulaPom.enabled = false
+loggerUsageCheck.enabled = false
 
 esplugin {
     name 'opendistro_performance_analyzer'
@@ -192,7 +193,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.9'
     compile 'org.bouncycastle:bcprov-jdk15on:1.66'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.66'
-    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.11'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.12'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
     compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.4'
@@ -280,7 +281,7 @@ task buildRca() {
         exec {
             def licenseDir = "$projectDir/licenses"
             workingDir("$licenseDir")
-            commandLine 'rm', "performanceanalyzer-rca-1.11.jar.sha1"
+            commandLine 'rm', "performanceanalyzer-rca-1.12.jar.sha1"
         }
         exec {
             workingDir("$projectDir")
@@ -372,16 +373,17 @@ task setupEsCluster() {
  *      -Dtests.password to authenticate requests in the opendistro-security context
  * -Dtests.password the password of the admin user specified by -Dtests.user
  */
-integTestRunner {
-    onlyIf = {
-        propEnabled("tests.enableIT")
-    }
-    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
-    systemProperty 'tests.security.manager', 'false'
-    if (propEnabled("tests.useDockerCluster")) {
-        dependsOn(setupEsCluster)
-    }
-}
+// TODO : 'integTestRunner' task has been removed with 7.10, needs to be migrated
+/* integTestRunner {
+*    onlyIf = {
+*        propEnabled("tests.enableIT")
+*    }
+*    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
+*    systemProperty 'tests.security.manager', 'false'
+*    if (propEnabled("tests.useDockerCluster")) {
+*        dependsOn(setupEsCluster)
+*    }
+}*/
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {
