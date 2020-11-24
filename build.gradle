@@ -33,7 +33,7 @@ buildscript {
 plugins {
     id 'java'
     id 'nebula.ospackage' version "8.3.0"
-    id 'com.github.spotbugs' version '4.0.0'
+    id 'com.github.spotbugs' version '4.6.0'
     id 'jacoco'
 }
 
