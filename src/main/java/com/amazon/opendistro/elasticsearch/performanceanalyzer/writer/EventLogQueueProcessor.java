@@ -116,6 +116,7 @@ public class EventLogQueueProcessor {
             } else if (entry.epoch == nextTimeBucket) {
                 nextMetrics.add(entry);
             } else {
+                //increment stale_metrics count when metrics to be collected is falling behind the current bucket
                 PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.STALE_METRICS, "", 1);
             }
