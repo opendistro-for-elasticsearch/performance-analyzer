@@ -31,8 +31,8 @@ import org.mockito.Mockito;
 
 public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestCase {
     private static final String TEST_INDEX = "test";
-    private NodeStatsFixedShardsMetricsCollector nodeStatsFixedShardsMetricsCollector;
-    private PerformanceAnalyzerController collector;
+    private NodeStatsFixedShardsMetricsCollector collector;
+    private PerformanceAnalyzerController controller;
     private long startTimeInMills = 1153721339;
 
     @Before
@@ -41,8 +41,8 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
         ESResources.INSTANCE.setIndicesService(indicesService);
 
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
-        collector = Mockito.mock(PerformanceAnalyzerController.class);
-        nodeStatsFixedShardsMetricsCollector = new NodeStatsFixedShardsMetricsCollector(collector);
+        controller = Mockito.mock(PerformanceAnalyzerController.class);
+        collector = new NodeStatsFixedShardsMetricsCollector(controller);
     }
 
     @After
@@ -53,14 +53,14 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
     @Test
     public void testNodeStatsMetrics() {
         try {
-            nodeStatsFixedShardsMetricsCollector.getNodeIndicesStatsByShardField();
+            collector.getNodeIndicesStatsByShardField();
         } catch (Exception exception) {
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
         }
 
-        nodeStatsFixedShardsMetricsCollector = new NodeStatsFixedShardsMetricsCollector(null);
+        collector = new NodeStatsFixedShardsMetricsCollector(null);
         try {
-            nodeStatsFixedShardsMetricsCollector.collectMetrics(startTimeInMills);
+            collector.collectMetrics(startTimeInMills);
         } catch (Exception exception) {
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
         }
@@ -69,8 +69,8 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
     @Test
     public void testCollectMetrics() {
         createIndex(TEST_INDEX);
-        Mockito.when(collector.getNodeStatsShardsPerCollection()).thenReturn(1);
-        nodeStatsFixedShardsMetricsCollector.collectMetrics(startTimeInMills);
+        Mockito.when(controller.getNodeStatsShardsPerCollection()).thenReturn(1);
+        collector.collectMetrics(startTimeInMills);
 
         //cannot make NodeStatsMetricsFixedShardsPerCollectionStatus static to deserialize it, so check with jsonString
         String jsonStr = readMetricsInJsonString();
@@ -95,7 +95,6 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
         assertTrue(jsonStr.contains(ShardStatsValue.Constants.VERSION_MAP_MEMORY_VALUE));
         assertTrue(jsonStr.contains(ShardStatsValue.Constants.BITSET_MEMORY_VALUE));
         assertTrue(jsonStr.contains(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES_VALUE));
-
     }
 
     private String readMetricsInJsonString() {

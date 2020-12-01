@@ -2,6 +2,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector.CacheMaxSizeStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
@@ -45,8 +46,8 @@ public class CacheConfigMetricsCollectorTests extends ESSingleNodeTestCase {
     assertEquals(2, metrics.size());
     CacheMaxSizeStatus filedDataCache = metrics.get(0);
     CacheMaxSizeStatus shardRequestCache = metrics.get(1);
-    assertEquals("field_data_cache", filedDataCache.getCacheType());
-    assertEquals("shard_request_cache", shardRequestCache.getCacheType());
+    assertEquals(CacheType.FIELD_DATA_CACHE.toString(), filedDataCache.getCacheType());
+    assertEquals(CacheType.SHARD_REQUEST_CACHE.toString(), shardRequestCache.getCacheType());
   }
 
   private List<CacheMaxSizeStatus> readMetrics() throws IOException {

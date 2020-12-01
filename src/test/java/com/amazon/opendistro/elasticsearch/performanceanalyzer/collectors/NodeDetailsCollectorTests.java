@@ -3,6 +3,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
@@ -59,8 +60,8 @@ public class NodeDetailsCollectorTests extends ESTestCase {
 
     assertEquals(NODE_ID, nodeDetailsStatus.getID());
     assertEquals("0.0.0.0", nodeDetailsStatus.getHostAddress());
-    assertEquals("DATA", nodeDetailsStatus.getRole());
-    assertEquals(true, nodeDetailsStatus.getIsMasterNode());
+    assertEquals(NodeRole.DATA.role(), nodeDetailsStatus.getRole());
+    assertTrue(nodeDetailsStatus.getIsMasterNode());
   }
 
   private NodeDetailsStatus readMetrics() throws IOException {
