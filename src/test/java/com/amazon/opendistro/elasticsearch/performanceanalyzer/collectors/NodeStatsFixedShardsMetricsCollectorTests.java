@@ -53,6 +53,27 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
     @Test
     public void testNodeStatsMetrics() {
         try {
+            collector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
+            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+        } catch (RuntimeException ex) {
+            //- expecting exception...only 1 values passed; 2 expected
+        }
+
+        try {
+            collector.saveMetricValues("89123.23", startTimeInMills);
+            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+        } catch (RuntimeException ex) {
+            //- expecting exception...only 0 values passed; 2 expected
+        }
+
+        try {
+            collector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
+            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+        } catch (RuntimeException ex) {
+            //- expecting exception...only 3 values passed; 2 expected
+        }
+
+        try {
             collector.getNodeIndicesStatsByShardField();
         } catch (Exception exception) {
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
