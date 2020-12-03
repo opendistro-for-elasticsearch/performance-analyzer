@@ -15,6 +15,8 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
@@ -27,21 +29,25 @@ import org.elasticsearch.test.ESSingleNodeTestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
 public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestCase {
     private static final String TEST_INDEX = "test";
+    private static long startTimeInMills = 1153721339;
     private NodeStatsFixedShardsMetricsCollector collector;
+
+    @Mock
     private PerformanceAnalyzerController controller;
-    private long startTimeInMills = 1153721339;
 
     @Before
     public void init() {
+        initMocks(this);
+
         IndicesService indicesService = getInstanceFromNode(IndicesService.class);
         ESResources.INSTANCE.setIndicesService(indicesService);
 
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
-        controller = Mockito.mock(PerformanceAnalyzerController.class);
         collector = new NodeStatsFixedShardsMetricsCollector(controller);
     }
 

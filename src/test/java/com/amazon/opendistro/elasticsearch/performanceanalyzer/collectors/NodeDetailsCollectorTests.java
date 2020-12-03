@@ -1,5 +1,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
@@ -23,16 +25,20 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.mockito.Mock;
 
 public class NodeDetailsCollectorTests extends ESTestCase {
   private static final String NODE_ID = "testNode";
   private NodeDetailsCollector collector;
-  private ConfigOverridesWrapper configOverrides;
   private ThreadPool threadPool;
+
+  @Mock
+  private ConfigOverridesWrapper configOverrides;
 
   @Before
   public void init() {
+    initMocks(this);
+
     DiscoveryNode testNode = new DiscoveryNode(NODE_ID, ESTestCase.buildNewFakeTransportAddress(), Collections
         .emptyMap(),
         DiscoveryNodeRole.BUILT_IN_ROLES, Version.CURRENT);
@@ -42,7 +48,6 @@ public class NodeDetailsCollectorTests extends ESTestCase {
     ESResources.INSTANCE.setClusterService(clusterService);
 
     MetricsConfiguration.CONFIG_MAP.put(NodeDetailsCollector.class, MetricsConfiguration.cdefault);
-    configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
     collector = new NodeDetailsCollector(configOverrides);
   }
 
