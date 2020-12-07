@@ -14,8 +14,9 @@ fi
 
 # Prepare the RCA reader process for execution
 cp -r "$ES_HOME"/plugins/opendistro_performance_analyzer/performance-analyzer-rca $ES_HOME
-if [ -f "$ES_HOME"/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli ]; then
-  mv "$ES_HOME"/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli "$ES_HOME"/bin
+if [ -f "$ES_HOME"/plugins/opendistro_performance_analyzer/bin/performance-analyzer-agent-cli ]; then
+  mv "$ES_HOME"/plugins/opendistro_performance_analyzer/bin/performance-analyzer-agent-cli "$ES_HOME"/bin
+  chmod 755 "$ES_HOME"/bin/performance-analyzer-agent-cli
   rm -rf "$ES_HOME"/bin/opendistro_performance_analyzer
 fi
 mkdir -p "$ES_HOME"/data
