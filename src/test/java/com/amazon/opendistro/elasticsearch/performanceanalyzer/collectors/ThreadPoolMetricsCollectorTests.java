@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
@@ -31,12 +32,10 @@ import java.util.List;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.threadpool.ThreadPoolStats;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
-@Ignore
 public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
     private ThreadPoolMetricsCollector threadPoolMetricsCollector;
@@ -46,7 +45,8 @@ public class ThreadPoolMetricsCollectorTests extends CustomMetricsLocationTestBa
 
     @Before
     public void init() {
-        mockThreadPool = Mockito.mock(ThreadPool.class);
+        initMocks(this);
+
         ESResources.INSTANCE.setThreadPool(mockThreadPool);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, MetricsConfiguration.cdefault);

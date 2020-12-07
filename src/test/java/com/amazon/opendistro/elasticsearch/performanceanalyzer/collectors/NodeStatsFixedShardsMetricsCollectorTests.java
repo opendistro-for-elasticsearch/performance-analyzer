@@ -15,64 +15,120 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.mockito.MockitoAnnotations.initMocks;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import java.util.List;
+import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.test.ESSingleNodeTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
-@Ignore
-public class NodeStatsFixedShardsMetricsCollectorTests extends CustomMetricsLocationTestBase {
+public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestCase {
+    private static final String TEST_INDEX = "test";
+    private static long startTimeInMills = 1153721339;
+    private NodeStatsFixedShardsMetricsCollector collector;
+
+    @Mock
+    private PerformanceAnalyzerController controller;
+
+    @Before
+    public void init() {
+        initMocks(this);
+
+        IndicesService indicesService = getInstanceFromNode(IndicesService.class);
+        ESResources.INSTANCE.setIndicesService(indicesService);
+
+        MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
+        collector = new NodeStatsFixedShardsMetricsCollector(controller);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        super.tearDown();
+    }
 
     @Test
     public void testNodeStatsMetrics() {
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = 1253722339;
-
-        MetricsConfiguration.CONFIG_MAP.put(NodeStatsFixedShardsMetricsCollector.class, MetricsConfiguration.cdefault);
-
-        NodeStatsFixedShardsMetricsCollector nodeStatsFixedShardsMetricsCollector = new NodeStatsFixedShardsMetricsCollector(null);
-        nodeStatsFixedShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55");
-
-
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-            PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("89123.23", fetchedValue);
-
-
         try {
-            nodeStatsFixedShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
+            collector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex");
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
             //- expecting exception...only 1 values passed; 2 expected
         }
 
         try {
-            nodeStatsFixedShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills);
+            collector.saveMetricValues("89123.23", startTimeInMills);
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
             //- expecting exception...only 0 values passed; 2 expected
         }
 
         try {
-            nodeStatsFixedShardsMetricsCollector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
+            collector.saveMetricValues("89123.23", startTimeInMills, "NodesStatsIndex", "55", "123");
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
             //- expecting exception...only 3 values passed; 2 expected
         }
 
         try {
-            nodeStatsFixedShardsMetricsCollector.getNodeIndicesStatsByShardField();
+            collector.getNodeIndicesStatsByShardField();
         } catch (Exception exception) {
             assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
         }
 
+        collector = new NodeStatsFixedShardsMetricsCollector(null);
+        try {
+            collector.collectMetrics(startTimeInMills);
+        } catch (Exception exception) {
+            assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
+        }
+    }
+
+    @Test
+    public void testCollectMetrics() {
+        createIndex(TEST_INDEX);
+        Mockito.when(controller.getNodeStatsShardsPerCollection()).thenReturn(1);
+        collector.collectMetrics(startTimeInMills);
+
+        //cannot make NodeStatsMetricsFixedShardsPerCollectionStatus static to deserialize it, so check with jsonString
+        String jsonStr = readMetricsInJsonString();
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.INDEXING_THROTTLE_TIME_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.REFRESH_COUNT_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.REFRESH_TIME_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.FLUSH_COUNT_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.FLUSH_TIME_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.MERGE_COUNT_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.MERGE_TIME_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.MERGE_CURRENT_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.INDEX_BUFFER_BYTES_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.SEGMENTS_COUNT_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.SEGMENTS_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.TERMS_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.STORED_FIELDS_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.TERM_VECTOR_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.NORMS_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.POINTS_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.DOC_VALUES_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.INDEX_WRITER_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.VERSION_MAP_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.BITSET_MEMORY_VALUE));
+        assertTrue(jsonStr.contains(ShardStatsValue.Constants.SHARD_SIZE_IN_BYTES_VALUE));
+    }
+
+    private String readMetricsInJsonString() {
+        List<Event> metrics = TestUtil.readEvents();
+        assert metrics.size() == 1;
+        String[] jsonStrs = metrics.get(0).value.split("\n");
+        assert jsonStrs.length == 2;
+        return jsonStrs[1];
     }
 }
