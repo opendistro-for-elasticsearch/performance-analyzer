@@ -48,9 +48,6 @@ jobs:
     - name: Build PA and run Unit Tests
       working-directory: ./tmp/pa
       run: ./gradlew build
-    - name: Run Integration Tests
-      working-directory: ./tmp/pa
-      run: ./gradlew integTest -Dtests.enableIT -Dtests.useDockerCluster
     - name: Generate Jacoco coverage report
       working-directory: ./tmp/pa
       run: ./gradlew jacocoTestReport
@@ -59,3 +56,6 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       run: bash <(curl -s https://codecov.io/bash) -f ./build/reports/jacoco/test/jacocoTestReport.xml
+    - name: Run Integration Tests
+      working-directory: ./tmp/pa
+      run: ./gradlew integTest -Dtests.enableIT -Dtests.useDockerCluster

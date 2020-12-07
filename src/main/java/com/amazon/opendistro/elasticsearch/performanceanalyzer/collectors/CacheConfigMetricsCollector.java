@@ -111,7 +111,7 @@ public class CacheConfigMetricsCollector extends PerformanceAnalyzerMetricsColle
         private final String cacheType;
 
         @JsonInclude(Include.NON_NULL)
-        private final long cacheMaxSize;
+        private final Long cacheMaxSize;
 
         CacheMaxSizeStatus(String cacheType, Long cacheMaxSize) {
             this.cacheType = cacheType;
