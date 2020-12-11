@@ -29,15 +29,16 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ha
  */
 public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerClusterConfigAction.class);
-    private static final String PA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/cluster/config";
-    private static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
-    private static final String LOGGING_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/cluster/config";
-    private static final String BATCH_METRICS_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/batch/cluster/config";
-    private static final String ENABLED = "enabled";
-    private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
     private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
     private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
     private static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
+
+    public static final String PA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/cluster/config";
+    public static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
+    public static final String LOGGING_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/cluster/config";
+    public static final String BATCH_METRICS_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/batch/cluster/config";
+    public static final String ENABLED = "enabled";
+    public static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
 
     private static final List<Route> ROUTES =
         unmodifiableList(
