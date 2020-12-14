@@ -47,20 +47,6 @@ public class PerformanceAnalyzerTransportChannelTests {
         assertEquals(originalChannel, channel.getInnerChannel());
     }
 
-//    @Test
-//    public void testShardBulkMetrics() {
-//        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-//        long startTimeInMills = 1593719339;
-//        PerformanceAnalyzerTransportChannel performanceanalyzerTransportChannel = new PerformanceAnalyzerTransportChannel();
-//        performanceanalyzerTransportChannel.saveMetricValues("ABCDEF", startTimeInMills, "BulkThread", "ShardBulkId", "start");
-//        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-//                PluginSettings.instance().getMetricsLocation() +
-//                        PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/BulkThread/shardbulk/ShardBulkId/start");
-//        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-//                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-//        assertEquals("ABCDEF", fetchedValue);
-//    }
-
     @Test
     public void testResponse() throws IOException {
         channel.sendResponse(response);
@@ -70,5 +56,4 @@ public class PerformanceAnalyzerTransportChannelTests {
         channel.sendResponse(exception);
         verify(originalChannel).sendResponse(exception);
     }
-
 }

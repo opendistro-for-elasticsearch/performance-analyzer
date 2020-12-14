@@ -17,7 +17,9 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector.NodeStatsMetricsAllShardsPerCollectionStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +36,7 @@ import org.junit.Test;
 public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
     private static final String TEST_INDEX = "test";
     private NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector;
+    private long startTimeInMills = 1153721339;;
 
     @Before
     public void init() {
@@ -50,8 +53,31 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
     }
 
     @Test
+    public void testGetNodeIndicesStatsByShardField() {
+        try {
+            nodeStatsAllShardsMetricsCollector.getNodeIndicesStatsByShardField();
+        } catch (Exception e) {
+            assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
+        }
+    }
+
+    @Test
+    public void testGetMetricsPath() {
+        String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55";
+        String actualPath = nodeStatsAllShardsMetricsCollector.getMetricsPath(startTimeInMills, "NodesStatsIndex", "55");
+        assertEquals(expectedPath, actualPath);
+
+        try {
+            nodeStatsAllShardsMetricsCollector.getMetricsPath(startTimeInMills, "NodesStatsIndex");
+            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+        } catch (RuntimeException ex) {
+            //- expecting exception...only 1 values passed; 2 expected
+        }
+    }
+
+    @Test
     public void testCollectMetrics() throws IOException {
-        long startTimeInMills = 1153721339;
         createIndex(TEST_INDEX);
 
         nodeStatsAllShardsMetricsCollector.collectMetrics(startTimeInMills);
