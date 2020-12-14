@@ -64,7 +64,7 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
     @Test
     public void testGetMetricsPath() {
         String expectedPath = PluginSettings.instance().getMetricsLocation()
-            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/indices/NodesStatsIndex/55";
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+ "/" + PerformanceAnalyzerMetrics.sIndicesPath + "/NodesStatsIndex/55";
         String actualPath = nodeStatsAllShardsMetricsCollector.getMetricsPath(startTimeInMills, "NodesStatsIndex", "55");
         assertEquals(expectedPath, actualPath);
 

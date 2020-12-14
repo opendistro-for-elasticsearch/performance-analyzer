@@ -19,9 +19,11 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector.NodeDetailsStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.NodeRole;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +48,7 @@ public class NodeDetailsCollectorTests extends ESTestCase {
   private static final String NODE_ID = "testNode";
   private NodeDetailsCollector collector;
   private ThreadPool threadPool;
+  private long startTimeInMills = 1153721339;
 
   @Mock
   private ConfigOverridesWrapper configOverrides;
@@ -70,6 +73,21 @@ public class NodeDetailsCollectorTests extends ESTestCase {
   public void tearDown() throws Exception {
     threadPool.shutdownNow();
     super.tearDown();
+  }
+
+  @Test
+  public void testGetMetricsPath() {
+    String expectedPath = PluginSettings.instance().getMetricsLocation()
+        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+ "/" + PerformanceAnalyzerMetrics.sNodesPath;
+    String actualPath = collector.getMetricsPath(startTimeInMills);
+    assertEquals(expectedPath, actualPath);
+
+    try {
+      collector.getMetricsPath(startTimeInMills, "nodesPath");
+      assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+    } catch (RuntimeException ex) {
+      //- expecting exception...1 values passed; 0 expected
+    }
   }
 
   @Test

@@ -59,8 +59,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.Perform
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -91,7 +89,6 @@ import org.elasticsearch.common.settings.SettingsFilter;
 import org.elasticsearch.common.util.PageCacheRecycler;
 import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
-import org.elasticsearch.discovery.Discovery;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.IndexModule;
@@ -231,22 +228,6 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         PerformanceAnalyzerSearchListener performanceanalyzerSearchListener =
             new PerformanceAnalyzerSearchListener(performanceAnalyzerController);
         indexModule.addSearchOperationListener(performanceanalyzerSearchListener);
-    }
-
-    //follower check, leader check
-    public void onDiscovery(Discovery discovery) {
-        try {
-            Class<?> listenerInjector = Class.forName(LISTENER_INJECTOR_CLASS_PATH);
-            Object listenerInjectorInstance = listenerInjector.getDeclaredConstructor().newInstance();
-            Method addListenerMethod = listenerInjectorInstance.getClass().getMethod(ADD_FAULT_DETECTION_METHOD,
-                    Discovery.class);
-            addListenerMethod.invoke(listenerInjectorInstance, discovery);
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException  |
-                IllegalAccessException e) {
-            LOG.debug("Exception while calling addFaultDetectionListener in Discovery");
-        } catch (ClassNotFoundException e) {
-            LOG.debug("No Class for ListenerInjector detected");
-        }
     }
 
     //- shardbulk

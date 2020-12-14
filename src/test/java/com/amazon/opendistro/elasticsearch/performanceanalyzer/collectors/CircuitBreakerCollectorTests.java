@@ -17,7 +17,9 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector.CircuitBreakerStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +52,21 @@ public class CircuitBreakerCollectorTests extends ESSingleNodeTestCase {
     @After
     public void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    @Test
+    public void testGetMetricsPath() {
+        String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+ "/" + PerformanceAnalyzerMetrics.sCircuitBreakerPath;
+        String actualPath = collector.getMetricsPath(startTimeInMills);
+        assertEquals(expectedPath, actualPath);
+
+        try {
+            collector.getMetricsPath(startTimeInMills, "circuitBreakerPath");
+            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+        } catch (RuntimeException ex) {
+            //- expecting exception...1 values passed; 0 expected
+        }
     }
 
     @Test
