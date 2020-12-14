@@ -29,10 +29,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.setting.ha
  */
 public class PerformanceAnalyzerClusterConfigAction extends BaseRestHandler {
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerClusterConfigAction.class);
-    private static final String CURRENT = "currentPerformanceAnalyzerClusterState";
-    private static final String NAME = "PerformanceAnalyzerClusterConfigAction";
-    private static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
 
+    public static final String CURRENT = "currentPerformanceAnalyzerClusterState";
+    public static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
     public static final String PA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/cluster/config";
     public static final String RCA_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/cluster/config";
     public static final String LOGGING_CLUSTER_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/cluster/config";
