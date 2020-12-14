@@ -260,6 +260,7 @@ gradle.startParameter.excludedTaskNames += [ "forbiddenApisMain",
                                              "testingConventions"]
 import java.nio.file.Paths
 import org.ajoberstar.gradle.git.tasks.GitClone
+import org.elasticsearch.gradle.test.RestIntegTestTask
 
 String rcaDir
 String rcaArtifactsDir
@@ -366,7 +367,7 @@ task setupEsCluster() {
 }
 
 /**
- * integTestRunner is a task provided by the ES test framework, which allows us to spin up clients
+ * integTest is a task provided by the ES test framework, which allows us to spin up clients
  * and test API calls against a local or remote Elasticsearch cluster.
  *
  * The simplest way to run this task in a way that "just works" is to invoke
@@ -389,17 +390,18 @@ task setupEsCluster() {
  *      -Dtests.password to authenticate requests in the opendistro-security context
  * -Dtests.password the password of the admin user specified by -Dtests.user
  */
-// TODO : 'integTestRunner' task has been removed with 7.10, needs to be migrated
-/* integTestRunner {
-*    onlyIf = {
-*        propEnabled("tests.enableIT")
-*    }
-*    // add "-Dtests.security.manager=false" to VM options if you want to run integ tests in IntelliJ
-*    systemProperty 'tests.security.manager', 'false'
-*    if (propEnabled("tests.useDockerCluster")) {
-*        dependsOn(setupEsCluster)
-*    }
-}*/
+task integTest(type: RestIntegTestTask) {
+    onlyIf = {
+        propEnabled("tests.enableIT")
+    }
+    if (propEnabled("tests.useDockerCluster")) {
+        dependsOn(setupEsCluster)
+    }
+    systemProperty 'tests.security.manager', 'false'
+    description = "Run integration tests against integTest cluster"
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+}
 
 // This is afterEvaluate because the bundlePlugin ZIP task is updated afterEvaluate and changes the ZIP name to match the plugin name
 afterEvaluate {
