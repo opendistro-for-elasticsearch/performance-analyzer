@@ -67,7 +67,7 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
 
         try {
             collector.getMetricsPath(startTimeInMills, "NodesStatsIndex");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+            fail("Negative scenario test: Should have been a RuntimeException");
         } catch (RuntimeException ex) {
             //- expecting exception...only 1 values passed; 2 expected
         }

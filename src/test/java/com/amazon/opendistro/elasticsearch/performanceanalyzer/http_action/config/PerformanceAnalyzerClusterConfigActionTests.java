@@ -99,25 +99,25 @@ public class PerformanceAnalyzerClusterConfigActionTests {
 
   @Test
   public void testUpdateRcaSetting() throws IOException {
-    test(PerformanceAnalyzerClusterConfigAction.RCA_CLUSTER_CONFIG_PATH);
+    testWithRequestPath(PerformanceAnalyzerClusterConfigAction.RCA_CLUSTER_CONFIG_PATH);
   }
 
   @Test
   public void testUpdateLoggingSetting() throws IOException {
-    test(PerformanceAnalyzerClusterConfigAction.LOGGING_CLUSTER_CONFIG_PATH);
+    testWithRequestPath(PerformanceAnalyzerClusterConfigAction.LOGGING_CLUSTER_CONFIG_PATH);
   }
 
   @Test
   public void testUpdateBatchMetricsSetting() throws IOException {
-    test(PerformanceAnalyzerClusterConfigAction.BATCH_METRICS_CLUSTER_CONFIG_PATH);
+    testWithRequestPath(PerformanceAnalyzerClusterConfigAction.BATCH_METRICS_CLUSTER_CONFIG_PATH);
   }
 
   @Test
   public void testUpdatePerformanceAnalyzerSetting() throws IOException {
-    test(PerformanceAnalyzerClusterConfigAction.PA_CLUSTER_CONFIG_PATH);
+    testWithRequestPath(PerformanceAnalyzerClusterConfigAction.PA_CLUSTER_CONFIG_PATH);
   }
 
-  private void test(String requestPath) throws IOException {
+  private void testWithRequestPath(String requestPath) throws IOException {
     final FakeRestRequest fakeRestRequest = buildRequest(requestPath);
     final FakeRestChannel channel = new FakeRestChannel(fakeRestRequest, true, 10);
     restController.dispatchRequest(fakeRestRequest, channel, new ThreadContext(Settings.EMPTY));
@@ -132,8 +132,8 @@ public class PerformanceAnalyzerClusterConfigActionTests {
   private FakeRestRequest buildRequest(String requestPath) throws IOException {
     final XContentBuilder builder = XContentFactory.jsonBuilder()
         .startObject()
-        .field(PerformanceAnalyzerClusterConfigAction.ENABLED, true)
-        .field(PerformanceAnalyzerClusterConfigAction.SHARDS_PER_COLLECTION, 1)
+          .field(PerformanceAnalyzerClusterConfigAction.ENABLED, true)
+          .field(PerformanceAnalyzerClusterConfigAction.SHARDS_PER_COLLECTION, 1)
         .endObject();
 
     return new FakeRestRequest.Builder(NamedXContentRegistry.EMPTY)

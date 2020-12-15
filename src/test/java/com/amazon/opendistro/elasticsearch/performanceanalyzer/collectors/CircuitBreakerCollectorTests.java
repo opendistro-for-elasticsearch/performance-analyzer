@@ -63,7 +63,7 @@ public class CircuitBreakerCollectorTests extends ESSingleNodeTestCase {
 
         try {
             collector.getMetricsPath(startTimeInMills, "circuitBreakerPath");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+            fail("Negative scenario test: Should have been a RuntimeException");
         } catch (RuntimeException ex) {
             //- expecting exception...1 values passed; 0 expected
         }

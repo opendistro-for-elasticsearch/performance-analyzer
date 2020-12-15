@@ -84,7 +84,7 @@ public class NodeDetailsCollectorTests extends ESTestCase {
 
     try {
       collector.getMetricsPath(startTimeInMills, "nodesPath");
-      assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+      fail("Negative scenario test: Should have been a RuntimeException");
     } catch (RuntimeException ex) {
       //- expecting exception...1 values passed; 0 expected
     }

@@ -62,7 +62,7 @@ public class CacheConfigMetricsCollectorTests extends ESSingleNodeTestCase {
 
     try {
       collector.getMetricsPath(startTimeInMills, "cacheConfigPath");
-      assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+      fail("Negative scenario test: Should have been a RuntimeException");
     } catch (RuntimeException ex) {
       //- expecting exception...1 values passed; 0 expected
     }
@@ -70,8 +70,6 @@ public class CacheConfigMetricsCollectorTests extends ESSingleNodeTestCase {
 
   @Test
   public void testCollectMetrics() throws IOException {
-
-
     createIndex(TEST_INDEX);
     collector.collectMetrics(startTimeInMills);
 

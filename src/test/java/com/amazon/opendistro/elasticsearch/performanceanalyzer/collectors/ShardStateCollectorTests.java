@@ -19,7 +19,7 @@ import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Al
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
 import static org.elasticsearch.test.ESTestCase.settings;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
@@ -81,7 +81,7 @@ public class ShardStateCollectorTests {
 
         try {
             shardStateCollector.getMetricsPath(startTimeInMills, "shardStatePath");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+            fail("Negative scenario test: Should have been a RuntimeException");
         } catch (RuntimeException ex) {
             //- expecting exception...1 values passed; 0 expected
         }
