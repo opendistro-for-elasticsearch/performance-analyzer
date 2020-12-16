@@ -19,8 +19,10 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardStatsValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import java.util.List;
@@ -54,6 +56,21 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
     @After
     public void tearDown() throws Exception {
         super.tearDown();
+    }
+
+    @Test
+    public void testGetMetricsPath() {
+        String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+ "/" + PerformanceAnalyzerMetrics.sIndicesPath + "/NodesStatsIndex/55";
+        String actualPath = collector.getMetricsPath(startTimeInMills, "NodesStatsIndex", "55");
+        assertEquals(expectedPath, actualPath);
+
+        try {
+            collector.getMetricsPath(startTimeInMills, "NodesStatsIndex");
+            fail("Negative scenario test: Should have been a RuntimeException");
+        } catch (RuntimeException ex) {
+            //- expecting exception...only 1 values passed; 2 expected
+        }
     }
 
     @Test

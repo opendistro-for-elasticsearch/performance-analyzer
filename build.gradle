@@ -145,6 +145,8 @@ jacocoTestReport {
                             '**/com/amazon/opendistro/elasticsearch/performanceanalyzer/**',
                     ],
                     exclude: [
+                            '**/FaultDetectionMetricsCollector.class',
+                            '**/MasterThrottlingMetricsCollector.class',
                     ])
         })
     }
@@ -165,7 +167,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.48
+                minimum = 0.6212
             }
         }
     }

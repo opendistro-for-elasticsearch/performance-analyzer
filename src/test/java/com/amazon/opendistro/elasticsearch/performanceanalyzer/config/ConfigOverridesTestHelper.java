@@ -62,4 +62,10 @@ public class ConfigOverridesTestHelper {
     public static String getValidConfigOverridesJson() throws JsonProcessingException {
         return MAPPER.writeValueAsString(buildValidConfigOverrides());
     }
+
+    public static String getInvalidConfigOverridesJson() throws JsonProcessingException {
+        ConfigOverrides overrides = buildValidConfigOverrides();
+        overrides.getDisable().setRcas(ENABLED_RCAS_LIST);
+        return MAPPER.writeValueAsString(overrides);
+    }
 }
