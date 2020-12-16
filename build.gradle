@@ -145,6 +145,8 @@ jacocoTestReport {
                             '**/com/amazon/opendistro/elasticsearch/performanceanalyzer/**',
                     ],
                     exclude: [
+                            '**/FaultDetectionMetricsCollector.class',
+                            '**/MasterThrottlingMetricsCollector.class',
                     ])
         })
     }
