@@ -1,10 +1,17 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static org.junit.Assert.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
+import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.SourcePrioritizedRunnable;
 import org.elasticsearch.common.Priority;
@@ -18,21 +25,20 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-@Ignore
-@ThreadLeakScope(ThreadLeakScope.Scope.NONE)
-public class MasterServiceEventMetricsTests extends ESTestCase {
+import java.util.Arrays;
+import java.util.List;
+
+public class MasterServiceEventMetricsTests {
   private long startTimeInMills = 1153721339;
   private MasterServiceEventMetrics masterServiceEventMetrics;
   private ThreadPool threadPool;
 
-//  @Mock
-//  private ThreadIDUtil mockThreadIDUtil;
-
   @Before
   public void init() {
-    initMocks(this);
-//    setMock(mockThreadIDUtil);
-//    when(mockThreadIDUtil.getNativeThreadId(anyLong())).thenReturn(24L);
+    // this test only runs in Linux system
+    // as some of the static members of the ThreadList class are specific to Linux
+    org.junit.Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
+
     threadPool = new TestThreadPool("test");
     ClusterService clusterService = ClusterServiceUtils.createClusterService(threadPool);
     ESResources.INSTANCE.setClusterService(clusterService);
@@ -41,27 +47,42 @@ public class MasterServiceEventMetricsTests extends ESTestCase {
     masterServiceEventMetrics = new MasterServiceEventMetrics();
   }
 
-//  private void setMock(ThreadIDUtil mockThreadIDUtil) {
-//    try {
-//      Field instance = ThreadIDUtil.class.getDeclaredField("INSTANCE");
-//      instance.setAccessible(true);
-//      instance.set(instance, mockThreadIDUtil);
-//    } catch (Exception e) {
-//      throw new RuntimeException(e);
-//    }
-//  }
-//
-//  private void resetSingleton() throws Exception {
-//    Field instance = ThreadIDUtil.class.getDeclaredField("INSTANCE");
-//    instance.setAccessible(true);
-//    instance.set(null, null);
-//  }
-
   @After
   public void tearDown() throws Exception {
-//    resetSingleton();
     threadPool.shutdownNow();
-    super.tearDown();
+  }
+
+  @Test
+  public void testGetMetricsPath() {
+    String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills) + "/"
+            + PerformanceAnalyzerMetrics.sThreadsPath + "/" + "thread123" + "/"
+            + PerformanceAnalyzerMetrics.sMasterTaskPath + "/" + "task123" +"/"
+            + PerformanceAnalyzerMetrics.FINISH_FILE_NAME;
+    String actualPath = masterServiceEventMetrics.getMetricsPath(startTimeInMills, "thread123", "task123", PerformanceAnalyzerMetrics.FINISH_FILE_NAME);
+    assertEquals(expectedPath, actualPath);
+
+    try {
+      masterServiceEventMetrics.getMetricsPath(startTimeInMills, "thread123", "task123");
+      fail("Negative scenario test: Should have been a RuntimeException");
+    } catch (RuntimeException ex) {
+      //- expecting exception...2 values passed; 3 expected
+    }
+  }
+
+
+  @Test
+  public void testGenerateFinishMetrics() {
+    assertEquals(-1 ,     masterServiceEventMetrics.lastTaskInsertionOrder);
+    masterServiceEventMetrics.generateFinishMetrics(startTimeInMills);
+
+    masterServiceEventMetrics.lastTaskInsertionOrder = 1;
+    masterServiceEventMetrics.generateFinishMetrics(startTimeInMills);
+    List<Event> metrics = TestUtil.readEvents();
+    String[] jsonStrs = metrics.get(0).value.split("\n");
+    assert jsonStrs.length == 2;
+    assertTrue(jsonStrs[1].contains(AllMetrics.MasterMetricValues.FINISH_TIME.toString()));
+    assertEquals(-1 ,     masterServiceEventMetrics.lastTaskInsertionOrder);
   }
 
   @Test
@@ -71,10 +92,31 @@ public class MasterServiceEventMetricsTests extends ESTestCase {
     SourcePrioritizedRunnable runnable = new SourcePrioritizedRunnable(Priority.HIGH, "_add_listener_") {
       @Override
       public void run() {
-        System.out.println("dummy runnable");
+        try {
+          Thread.sleep(100); //dummy runnable
+        } catch (InterruptedException e) {
+        }
       }
     };
+
     prioritizedEsThreadPoolExecutor.submit(runnable);
+    System.out.println("after submit: " + System.currentTimeMillis());
+    System.out.println("before collect: " + System.currentTimeMillis());
     masterServiceEventMetrics.collectMetrics(startTimeInMills);
+    List<String> jsonStrs = readMetricsInJsonString();
+    assertTrue(jsonStrs.get(0).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
+    assertTrue(jsonStrs.get(1).contains(AllMetrics.MasterMetricValues.START_TIME.toString()));
+    assertTrue(jsonStrs.get(2).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()));
+    assertTrue(jsonStrs.get(3).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()));
+    assertTrue(jsonStrs.get(4).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()));
+  }
+
+
+  private List<String> readMetricsInJsonString() {
+    List<Event> metrics = TestUtil.readEvents();
+    assert metrics.size() == 1;
+    String[] jsonStrs = metrics.get(0).value.split("\n");
+    assert jsonStrs.length == 6;
+    return Arrays.asList(jsonStrs).subList(1, jsonStrs.length);
   }
 }
