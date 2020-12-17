@@ -33,6 +33,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.search.internal.ShardSearchRequest;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -42,7 +43,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PerformanceAnalyzerSearchListenerTests {
-  private static final String TEST_INDEX = "test";
   private static final long TOOK_IN_NANOS = 10;
   private static final String EXCEPTION = StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR.toString();
 
@@ -56,12 +56,15 @@ public class PerformanceAnalyzerSearchListenerTests {
   @Mock private ShardId shardId;
   @Mock private PerformanceAnalyzerController controller;
 
-  @Before
-  public void setup() {
+  @BeforeClass
+  public static void setup() {
     // this test only runs in Linux system
     // as some of the static members of the ThreadList class are specific to Linux
     org.junit.Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
+  }
 
+  @Before
+  public void init() {
     initMocks(this);
     Mockito.when(controller.isPerformanceAnalyzerEnabled()).thenReturn(true);
 
