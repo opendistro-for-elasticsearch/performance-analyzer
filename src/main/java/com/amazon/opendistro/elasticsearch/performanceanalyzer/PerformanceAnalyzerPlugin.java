@@ -239,10 +239,10 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
             Class<?> listenerInjector = Class.forName(LISTENER_INJECTOR_CLASS_PATH);
             Object listenerInjectorInstance = listenerInjector.getDeclaredConstructor().newInstance();
             Method addListenerMethod = listenerInjectorInstance.getClass().getMethod(ADD_FAULT_DETECTION_METHOD,
-                    Discovery.class);
+                Discovery.class);
             addListenerMethod.invoke(listenerInjectorInstance, discovery);
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException  |
-                IllegalAccessException e) {
+            IllegalAccessException e) {
             LOG.debug("Exception while calling addFaultDetectionListener in Discovery");
         } catch (ClassNotFoundException e) {
             LOG.debug("No Class for ListenerInjector detected");

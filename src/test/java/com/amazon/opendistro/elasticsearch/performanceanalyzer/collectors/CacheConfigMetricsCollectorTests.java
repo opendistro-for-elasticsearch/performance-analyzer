@@ -17,8 +17,10 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector.CacheMaxSizeStatus;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.CacheType;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +37,7 @@ import org.junit.Test;
 public class CacheConfigMetricsCollectorTests extends ESSingleNodeTestCase {
   private static final String TEST_INDEX = "test";
   private CacheConfigMetricsCollector collector;
+  private long startTimeInMills = 1153721339;
 
   @Before
   public void init() {
@@ -51,9 +54,22 @@ public class CacheConfigMetricsCollectorTests extends ESSingleNodeTestCase {
   }
 
   @Test
-  public void testCollectMetrics() throws IOException {
-    long startTimeInMills = 1153721339;
+  public void testGetMetricsPath() {
+    String expectedPath = PluginSettings.instance().getMetricsLocation()
+        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+ "/" + PerformanceAnalyzerMetrics.sCacheConfigPath;
+    String actualPath = collector.getMetricsPath(startTimeInMills);
+    assertEquals(expectedPath, actualPath);
 
+    try {
+      collector.getMetricsPath(startTimeInMills, "cacheConfigPath");
+      fail("Negative scenario test: Should have been a RuntimeException");
+    } catch (RuntimeException ex) {
+      //- expecting exception...1 values passed; 0 expected
+    }
+  }
+
+  @Test
+  public void testCollectMetrics() throws IOException {
     createIndex(TEST_INDEX);
     collector.collectMetrics(startTimeInMills);
 

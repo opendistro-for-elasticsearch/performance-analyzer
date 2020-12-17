@@ -48,11 +48,11 @@ public class PerformanceAnalyzerOverridesClusterConfigAction extends BaseRestHan
 
     private static final Logger LOG =
             LogManager.getLogger(PerformanceAnalyzerOverridesClusterConfigAction.class);
-    private static final String PA_CONFIG_OVERRIDES_PATH =
+    public static final String PA_CONFIG_OVERRIDES_PATH =
             "/_opendistro/_performanceanalyzer/override/cluster/config";
     private static final String OVERRIDES_FIELD = "overrides";
     private static final String REASON_FIELD = "reason";
-    private static final String OVERRIDE_TRIGGERED_FIELD = "override triggered";
+    public static final String OVERRIDE_TRIGGERED_FIELD = "override triggered";
 
     private static final List<Route> ROUTES =
             unmodifiableList(

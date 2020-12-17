@@ -41,7 +41,6 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.ClusterSettings;
 import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.discovery.Discovery;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.env.TestEnvironment;
 import org.elasticsearch.indices.breaker.BreakerSettings;
@@ -59,7 +58,6 @@ import org.elasticsearch.usage.UsageService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 
 @ThreadLeakScope(Scope.NONE)
 public class PerformanceAnalyzerPluginTests extends ESTestCase {
@@ -72,9 +70,6 @@ public class PerformanceAnalyzerPluginTests extends ESTestCase {
   private CircuitBreakerService circuitBreakerService;
   private ClusterService clusterService;
   private ClusterSettings clusterSettings;
-
-  @Mock
-  private Discovery discovery;
 
   @Before
   public void setup() {

@@ -39,20 +39,24 @@ import org.elasticsearch.rest.RestStatus;
 
 @SuppressWarnings("deprecation")
 public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
+
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerConfigAction.class);
-    private static final String ENABLED = "enabled";
-    private static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
-    private static final String PA_ENABLED = "performanceAnalyzerEnabled";
-    private static final String RCA_ENABLED = "rcaEnabled";
-    private static final String PA_LOGGING_ENABLED = "loggingEnabled";
-    private static final String BATCH_METRICS_ENABLED = "batchMetricsEnabled";
-    private static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
     private static PerformanceAnalyzerConfigAction instance = null;
     private final PerformanceAnalyzerController performanceAnalyzerController;
-    private static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
-    private static final String PA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/config";
-    private static final String LOGGING_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/config";
-    private static final String BATCH_METRICS_CONFIG_PATH = "/_opendistro/_performanceanalyzer/batch/config";
+
+    public static final String ENABLED = "enabled";
+    public static final String SHARDS_PER_COLLECTION = "shardsPerCollection";
+    public static final String PA_ENABLED = "performanceAnalyzerEnabled";
+    public static final String RCA_ENABLED = "rcaEnabled";
+    public static final String PA_LOGGING_ENABLED = "loggingEnabled";
+    public static final String BATCH_METRICS_ENABLED = "batchMetricsEnabled";
+    public static final String BATCH_METRICS_RETENTION_PERIOD_MINUTES = "batchMetricsRetentionPeriodMinutes";
+    public static final String PERFORMANCE_ANALYZER_CONFIG_ACTION = "PerformanceAnalyzer_Config_Action";
+    public static final String RCA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/rca/config";
+    public static final String PA_CONFIG_PATH = "/_opendistro/_performanceanalyzer/config";
+    public static final String LOGGING_CONFIG_PATH = "/_opendistro/_performanceanalyzer/logging/config";
+    public static final String BATCH_METRICS_CONFIG_PATH = "/_opendistro/_performanceanalyzer/batch/config";
+
     private static final List<Route> ROUTES =
         unmodifiableList(
             asList(
@@ -154,7 +158,7 @@ public class PerformanceAnalyzerConfigAction extends BaseRestHandler {
 
     @Override
     public String getName() {
-        return "PerformanceAnalyzer_Config_Action";
+        return PERFORMANCE_ANALYZER_CONFIG_ACTION;
     }
 
     private RestChannelConsumer getChannelConsumerWithError(String error) {

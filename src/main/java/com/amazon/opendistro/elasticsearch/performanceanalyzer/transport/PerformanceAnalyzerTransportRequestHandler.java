@@ -17,6 +17,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.transport;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.action.bulk.BulkShardRequest;
@@ -48,7 +49,8 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
         actualHandler.messageReceived(request, getChannel(request, channel, task), task);
     }
 
-    private TransportChannel getChannel(T request, TransportChannel channel, Task task) {
+    @VisibleForTesting
+    TransportChannel getChannel(T request, TransportChannel channel, Task task) {
         if (!controller.isPerformanceAnalyzerEnabled()) {
             return channel;
         }

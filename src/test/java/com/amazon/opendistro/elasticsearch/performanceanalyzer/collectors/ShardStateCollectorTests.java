@@ -19,11 +19,14 @@ import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.Al
 import static com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ShardType.SHARD_REPLICA;
 import static org.elasticsearch.test.ESTestCase.settings;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.carrotsearch.randomizedtesting.RandomizedRunner;
@@ -51,6 +54,7 @@ public class ShardStateCollectorTests {
     private static final int NUMBER_OF_PRIMARY_SHARDS = 1;
     private static final int NUMBER_OF_REPLICAS = 1;
 
+    private long startTimeInMills = 1153721339;
     private ShardStateCollector shardStateCollector;
     private ClusterService clusterService;
     private PerformanceAnalyzerController controller;
@@ -69,8 +73,23 @@ public class ShardStateCollectorTests {
     }
 
     @Test
+    public void testGetMetricsPath() {
+        String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+ "/" + PerformanceAnalyzerMetrics.sShardStatePath;
+        String actualPath = shardStateCollector.getMetricsPath(startTimeInMills);
+        assertEquals(expectedPath, actualPath);
+
+        try {
+            shardStateCollector.getMetricsPath(startTimeInMills, "shardStatePath");
+            fail("Negative scenario test: Should have been a RuntimeException");
+        } catch (RuntimeException ex) {
+            //- expecting exception...1 values passed; 0 expected
+        }
+    }
+
+    @Test
     public void testCollectMetrics() throws IOException {
-        long startTimeInMills = 1153721339;
+
         Mockito.when(controller.isCollectorEnabled(configOverrides, "ShardsStateCollector"))
                 .thenReturn(true);
         Mockito.when(clusterService.state()).thenReturn(generateClusterState());
