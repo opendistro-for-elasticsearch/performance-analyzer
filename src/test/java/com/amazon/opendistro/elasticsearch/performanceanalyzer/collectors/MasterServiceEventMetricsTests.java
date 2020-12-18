@@ -28,18 +28,23 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_sha
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import java.util.Arrays;
 import java.util.List;
+
+import com.carrotsearch.randomizedtesting.RandomizedRunner;
+import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.SourcePrioritizedRunnable;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.test.ClusterServiceUtils;
+import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 public class MasterServiceEventMetricsTests {
   private long startTimeInMills = 1153721339;
@@ -61,10 +66,13 @@ public class MasterServiceEventMetricsTests {
 
     MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, MetricsConfiguration.cdefault);
     masterServiceEventMetrics = new MasterServiceEventMetrics();
+
+    //clean metricQueue before running every test
+    TestUtil.readEvents();
   }
 
   @After
-  public void tearDown() {
+  public void tearDown(){
     threadPool.shutdownNow();
   }
 
@@ -109,13 +117,15 @@ public class MasterServiceEventMetricsTests {
       @Override
       public void run() {
         try {
-          Thread.sleep(100); //dummy runnable
+          Thread.sleep(100L); //dummy runnable
         } catch (InterruptedException e) {
         }
       }
     };
 
     prioritizedEsThreadPoolExecutor.submit(runnable);
+    Thread.sleep(1L); // don't delete it
+
     masterServiceEventMetrics.collectMetrics(startTimeInMills);
     List<String> jsonStrs = readMetricsInJsonString();
     assertTrue(jsonStrs.get(0).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
