@@ -57,6 +57,9 @@ public class MasterServiceMetricsTests {
 
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, MetricsConfiguration.cdefault);
         masterServiceMetrics = new MasterServiceMetrics();
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
     }
 
     @After

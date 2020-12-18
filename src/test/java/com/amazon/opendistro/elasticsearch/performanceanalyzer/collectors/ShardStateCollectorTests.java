@@ -70,6 +70,9 @@ public class ShardStateCollectorTests {
         controller = Mockito.mock(PerformanceAnalyzerController.class);
         configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
         shardStateCollector = new ShardStateCollector(controller, configOverrides);
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
     }
 
     @Test
