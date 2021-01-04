@@ -1,5 +1,6 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.config;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
@@ -30,7 +31,7 @@ public class PerformanceAnalyzerController {
     private boolean rcaEnabled;
     private boolean loggingEnabled;
     private boolean batchMetricsEnabled;
-    private volatile int shardsPerCollection;
+    @VisibleForTesting volatile int shardsPerCollection;
     private static final boolean paEnabledDefaultValue = false;
     private static final boolean rcaEnabledDefaultValue = true;
     private static final boolean loggingEnabledDefaultValue = false;
