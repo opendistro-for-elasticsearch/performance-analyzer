@@ -1,6 +1,6 @@
 ** GoogleGuava; version 27.0.1-jre -- https://github.com/google/guava
 ** Jackson-annotations; version 2.8.11 -- https://github.com/FasterXML/jackson-annotations/
-** Jackson-databind; version 2.8.11 -- https://github.com/FasterXML/jackson-databind
+** Jackson-databind; version 2.12.0 -- https://github.com/FasterXML/jackson-databind
 ** jooq; version 3.10.8 -- https://github.com/jOOQ/jOOQ
 ** org.xerial:sqlite-jdbc; version 3.8.11.2 -- https://bitbucket.org/xerial/sqlite-jdbc/src/8de652d3f54cdfd32d5a493130c995f36e16c652/LICENSE?at=default&fileviewer=file-view-default
 ** PowerMock; version 1.6.1 -- https://github.com/powermock/powermock

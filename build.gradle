@@ -211,7 +211,7 @@ dependencies {
     compile 'org.bouncycastle:bcpkix-jdk15on:1.66'
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.12'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0'
     compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.4'
     compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
         force = 'true'
