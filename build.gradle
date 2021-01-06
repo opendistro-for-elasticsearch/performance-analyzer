@@ -200,6 +200,13 @@ dependencies {
        resolutionStrategy {
           force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
        }
+        resolutionStrategy.dependencySubstitution {
+            substitute module('com.fasterxml.jackson.core:jackson-core:2.10.4') with module('com.fasterxml.jackson.core:jackson-core:2.12.0')
+            substitute module('com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.10.4') with module('com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.12.0')
+            substitute module('com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.4') with module('com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.0')
+            substitute module('com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.10.4') with module('com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.12.0')
+            substitute module('junit:junit:4.12') with module('junit:junit:4.13.1')
+        }
     }
 
     compile ('com.google.guava:guava:28.2-jre') {
