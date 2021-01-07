@@ -43,7 +43,7 @@ public class PerformanceAnalyzerSearchListener implements SearchOperationListene
 
     @Override
     public String toString() {
-        return PerformanceAnalyzerSearchListener.class.getName();
+        return PerformanceAnalyzerSearchListener.class.getSimpleName();
     }
 
 

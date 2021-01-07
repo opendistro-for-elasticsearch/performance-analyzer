@@ -15,7 +15,9 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.listener;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatExceptionCode;
@@ -26,8 +28,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.jvm.ThreadList;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.search.internal.SearchContext;
@@ -37,10 +40,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class PerformanceAnalyzerSearchListenerTests {
   private static final long TOOK_IN_NANOS = 10;
@@ -70,7 +69,7 @@ public class PerformanceAnalyzerSearchListenerTests {
 
     MetricsConfiguration.CONFIG_MAP.put(ThreadList.class, MetricsConfiguration.cdefault);
     searchListener = new PerformanceAnalyzerSearchListener(controller);
-    assertEquals(PerformanceAnalyzerSearchListener.class.getName(), searchListener.toString());
+    assertEquals(PerformanceAnalyzerSearchListener.class.getSimpleName(), searchListener.toString());
 
     statsCollector = StatsCollector.instance();
   }
@@ -98,7 +97,7 @@ public class PerformanceAnalyzerSearchListenerTests {
   public void testOnPreQueryPhase() {
     initializeValidSearchContext(true);
     searchListener.onPreQueryPhase(searchContext);
-    List<String> jsonStrs = readMetricsInJsonString(4);
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(4);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.CommonMetric.START_TIME.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.CommonDimension.INDEX_NAME.toString()));
     assertTrue(jsonStrs.get(2).contains(AllMetrics.CommonDimension.SHARD_ID.toString()));
@@ -108,7 +107,7 @@ public class PerformanceAnalyzerSearchListenerTests {
   public void testOnQueryPhase() {
     initializeValidSearchContext(true);
     searchListener.onQueryPhase(searchContext, TOOK_IN_NANOS);
-    List<String> jsonStrs = readMetricsInJsonString(5);
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(5);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.CommonMetric.FINISH_TIME.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.CommonDimension.FAILED.toString()));
     assertTrue(jsonStrs.get(1).contains("false"));
@@ -121,7 +120,7 @@ public class PerformanceAnalyzerSearchListenerTests {
   public void testOnFailedQueryPhase() {
     initializeValidSearchContext(true);
     searchListener.onFailedQueryPhase(searchContext);
-    List<String> jsonStrs = readMetricsInJsonString(5);
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(5);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.CommonMetric.FINISH_TIME.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.CommonDimension.FAILED.toString()));
     assertTrue(jsonStrs.get(1).contains("true"));
@@ -133,7 +132,7 @@ public class PerformanceAnalyzerSearchListenerTests {
   public void testOnPreFetchPhase() {
     initializeValidSearchContext(true);
     searchListener.onPreFetchPhase(searchContext);
-    List<String> jsonStrs = readMetricsInJsonString(4);
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(4);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.CommonMetric.START_TIME.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.CommonDimension.INDEX_NAME.toString()));
     assertTrue(jsonStrs.get(2).contains(AllMetrics.CommonDimension.SHARD_ID.toString()));
@@ -143,7 +142,7 @@ public class PerformanceAnalyzerSearchListenerTests {
   public void testOnFetchPhase() {
     initializeValidSearchContext(true);
     searchListener.onFetchPhase(searchContext, TOOK_IN_NANOS);
-    List<String> jsonStrs = readMetricsInJsonString(5);
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(5);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.CommonMetric.FINISH_TIME.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.CommonDimension.FAILED.toString()));
     assertTrue(jsonStrs.get(1).contains("false"));
@@ -155,20 +154,12 @@ public class PerformanceAnalyzerSearchListenerTests {
   public void testOnFailedFetchPhase() {
     initializeValidSearchContext(true);
     searchListener.onFailedFetchPhase(searchContext);
-    List<String> jsonStrs = readMetricsInJsonString(5);
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(5);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.CommonMetric.FINISH_TIME.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.CommonDimension.FAILED.toString()));
     assertTrue(jsonStrs.get(1).contains("true"));
     assertTrue(jsonStrs.get(2).contains(AllMetrics.CommonDimension.INDEX_NAME.toString()));
     assertTrue(jsonStrs.get(3).contains(AllMetrics.CommonDimension.SHARD_ID.toString()));
-  }
-
-  private List<String> readMetricsInJsonString(int length) {
-    List<Event> metrics = TestUtil.readEvents();
-    assert metrics.size() == 1;
-    String[] jsonStrs = metrics.get(0).value.split("\n");
-    assert jsonStrs.length == length;
-    return Arrays.asList(jsonStrs).subList(1, jsonStrs.length);
   }
 
   @Test

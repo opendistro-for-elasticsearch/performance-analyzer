@@ -26,25 +26,19 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
-import java.util.Arrays;
 import java.util.List;
-
-import com.carrotsearch.randomizedtesting.RandomizedRunner;
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.apache.commons.lang3.SystemUtils;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.cluster.service.SourcePrioritizedRunnable;
 import org.elasticsearch.common.Priority;
 import org.elasticsearch.common.util.concurrent.PrioritizedEsThreadPoolExecutor;
 import org.elasticsearch.test.ClusterServiceUtils;
-import org.elasticsearch.test.ESTestCase;
 import org.elasticsearch.threadpool.TestThreadPool;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
 public class MasterServiceEventMetricsTests {
   private long startTimeInMills = 1153721339;
@@ -127,20 +121,11 @@ public class MasterServiceEventMetricsTests {
     Thread.sleep(1L); // don't delete it
 
     masterServiceEventMetrics.collectMetrics(startTimeInMills);
-    List<String> jsonStrs = readMetricsInJsonString();
+    List<String> jsonStrs = TestUtil.readMetricsInJsonString(6);
     assertTrue(jsonStrs.get(0).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_PRIORITY.toString()));
     assertTrue(jsonStrs.get(1).contains(AllMetrics.MasterMetricValues.START_TIME.toString()));
     assertTrue(jsonStrs.get(2).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_TYPE.toString()));
     assertTrue(jsonStrs.get(3).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_METADATA.toString()));
     assertTrue(jsonStrs.get(4).contains(AllMetrics.MasterMetricDimensions.MASTER_TASK_QUEUE_TIME.toString()));
-  }
-
-
-  private List<String> readMetricsInJsonString() {
-    List<Event> metrics = TestUtil.readEvents();
-    assert metrics.size() == 1;
-    String[] jsonStrs = metrics.get(0).value.split("\n");
-    assert jsonStrs.length == 6;
-    return Arrays.asList(jsonStrs).subList(1, jsonStrs.length);
   }
 }
