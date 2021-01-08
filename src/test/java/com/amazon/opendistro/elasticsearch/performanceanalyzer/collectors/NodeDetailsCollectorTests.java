@@ -67,6 +67,9 @@ public class NodeDetailsCollectorTests extends ESTestCase {
 
     MetricsConfiguration.CONFIG_MAP.put(NodeDetailsCollector.class, MetricsConfiguration.cdefault);
     collector = new NodeDetailsCollector(configOverrides);
+
+    //clean metricQueue before running every test
+    TestUtil.readEvents();
   }
 
   @After

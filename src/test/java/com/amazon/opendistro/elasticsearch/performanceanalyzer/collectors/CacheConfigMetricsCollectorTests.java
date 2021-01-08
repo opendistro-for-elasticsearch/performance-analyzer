@@ -46,6 +46,9 @@ public class CacheConfigMetricsCollectorTests extends ESSingleNodeTestCase {
 
     MetricsConfiguration.CONFIG_MAP.put(CacheConfigMetricsCollector.class, MetricsConfiguration.cdefault);
     collector = new CacheConfigMetricsCollector();
+
+    //clean metricQueue before running every test
+    TestUtil.readEvents();
   }
 
   @After

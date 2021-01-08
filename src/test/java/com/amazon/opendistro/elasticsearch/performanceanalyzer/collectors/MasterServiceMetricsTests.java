@@ -15,69 +15,111 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.MasterPendingValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import java.util.List;
+import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.test.ClusterServiceUtils;
+import org.elasticsearch.threadpool.TestThreadPool;
+import org.elasticsearch.threadpool.ThreadPool;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
 
-@Ignore
-public class MasterServiceMetricsTests extends CustomMetricsLocationTestBase {
+public class MasterServiceMetricsTests {
+    private MasterServiceMetrics masterServiceMetrics;
+    private long startTimeInMills = 1153721339;
+    private ThreadPool threadPool;
+
+    @Mock
+    private ClusterService mockedClusterService;
+
+    @Before
+    public void init() {
+        initMocks(this);
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+        threadPool = new TestThreadPool("test");
+        ClusterService clusterService = ClusterServiceUtils.createClusterService(threadPool);
+        ESResources.INSTANCE.setClusterService(clusterService);
+
+        MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, MetricsConfiguration.cdefault);
+        masterServiceMetrics = new MasterServiceMetrics();
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
+    }
+
+    @After
+    public void tearDown() {
+        threadPool.shutdownNow();
+    }
 
     @Test
-    public void testMasterServiceMetrics() {
-        MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
-        MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = 1353723339;
-
-        MasterServiceMetrics masterServiceMetrics = new MasterServiceMetrics();
-        masterServiceMetrics.saveMetricValues("master_metrics_value", startTimeInMills, "current", "start");
-
-
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(PluginSettings.instance().getMetricsLocation() +
-                PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/pending_tasks/current/start/");
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                 + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
-        assertEquals("master_metrics_value", fetchedValue);
+    public void testGetMetricsPath() {
+        String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills) + "/"
+            + PerformanceAnalyzerMetrics.sPendingTasksPath + "/"
+            + "current" + "/"
+            + PerformanceAnalyzerMetrics.FINISH_FILE_NAME;
+        String actualPath = masterServiceMetrics.getMetricsPath(startTimeInMills, "current", PerformanceAnalyzerMetrics.FINISH_FILE_NAME);
+        assertEquals(expectedPath, actualPath);
 
         try {
-            masterServiceMetrics.saveMetricValues("master_metrics_value", startTimeInMills, "current");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
+            masterServiceMetrics.getMetricsPath(startTimeInMills, "current");
+            fail("Negative scenario test: Should have been a RuntimeException");
         } catch (RuntimeException ex) {
-            //- expecting exception...only 1 values passed; 2 expected
+            //- expecting exception...1 values passed; 2 expected
         }
+    }
 
-        try {
-            masterServiceMetrics.saveMetricValues("master_metrics_value", startTimeInMills);
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 0 values passed; 2 expected
-        }
+    @Test
+    public void testCollectMetrics() {
+        masterServiceMetrics.collectMetrics(startTimeInMills);
+        String jsonStr = readMetricsInJsonString(1);
+        assertTrue(jsonStr.contains(MasterPendingValue.Constants.PENDING_TASKS_COUNT_VALUE));
+    }
 
-        try {
-            masterServiceMetrics.saveMetricValues("master_metrics_value", startTimeInMills, "current", "start", "123");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...only 3 values passed; 2 expected
-        }
+    @Test
+    public void testWithMockClusterService() {
+        ESResources.INSTANCE.setClusterService(mockedClusterService);
+        masterServiceMetrics.collectMetrics(startTimeInMills);
+        String jsonStr = readMetricsInJsonString(0);
+        assertNull(jsonStr);
 
-        MasterServiceEventMetrics masterServiceEventMetrics = new MasterServiceEventMetrics();
-        try {
-            masterServiceEventMetrics.getMasterServiceTPExecutorField();
-            masterServiceEventMetrics.getPrioritizedTPExecutorCurrentField();
-            masterServiceEventMetrics.getPrioritizedTPExecutorAddPendingMethod();
-            masterServiceEventMetrics.getTPExecutorWorkersField();
-            masterServiceEventMetrics.getWorkerThreadField();
-        } catch (Exception exception) {
-            assertTrue("There shouldn't be any exception in the code; Please check the reflection code for any changes", true);
+        ESResources.INSTANCE.setClusterService(mockedClusterService);
+        when(mockedClusterService.getMasterService()).thenThrow(new RuntimeException());
+        masterServiceMetrics.collectMetrics(startTimeInMills);
+        jsonStr = readMetricsInJsonString(0);
+        assertNull(jsonStr);
+
+        ESResources.INSTANCE.setClusterService(null);
+        masterServiceMetrics.collectMetrics(startTimeInMills);
+        jsonStr = readMetricsInJsonString(0);
+        assertNull(jsonStr);
+    }
+
+    private String readMetricsInJsonString(int size) {
+        List<Event> metrics = TestUtil.readEvents();
+        assert metrics.size() == size;
+        if (size != 0) {
+            String[] jsonStrs = metrics.get(0).value.split("\n");
+            assert jsonStrs.length == 2;
+            return jsonStrs[1];
+        } else {
+            return null;
         }
     }
 }

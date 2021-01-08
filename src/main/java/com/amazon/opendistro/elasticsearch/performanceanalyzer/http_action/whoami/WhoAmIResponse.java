@@ -25,8 +25,10 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 public class WhoAmIResponse extends ActionResponse implements ToXContent {
     @Override
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
-        builder.startObject("whoami");
-        builder.endObject();
+        builder
+            .startObject()
+            .field("whoami", "whoami")
+            .endObject();
         return builder;
     }
 
