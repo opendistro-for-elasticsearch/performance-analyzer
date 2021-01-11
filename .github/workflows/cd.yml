@@ -6,7 +6,7 @@ on:
   #     - 'v*'
   push:
     branches:
-      - " release-workflow-patch"
+      - "release-workflow-patch"
 
 jobs:
   build:
@@ -76,7 +76,7 @@ jobs:
 
           echo "Copying ${rpm} to ${s3_prefix}${rpm_outfile}"
           aws s3 cp --quiet $rpm ${s3_prefix}${rpm_outfile}
-          
+
           echo "Copying ${deb} to ${s3_prefix}${deb_outfile}"
           aws s3 cp --quiet $deb ${s3_prefix}${deb_outfile}
 
