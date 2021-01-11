@@ -15,9 +15,16 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json.JsonResponseData;
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * "node1": {
+ *         "data": {
+ *            .......
+ *         },
+ *         "timestamp": 1606861740000
+ *     }
+ */
 public class JsonResponseNode {
   private static final String DATA = "data";
   private static final String TIMESTAMP = "timestamp";

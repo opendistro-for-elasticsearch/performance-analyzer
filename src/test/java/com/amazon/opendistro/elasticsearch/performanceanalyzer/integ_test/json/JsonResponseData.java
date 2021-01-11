@@ -18,6 +18,21 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json.JsonResponseField.Type.Constants;
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * "data": {
+ *   "fields": [
+ *      {
+ *        "name": "CPU_Utilization",
+ *        "type": "DOUBLE"
+ *      }
+ *   ],
+ *   "records": [
+ *       [
+ *         0.005275218803760752
+ *       ]
+ *    ]
+ *  }
+ */
 public class JsonResponseData {
   private static final String FIELDS = "fields";
   private static final String RECORDS = "records";

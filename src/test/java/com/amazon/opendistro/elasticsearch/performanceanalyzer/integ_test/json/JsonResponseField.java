@@ -17,6 +17,14 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ *   "fields": [
+ *      {
+ *        "name": "CPU_Utilization",
+ *        "type": "DOUBLE"
+ *      }
+ *   ]
+ */
 public class JsonResponseField {
   private static final String NAME = "name";
   private static final String TYPE = "type";
