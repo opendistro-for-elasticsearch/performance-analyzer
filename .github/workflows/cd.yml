@@ -58,6 +58,7 @@ jobs:
           aws-region: us-west-2
 
       - name: Upload Artifacts to S3
+        working-directory: ./tmp/pa
         shell: bash
         run: |
           zip=`ls artifacts/*.zip`
