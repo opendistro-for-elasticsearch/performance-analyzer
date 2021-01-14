@@ -15,6 +15,7 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.action;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -40,6 +41,7 @@ public class PerformanceAnalyzerActionFilterTests {
   @Mock private PerformanceAnalyzerController controller;
   @Mock private SearchRequest searchRequest;
   @Mock private BulkRequest bulkRequest;
+  @Mock private ActionRequest request;
   @Mock private ActionListener<ActionResponse> listener;
   @Mock private ActionFilterChain<ActionRequest, ActionResponse> chain;
   @Mock private Task task;
@@ -63,9 +65,19 @@ public class PerformanceAnalyzerActionFilterTests {
     testApply(bulkRequest);
   }
 
+  @Test
+  public void testApplyWithOtherRequest() {
+    testApply(request);
+  }
+
   private void testApply(ActionRequest request) {
     filter.apply(task, "_action", request, listener, chain);
     verify(chain).proceed(eq(task), eq("_action"), eq(request), any());
+  }
+
+  @Test
+  public void testOrder() {
+    assertEquals(Integer.MIN_VALUE, filter.order());
   }
 }
 

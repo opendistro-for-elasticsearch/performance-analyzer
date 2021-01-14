@@ -237,42 +237,6 @@ public class NodeStatsFixedShardsMetricsCollector extends PerformanceAnalyzerMet
             this.shardSizeInBytes = calculate(ShardStatsValue.SHARD_SIZE_IN_BYTES);
         }
 
-        @SuppressWarnings("checkstyle:parameternumber")
-        public NodeStatsMetricsFixedShardsPerCollectionStatus(long indexingThrottleTime, long refreshCount, long refreshTime,
-                                                              long flushCount, long flushTime, long mergeCount,
-                                                              long mergeTime, long mergeCurrent, long indexBufferBytes,
-                                                              long segmentCount, long segmentsMemory, long termsMemory,
-                                                              long storedFieldsMemory, long termVectorsMemory,
-                                                              long normsMemory, long pointsMemory, long docValuesMemory,
-                                                              long indexWriterMemory, long versionMapMemory,
-                                                              long bitsetMemory, long shardSizeInBytes) {
-            super();
-            this.shardStats = null;
-
-            this.indexingThrottleTime = indexingThrottleTime;
-            this.refreshCount = refreshCount;
-            this.refreshTime = refreshTime;
-            this.flushCount = flushCount;
-            this.flushTime = flushTime;
-            this.mergeCount = mergeCount;
-            this.mergeTime = mergeTime;
-            this.mergeCurrent = mergeCurrent;
-            this.indexBufferBytes = indexBufferBytes;
-            this.segmentCount = segmentCount;
-            this.segmentsMemory = segmentsMemory;
-            this.termsMemory = termsMemory;
-            this.storedFieldsMemory = storedFieldsMemory;
-            this.termVectorsMemory = termVectorsMemory;
-            this.normsMemory = normsMemory;
-            this.pointsMemory = pointsMemory;
-            this.docValuesMemory = docValuesMemory;
-            this.indexWriterMemory = indexWriterMemory;
-            this.versionMapMemory = versionMapMemory;
-            this.bitsetMemory = bitsetMemory;
-            this.shardSizeInBytes = shardSizeInBytes;
-        }
-
-
         private long calculate(ShardStatsValue nodeMetric) {
             return valueCalculators.get(nodeMetric.toString()).calculateValue(shardStats);
         }

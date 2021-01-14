@@ -36,7 +36,7 @@ import org.junit.Test;
 public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCase {
     private static final String TEST_INDEX = "test";
     private NodeStatsAllShardsMetricsCollector nodeStatsAllShardsMetricsCollector;
-    private long startTimeInMills = 1153721339;;
+    private long startTimeInMills = 1153721339;
 
     @Before
     public void init() {
@@ -45,6 +45,9 @@ public class NodeStatsAllShardsMetricsCollectorTests extends ESSingleNodeTestCas
 
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
         nodeStatsAllShardsMetricsCollector = new NodeStatsAllShardsMetricsCollector(null);
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
     }
 
     @After

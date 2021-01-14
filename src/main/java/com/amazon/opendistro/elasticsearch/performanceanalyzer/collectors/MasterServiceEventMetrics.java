@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.MasterService;
@@ -43,7 +44,6 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
             MasterServiceEventMetrics.class).samplingInterval;
     private static final Logger LOG = LogManager.getLogger(MasterServiceEventMetrics.class);
     private static final String MASTER_NODE_NOT_UP_METRIC = "MasterNodeNotUp";
-    private long lastTaskInsertionOrder;
     private static final int KEYS_PATH_LENGTH = 3;
     private StringBuilder value;
     private static final int TPEXECUTOR_ADD_PENDING_PARAM_COUNT = 3;
@@ -52,6 +52,9 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
     private HashSet<Object> masterServiceWorkers;
     private long currentThreadId;
     private Object currentWorker;
+
+    @VisibleForTesting
+    long lastTaskInsertionOrder;
 
     public MasterServiceEventMetrics() {
         super(SAMPLING_TIME_INTERVAL, "MasterServiceEventMetrics");
@@ -137,7 +140,8 @@ public class MasterServiceEventMetrics extends PerformanceAnalyzerMetricsCollect
         }
     }
 
-    private void generateFinishMetrics(long startTime) {
+    @VisibleForTesting
+    void generateFinishMetrics(long startTime) {
         if (lastTaskInsertionOrder != -1) {
             value.append(PerformanceAnalyzerMetrics.getCurrentTimeMetric());
             PerformanceAnalyzerMetrics.addMetricEntry(value, MasterMetricValues.FINISH_TIME.toString(),
