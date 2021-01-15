@@ -147,6 +147,7 @@ jacocoTestReport {
                     exclude: [
                             '**/FaultDetectionMetricsCollector.class',
                             '**/MasterThrottlingMetricsCollector.class',
+                            '**/ClusterSettingsManager.class',
                     ])
         })
     }
@@ -167,7 +168,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.6212
+                minimum = 0.8
             }
         }
     }

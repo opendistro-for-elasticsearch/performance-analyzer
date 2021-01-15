@@ -47,6 +47,9 @@ public class CircuitBreakerCollectorTests extends ESSingleNodeTestCase {
 
         MetricsConfiguration.CONFIG_MAP.put(CircuitBreakerCollector.class, MetricsConfiguration.cdefault);
         collector = new CircuitBreakerCollector();
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
     }
 
     @After

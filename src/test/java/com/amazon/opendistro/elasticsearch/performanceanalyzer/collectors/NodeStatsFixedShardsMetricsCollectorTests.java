@@ -51,6 +51,9 @@ public class NodeStatsFixedShardsMetricsCollectorTests extends ESSingleNodeTestC
 
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsAllShardsMetricsCollector.class, MetricsConfiguration.cdefault);
         collector = new NodeStatsFixedShardsMetricsCollector(controller);
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
     }
 
     @After

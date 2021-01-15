@@ -1,22 +1,22 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared;
 
-import java.io.File;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.config.PerformanceAnalyzerConfigAction;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
+import java.io.File;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.writer.EventLogQueueProcessor;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
-public class EventLogFileHandlerTest {
-    @Mock
-    private PerformanceAnalyzerController mockController;
+public class EventLogFileHandlerTests {
+    @Mock private PerformanceAnalyzerController mockController;
+    @Mock private PerformanceAnalyzerConfigAction configAction;
 
     String pathToTestMetricsDir;
 
@@ -27,6 +27,7 @@ public class EventLogFileHandlerTest {
         deleteDirectory(new File(pathToTestMetricsDir));
         boolean newDir = new File(pathToTestMetricsDir).mkdir();
         when(mockController.isPerformanceAnalyzerEnabled()).thenReturn(true);
+        PerformanceAnalyzerConfigAction.setInstance(configAction);
     }
 
     private boolean deleteDirectory(File directoryToBeDeleted) {

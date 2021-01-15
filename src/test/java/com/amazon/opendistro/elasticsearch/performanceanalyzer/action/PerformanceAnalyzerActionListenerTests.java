@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright <2020> Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,49 +15,106 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.action;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
-import static org.junit.Assert.assertEquals;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import java.util.List;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.ActionListener;
+import org.elasticsearch.action.ActionResponse;
+import org.elasticsearch.action.bulk.BulkResponse;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.rest.RestStatus;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-@Ignore
-public class PerformanceAnalyzerActionListenerTests extends CustomMetricsLocationTestBase {
+@SuppressWarnings("unchecked")
+public class PerformanceAnalyzerActionListenerTests {
+    private static final String listenerId= "12345";
+    private long startTimeInMills = 1153721339;
+    private PerformanceAnalyzerActionListener actionListener;
+    private ActionListener originalActionListener;
+
+    @Before
+    public void init() {
+        originalActionListener = Mockito.mock(ActionListener.class);
+        actionListener = new PerformanceAnalyzerActionListener();
+    }
 
     @Test
-    public void testHttpMetrics() {
-        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
-        long startTimeInMills = 1553725339;
-        PerformanceAnalyzerActionListener performanceanalyzerActionListener = new PerformanceAnalyzerActionListener();
-        performanceanalyzerActionListener.saveMetricValues("XYZADFAS", startTimeInMills, "bulk", "bulkId", "start");
-        String fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/bulk/bulkId/start");
-        assertEquals("XYZADFAS", fetchedValue);
+    public void testGetMetricsPath() {
+        String expectedPath = PluginSettings.instance().getMetricsLocation()
+            + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills) + "/"
+            + PerformanceAnalyzerMetrics.sThreadsPath + "/"
+            + PerformanceAnalyzerMetrics.sHttpPath + "/"
+            + "bulk/bulkId/start";
+        String actualPath = actionListener.getMetricsPath(startTimeInMills, "bulk", "bulkId", "start");
+        assertEquals(expectedPath, actualPath);
 
-        String startMetricsValue = performanceanalyzerActionListener.generateStartMetrics(123, "val2", 0).toString();
-        performanceanalyzerActionListener.saveMetricValues(startMetricsValue,  startTimeInMills, "search", "searchId1", "start");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId1/start");
-        assertEquals(startMetricsValue, fetchedValue);
+        try {
+            actionListener.getMetricsPath(startTimeInMills, "bulk");
+            fail("Negative scenario test: Should have been a RuntimeException");
+        } catch (RuntimeException ex) {
+            //- expecting exception...1 values passed; 3 expected
+        }
+    }
 
-        String finishMetricsValue = performanceanalyzerActionListener.generateFinishMetrics(456, 200, "val4").toString();
-        performanceanalyzerActionListener.saveMetricValues(finishMetricsValue, startTimeInMills, "search", "searchId1", "finish");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId1/finish");
-        assertEquals(finishMetricsValue, fetchedValue);
+    @Test
+    public void testOnResponseWithBulkResponse() {
+        BulkResponse bulkResponse = Mockito.mock(BulkResponse.class);
+        Mockito.when(bulkResponse.status()).thenReturn(RestStatus.OK);
+        actionListener.set(RequestType.bulk, listenerId , originalActionListener);
+        testOnResponse(bulkResponse);
+    }
 
-        performanceanalyzerActionListener.saveMetricValues(finishMetricsValue, startTimeInMills, "search", "searchId2", "finish");
-        fetchedValue = PerformanceAnalyzerMetrics.getMetric(
-                PluginSettings.instance().getMetricsLocation()
-                        + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills)+"/threads/http/search/searchId2/finish");
-        assertEquals(finishMetricsValue, fetchedValue);
+    @Test
+    public void testOnResponseWithSearchResponse() {
+        SearchResponse searchResponse = Mockito.mock(SearchResponse.class);
+        Mockito.when(searchResponse.status()).thenReturn(RestStatus.OK);
+        actionListener.set(RequestType.search, listenerId , originalActionListener);
+        testOnResponse(searchResponse);
+    }
 
-        PerformanceAnalyzerMetrics.removeMetrics(PluginSettings.instance().getMetricsLocation()
-                + PerformanceAnalyzerMetrics.getTimeInterval(startTimeInMills));
+    @Test
+    public void testOnFailureWithElasticsearchException() {
+        ElasticsearchException exception = Mockito.mock(ElasticsearchException.class);
+        Mockito.when(exception.status()).thenReturn(RestStatus.INTERNAL_SERVER_ERROR);
+        actionListener.set(RequestType.search, listenerId , originalActionListener);
+        actionListener.onFailure(exception);
+        String[] metricsValues = readMetricsValue();
+        assertEquals("HTTPRespCode:500", metricsValues[2]);
+        assertTrue( metricsValues[3].contains("Exception:org.elasticsearch.ElasticsearchException"));
+    }
+
+    @Test
+    public void testOnFailureWithException() {
+        NullPointerException exception = new NullPointerException();
+        actionListener.set(RequestType.search, listenerId , originalActionListener);
+        actionListener.onFailure(exception);
+        String[] metricsValues = readMetricsValue();
+        assertEquals("HTTPRespCode:-1", metricsValues[2]);
+        assertTrue( metricsValues[3].contains("Exception:java.lang.NullPointerException"));
+    }
+
+    private void testOnResponse(ActionResponse response) {
+        actionListener.onResponse(response);
+
+        String[] metricsValues = readMetricsValue();
+        assertEquals("HTTPRespCode:200", metricsValues[2]);
+        assertEquals("Exception:", metricsValues[3]);
+    }
+
+    private String[] readMetricsValue() {
+        List<Event> metrics = TestUtil.readEvents();
+        assert metrics.size() == 1;
+        String[] metricsValues = metrics.get(0).value.split("\n");
+        assert metricsValues.length == 4;
+        return metricsValues;
     }
 }
