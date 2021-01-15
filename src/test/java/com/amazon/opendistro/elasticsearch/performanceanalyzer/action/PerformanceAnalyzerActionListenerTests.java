@@ -45,6 +45,9 @@ public class PerformanceAnalyzerActionListenerTests {
     public void init() {
         originalActionListener = Mockito.mock(ActionListener.class);
         actionListener = new PerformanceAnalyzerActionListener();
+
+        //clean metricQueue before running every test
+        TestUtil.readEvents();
     }
 
     @Test
