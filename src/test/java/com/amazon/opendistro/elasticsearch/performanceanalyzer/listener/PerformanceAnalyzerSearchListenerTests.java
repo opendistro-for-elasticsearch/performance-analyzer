@@ -72,6 +72,9 @@ public class PerformanceAnalyzerSearchListenerTests {
     assertEquals(PerformanceAnalyzerSearchListener.class.getSimpleName(), searchListener.toString());
 
     statsCollector = StatsCollector.instance();
+
+    //clean metricQueue before running every test
+    TestUtil.readEvents();
   }
 
   @Test
