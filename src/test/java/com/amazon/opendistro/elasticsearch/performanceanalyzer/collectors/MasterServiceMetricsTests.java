@@ -17,7 +17,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -89,7 +89,7 @@ public class MasterServiceMetricsTests {
     public void testCollectMetrics() {
         masterServiceMetrics.collectMetrics(startTimeInMills);
         String jsonStr = readMetricsInJsonString(1);
-        assertTrue(jsonStr.contains(MasterPendingValue.Constants.PENDING_TASKS_COUNT_VALUE));
+        assertFalse(jsonStr.contains(MasterPendingValue.Constants.PENDING_TASKS_COUNT_VALUE));
     }
 
     @Test
@@ -116,8 +116,8 @@ public class MasterServiceMetricsTests {
         assert metrics.size() == size;
         if (size != 0) {
             String[] jsonStrs = metrics.get(0).value.split("\n");
-            assert jsonStrs.length == 2;
-            return jsonStrs[1];
+            assert jsonStrs.length == 1;
+            return jsonStrs[0];
         } else {
             return null;
         }

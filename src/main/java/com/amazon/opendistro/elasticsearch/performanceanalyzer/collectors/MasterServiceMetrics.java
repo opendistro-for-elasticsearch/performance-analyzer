@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,9 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.elasticsearch.cluster.service.PendingClusterTask;
+import java.util.HashMap;
+import java.util.List;
 
 @SuppressWarnings("unchecked")
 public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
@@ -58,12 +62,28 @@ public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector im
                 return;
             }
 
+            List<PendingClusterTask> pendingTasks = ESResources.INSTANCE.getClusterService().getMasterService()
+                                                    .pendingTasks();
+            HashMap<String,Integer> pendingTaskCountPerTaskType = new HashMap<>();
+
+            for (PendingClusterTask pendingTask: pendingTasks){
+                String pendingTaskType = pendingTask.getSource().toString().split(" ",2)[0];
+                if (pendingTaskCountPerTaskType.containsKey(pendingTaskType)) {
+                    pendingTaskCountPerTaskType.put(pendingTaskType, pendingTaskCountPerTaskType.get(pendingTaskType) + 1);
+                }
+                else{
+                    pendingTaskCountPerTaskType.put(pendingTaskType,1);
+                }
+            }
+
             value.setLength(0);
-            value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
-                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-            value.append(new MasterPendingStatus(
-                    ESResources.INSTANCE.getClusterService().getMasterService()
-                            .numberOfPendingTasks()).serialize());
+            value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
+            for (String pendingTaskType : pendingTaskCountPerTaskType.keySet()){
+                value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+                value.append(new MasterPendingStatus(
+                        pendingTaskType,pendingTaskCountPerTaskType.get(pendingTaskType)).serialize());
+            }
+
             saveMetricValues(value.toString(), startTime,
                     PerformanceAnalyzerMetrics.MASTER_CURRENT, PerformanceAnalyzerMetrics.MASTER_META_DATA);
 
@@ -73,14 +93,24 @@ public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector im
     }
 
     public static class MasterPendingStatus extends MetricStatus {
+        private final String pendingTaskType;
         private final int pendingTasksCount;
-        public MasterPendingStatus(int pendingTasksCount) {
+
+        public MasterPendingStatus(String pendingTaskType, int pendingTasksCount) {
+            this.pendingTaskType = pendingTaskType;
             this.pendingTasksCount = pendingTasksCount;
+
+        }
+
+        @JsonProperty(AllMetrics.MasterPendingTaskDimension.Constants.PENDING_TASK_TYPE)
+        public String getMasterTaskType(){
+            return pendingTaskType;
         }
 
         @JsonProperty(MasterPendingValue.Constants.PENDING_TASKS_COUNT_VALUE)
         public int getPendingTasksCount() {
             return pendingTasksCount;
         }
+
     }
 }
