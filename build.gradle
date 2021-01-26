@@ -346,7 +346,7 @@ bundlePlugin {
         include "plugin-security.policy"
     }
     exclude('tools.jar')
-    from("config/opendistro_performance_analyzer") {
+    from("config/opendistro-performance-analyzer") {
         into "config"
     }
 }
