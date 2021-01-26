@@ -82,7 +82,7 @@ validateNebulaPom.enabled = false
 loggerUsageCheck.enabled = false
 
 esplugin {
-    name 'opendistro_performance_analyzer'
+    name 'opendistro-performance-analyzer'
     description 'Performance Analyzer Plugin'
     classname 'com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin'
 }
