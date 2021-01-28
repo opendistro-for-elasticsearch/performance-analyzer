@@ -225,6 +225,9 @@ dependencies {
     compile('com.fasterxml.jackson.module:jackson-module-paranamer:2.12.0') {
         force = 'true'
     }
+    compile (group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.12.0'){
+        force = 'true'
+    }
     compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
         force = 'true'
     }
