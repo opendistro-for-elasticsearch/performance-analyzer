@@ -82,7 +82,7 @@ validateNebulaPom.enabled = false
 loggerUsageCheck.enabled = false
 
 esplugin {
-    name 'opendistro_performance_analyzer'
+    name 'opendistro-performance-analyzer'
     description 'Performance Analyzer Plugin'
     classname 'com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerPlugin'
 }
@@ -168,7 +168,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.8
+                minimum = 0.6
             }
         }
     }
@@ -346,7 +346,7 @@ bundlePlugin {
         include "plugin-security.policy"
     }
     exclude('tools.jar')
-    from("config/opendistro_performance_analyzer") {
+    from("config/opendistro-performance-analyzer") {
         into "config"
     }
 }
@@ -454,16 +454,34 @@ afterEvaluate {
         arch = 'NOARCH'
         postInstall file('packaging/rpm/postinst')
         postUninstall file('packaging/rpm/postrm')
-        archiveName "${packageName}-${version}.rpm"
         dependsOn 'assemble'
+        finalizedBy 'renameRpm'
+        task renameRpm(type: Copy) {
+            from("$buildDir/distributions")
+            into("$buildDir/distributions")
+            include archiveName
+            rename archiveName, "${packageName}-${version}.rpm"
+            doLast {
+                delete file("$buildDir/distributions/$archiveName")
+            }
+        }
     }
 
     buildDeb {
-        arch = 'amd64'
+        arch = 'all'
         postInstall file('packaging/deb/postinst')
         postUninstall file('packaging/deb/postrm')
-        archiveName "${packageName}-${version}.deb"
         dependsOn 'assemble'
+        finalizedBy 'renameDeb'
+        task renameDeb(type: Copy) {
+            from("$buildDir/distributions")
+            into("$buildDir/distributions")
+            include archiveName
+            rename archiveName, "${packageName}-${version}.deb"
+            doLast {
+                delete file("$buildDir/distributions/$archiveName")
+            }
+        }
     }
 
     task buildPackages(type: GradleBuild) {

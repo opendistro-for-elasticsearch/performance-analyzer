@@ -13,10 +13,10 @@ if [ -z "$ES_HOME" ]; then
 fi
 
 # Prepare the RCA reader process for execution
-cp -r "$ES_HOME"/plugins/opendistro_performance_analyzer/performance-analyzer-rca $ES_HOME
-if [ -f "$ES_HOME"/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli ]; then
-  mv "$ES_HOME"/bin/opendistro_performance_analyzer/performance-analyzer-agent-cli "$ES_HOME"/bin
-  rm -rf "$ES_HOME"/bin/opendistro_performance_analyzer
+cp -r "$ES_HOME"/plugins/opendistro-performance-analyzer/performance-analyzer-rca $ES_HOME
+if [ -f "$ES_HOME"/bin/opendistro-performance-analyzer/performance-analyzer-agent-cli ]; then
+  mv "$ES_HOME"/bin/opendistro-performance-analyzer/performance-analyzer-agent-cli "$ES_HOME"/bin
+  rm -rf "$ES_HOME"/bin/opendistro-performance-analyzer
 fi
 mkdir -p "$ES_HOME"/data
 mkdir -p "/var/lib/elasticsearch"
@@ -35,7 +35,7 @@ if ! grep -q '## OpenDistro Performance Analyzer' /etc/elasticsearch/jvm.options
    echo '## OpenDistro Performance Analyzer' >> /etc/elasticsearch/jvm.options
    echo "-Dclk.tck=$CLK_TCK" >> /etc/elasticsearch/jvm.options
    echo "-Djdk.attach.allowAttachSelf=true" >> /etc/elasticsearch/jvm.options
-   echo "-Djava.security.policy=file:///usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_config/es_security.policy" >> /etc/elasticsearch/jvm.options
+   echo "-Djava.security.policy=file:///usr/share/elasticsearch/plugins/opendistro-performance-analyzer/pa_config/es_security.policy" >> /etc/elasticsearch/jvm.options
 fi
 
 IS_UPGRADE=false
@@ -63,6 +63,6 @@ if [ "x$IS_UPGRADE" != "xtrue" ]; then
 
     elif command -v chkconfig >/dev/null; then
         echo "### Non systemd distro. Please start and stop performance analyzer manually using the command: "
-        echo "sh /usr/share/elasticsearch/plugins/opendistro_performance_analyzer/pa_bin/performance-analyzer-agent /usr/share/elasticsearch -d"
+        echo "sh /usr/share/elasticsearch/plugins/opendistro-performance-analyzer/pa_bin/performance-analyzer-agent /usr/share/elasticsearch -d"
     fi
 fi
