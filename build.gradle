@@ -299,10 +299,6 @@ task buildRca() {
     doLast {
         exec {
             workingDir("$rcaDir")
-            commandLine 'git', 'checkout', 'cve-jackson'
-        }
-        exec {
-            workingDir("$rcaDir")
             commandLine './gradlew', 'build', '-x', 'test'
         }
         exec {
