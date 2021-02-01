@@ -37,6 +37,7 @@ import org.elasticsearch.search.internal.SearchContext;
 import org.elasticsearch.search.internal.ShardSearchRequest;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -165,6 +166,7 @@ public class PerformanceAnalyzerSearchListenerTests {
     assertTrue(jsonStrs.get(3).contains(AllMetrics.CommonDimension.SHARD_ID.toString()));
   }
 
+  @Ignore
   @Test
   public void testInvalidSearchContext() {
     initializeValidSearchContext(false);
