@@ -200,6 +200,12 @@ dependencies {
     configurations.all {
        resolutionStrategy {
           force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
+          force 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
+          force 'com.fasterxml.jackson.core:jackson-core:2.10.5'
+          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.10.5'
+          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.5'
+          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.10.5'
+          force 'junit:junit:4.13.1'
        }
     }
 
@@ -211,9 +217,9 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk15on:1.68'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.68'
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.12'
-    compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.4'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.4'
-    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.4'
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.5'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
+    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.5'
     compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
         force = 'true'
     }
