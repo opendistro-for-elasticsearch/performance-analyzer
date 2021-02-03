@@ -1,4 +1,4 @@
-## 2020-11-17 Version 1.13.0.0 (Current)
+## 2021-02-02 Version 1.13.0.0 (Current)
 
 Supported Elasticsearch version 7.10.2
 
