@@ -16,7 +16,7 @@
 buildscript {
 
     ext {
-        es_version = System.getProperty("es.version", "7.10.0")
+        es_version = System.getProperty("es.version", "7.10.2")
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -54,7 +54,7 @@ spotbugsTest {
 }
 
 ext {
-    opendistroVersion = '1.12.0'
+    opendistroVersion = '1.13.0'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -216,7 +216,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.9'
     compile 'org.bouncycastle:bcprov-jdk15on:1.68'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.68'
-    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.12'
+    compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.13'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.5'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
     compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.5'
@@ -307,7 +307,7 @@ task buildRca() {
         exec {
             def licenseDir = "$projectDir/licenses"
             workingDir("$licenseDir")
-            commandLine 'rm', "performanceanalyzer-rca-1.12.jar.sha1"
+            commandLine 'rm', "performanceanalyzer-rca-1.13.jar.sha1"
         }
         exec {
             workingDir("$projectDir")
