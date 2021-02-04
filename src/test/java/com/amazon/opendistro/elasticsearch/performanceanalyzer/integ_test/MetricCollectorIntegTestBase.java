@@ -34,6 +34,8 @@ import org.junit.Assert;
 
 public class MetricCollectorIntegTestBase extends PerformanceAnalyzerIntegTestBase {
 
+  private List<String> nodeIDs;
+
   protected List<JsonResponseNode> readMetric(String endpoint) throws Exception {
     String jsonString;
     //read metric from local node
@@ -45,10 +47,10 @@ public class MetricCollectorIntegTestBase extends PerformanceAnalyzerIntegTestBa
     return parseJsonResponse(jsonObject);
   }
 
-  protected List<String> getNodeID() throws Exception {
+  protected void initNodes() throws Exception {
     final Request request = new Request("GET", "/_cat/nodes?full_id&h=id");
     final Response response = adminClient().performRequest(request);
-    List<String> nodeIDs = new ArrayList<>();
+    nodeIDs = new ArrayList<>();
     if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
       try (BufferedReader responseReader = new BufferedReader(
           new InputStreamReader(response.getEntity().getContent(), StandardCharsets.UTF_8))) {
@@ -58,6 +60,9 @@ public class MetricCollectorIntegTestBase extends PerformanceAnalyzerIntegTestBa
         }
       }
     }
+  }
+
+  protected List<String> getNodeIDs() {
     return nodeIDs;
   }
 
