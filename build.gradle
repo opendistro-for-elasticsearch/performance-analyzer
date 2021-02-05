@@ -36,6 +36,7 @@ plugins {
     id 'com.github.spotbugs' version '4.6.0'
     id 'checkstyle'
     id 'jacoco'
+    id 'com.diffplug.spotless' version '5.8.2'
 }
 
 spotbugsMain {
@@ -72,6 +73,14 @@ ext {
     noticeFile = rootProject.file('NOTICE.txt')
 }
 
+apply plugin: 'com.diffplug.spotless'
+
+spotless {
+    java {
+        licenseHeaderFile(file('license-header'))
+    }
+}
+
 test {
     enabled = true
     systemProperty 'tests.security.manager', 'false'
@@ -91,6 +100,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 compileJava {
+    dependsOn spotlessApply
     JavaVersion targetVersion = JavaVersion.toVersion(targetCompatibility);
     if (targetVersion.isJava9Compatible()) {
         options.compilerArgs += ["--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED"]
