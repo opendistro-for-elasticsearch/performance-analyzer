@@ -21,6 +21,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.Performanc
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ElectionTermCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.GCInfoCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
@@ -191,6 +192,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
                 NodeStatsFixedShardsMetricsCollector(performanceAnalyzerController));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ElectionTermCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());

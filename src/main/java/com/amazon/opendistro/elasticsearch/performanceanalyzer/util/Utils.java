@@ -24,6 +24,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ElectionTermCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
@@ -54,6 +55,7 @@ public class Utils {
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsFixedShardsMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, cdefault);
+        MetricsConfiguration.CONFIG_MAP.put(ElectionTermCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(FaultDetectionMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ShardStateCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(MasterThrottlingMetricsCollector.class, cdefault);
