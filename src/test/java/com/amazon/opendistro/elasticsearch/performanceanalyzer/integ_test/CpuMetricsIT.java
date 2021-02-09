@@ -25,11 +25,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class CpuMetricsIT extends MetricCollectorIntegTestBase {
-  private List<String> nodeIDs;
 
   @Before
   public void init() throws Exception {
-    nodeIDs = getNodeID();
+    initNodes();
   }
 
   @Test
@@ -43,7 +42,7 @@ public class CpuMetricsIT extends MetricCollectorIntegTestBase {
     //read metric from all nodes in cluster
     responseNodeList =
         readMetric(PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/metrics/?metrics=CPU_Utilization&agg=sum&nodes=all");
-    int nodeNum = nodeIDs.size();
+    int nodeNum = getNodeIDs().size();
     Assert.assertEquals(nodeNum, responseNodeList.size());
     for (int i = 0; i < nodeNum; i++) {
       validatePerNodeCPUMetric(responseNodeList.get(i));
