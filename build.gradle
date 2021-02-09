@@ -36,7 +36,7 @@ plugins {
     id 'com.github.spotbugs' version '4.6.0'
     id 'checkstyle'
     id 'jacoco'
-    id 'com.diffplug.spotless' version '5.8.2'
+    id 'com.diffplug.spotless' version '5.11.0'
 }
 
 spotbugsMain {
@@ -71,13 +71,23 @@ ext {
     projectSubstitutions = [:]
     licenseFile = rootProject.file('LICENSE.txt')
     noticeFile = rootProject.file('NOTICE.txt')
+    gitDefaultBranch = 'main'
 }
-
-apply plugin: 'com.diffplug.spotless'
 
 spotless {
     java {
+        // only apply formatting rules to updated files
+        ratchetFrom "origin/${gitDefaultBranch}"
+
         licenseHeaderFile(file('license-header'))
+        googleJavaFormat().aosp()
+        importOrder()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+
+        // add support for spotless:off and spotless:on tags to exclude sections of code
+        toggleOffOn()
     }
 }
 
@@ -300,6 +310,7 @@ task cloneGitRepo(type: GitClone) {
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
     uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
+    branch = gitDefaultBranch
     destinationPath = destination
     bare = false
     enabled = !destination.exists() // to clone only once
