@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2020-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -15,10 +15,13 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json;
 
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.integ_test.json.JsonResponseField.Type.Constants;
 import com.google.gson.annotations.SerializedName;
 
 /**
+ * spotless:off
+ *
  * "data": {
  *   "fields": [
  *      {
@@ -32,12 +35,16 @@ import com.google.gson.annotations.SerializedName;
  *       ]
  *    ]
  *  }
+ *
+ *  spotless:on
  */
 public class JsonResponseData {
   private static final String FIELDS = "fields";
   private static final String RECORDS = "records";
+
   @SerializedName(FIELDS)
   private JsonResponseField[] fields;
+
   @SerializedName(RECORDS)
   private String[][] records;
 

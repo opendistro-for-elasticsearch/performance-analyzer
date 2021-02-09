@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019-2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -108,212 +108,257 @@ import org.elasticsearch.transport.Transport;
 import org.elasticsearch.transport.TransportInterceptor;
 import org.elasticsearch.watcher.ResourceWatcherService;
 
-public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlugin, NetworkPlugin, SearchPlugin {
-    private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
-    public static final String PLUGIN_NAME = "opendistro-performance-analyzer";
-    private static final String ADD_FAULT_DETECTION_METHOD = "addFaultDetectionListener";
-    private static final String LISTENER_INJECTOR_CLASS_PATH =
-            "com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.ListenerInjector";
-    public static final int QUEUE_PURGE_INTERVAL_MS = 1000;
-    private static SecurityManager sm = null;
-    private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
-    private final NodeStatsSettingHandler nodeStatsSettingHandler;
-    private final ConfigOverridesClusterSettingHandler configOverridesClusterSettingHandler;
-    private final ConfigOverridesWrapper configOverridesWrapper;
-    private final PerformanceAnalyzerController performanceAnalyzerController;
-    private final ClusterSettingsManager clusterSettingsManager;
+public final class PerformanceAnalyzerPlugin extends Plugin
+    implements ActionPlugin, NetworkPlugin, SearchPlugin {
+  private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerPlugin.class);
+  public static final String PLUGIN_NAME = "opendistro-performance-analyzer";
+  private static final String ADD_FAULT_DETECTION_METHOD = "addFaultDetectionListener";
+  private static final String LISTENER_INJECTOR_CLASS_PATH =
+      "com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.ListenerInjector";
+  public static final int QUEUE_PURGE_INTERVAL_MS = 1000;
+  private static SecurityManager sm = null;
+  private final PerformanceAnalyzerClusterSettingHandler perfAnalyzerClusterSettingHandler;
+  private final NodeStatsSettingHandler nodeStatsSettingHandler;
+  private final ConfigOverridesClusterSettingHandler configOverridesClusterSettingHandler;
+  private final ConfigOverridesWrapper configOverridesWrapper;
+  private final PerformanceAnalyzerController performanceAnalyzerController;
+  private final ClusterSettingsManager clusterSettingsManager;
 
-    static {
-        SecurityManager sm = System.getSecurityManager();
-        Utils.configureMetrics();
-        if(sm != null) {
-            // unprivileged code such as scripts do not have SpecialPermission
-            sm.checkPermission(new SpecialPermission());
-        }
+  static {
+    SecurityManager sm = System.getSecurityManager();
+    Utils.configureMetrics();
+    if (sm != null) {
+      // unprivileged code such as scripts do not have SpecialPermission
+      sm.checkPermission(new SpecialPermission());
     }
+  }
 
-    public static void invokePrivileged(Runnable runner) {
-        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
-            try {
+  public static void invokePrivileged(Runnable runner) {
+    AccessController.doPrivileged(
+        (PrivilegedAction<Void>)
+            () -> {
+              try {
                 runner.run();
-            } catch(Exception ex) {
-                LOG.debug((Supplier<?>) () -> new ParameterizedMessage("Privileged Invocation failed {}",
-                        ex.toString()), ex);
-            }
-            return null;
-        } );
+              } catch (Exception ex) {
+                LOG.debug(
+                    (Supplier<?>)
+                        () ->
+                            new ParameterizedMessage(
+                                "Privileged Invocation failed {}", ex.toString()),
+                    ex);
+              }
+              return null;
+            });
+  }
+
+  private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
+
+  public PerformanceAnalyzerPlugin(final Settings settings, final java.nio.file.Path configPath) {
+    OSMetricsGeneratorFactory.getInstance();
+
+    ESResources.INSTANCE.setSettings(settings);
+    ESResources.INSTANCE.setConfigPath(configPath);
+    ESResources.INSTANCE.setPluginFileLocation(
+        new Environment(settings, configPath).pluginsFile().toAbsolutePath().toString()
+            + File.separator
+            + PLUGIN_NAME
+            + File.separator);
+    // initialize plugin settings. Accessing plugin settings before this
+    // point will break, as the plugin location will not be initialized.
+    PluginSettings.instance();
+    scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
+    this.performanceAnalyzerController =
+        new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
+
+    configOverridesWrapper = new ConfigOverridesWrapper();
+    clusterSettingsManager =
+        new ClusterSettingsManager(
+            Arrays.asList(
+                PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+                PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING),
+            Collections.singletonList(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING));
+    configOverridesClusterSettingHandler =
+        new ConfigOverridesClusterSettingHandler(
+            configOverridesWrapper,
+            clusterSettingsManager,
+            PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
+    clusterSettingsManager.addSubscriberForStringSetting(
+        PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING,
+        configOverridesClusterSettingHandler);
+    perfAnalyzerClusterSettingHandler =
+        new PerformanceAnalyzerClusterSettingHandler(
+            performanceAnalyzerController, clusterSettingsManager);
+    clusterSettingsManager.addSubscriberForIntSetting(
+        PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING, perfAnalyzerClusterSettingHandler);
+
+    nodeStatsSettingHandler =
+        new NodeStatsSettingHandler(performanceAnalyzerController, clusterSettingsManager);
+    clusterSettingsManager.addSubscriberForIntSetting(
+        PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING, nodeStatsSettingHandler);
+
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new CacheConfigMetricsCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CircuitBreakerCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new OSMetricsCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new HeapMetricsCollector());
+
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MetricsPurgeActivity());
+
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new NodeDetailsCollector(configOverridesWrapper));
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new NodeStatsAllShardsMetricsCollector(performanceAnalyzerController));
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new NodeStatsFixedShardsMetricsCollector(performanceAnalyzerController));
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new GCInfoCollector());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new FaultDetectionMetricsCollector(performanceAnalyzerController, configOverridesWrapper));
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new ShardStateCollector(performanceAnalyzerController, configOverridesWrapper));
+    scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+        new MasterThrottlingMetricsCollector(
+            performanceAnalyzerController, configOverridesWrapper));
+    scheduledMetricCollectorsExecutor.start();
+
+    EventLog eventLog = new EventLog();
+    EventLogFileHandler eventLogFileHandler =
+        new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
+    new EventLogQueueProcessor(
+            eventLogFileHandler,
+            MetricsConfiguration.SAMPLING_INTERVAL,
+            QUEUE_PURGE_INTERVAL_MS,
+            performanceAnalyzerController)
+        .scheduleExecutor();
+  }
+
+  // - http level: bulk, search
+  @Override
+  public List<ActionFilter> getActionFilters() {
+    return singletonList(new PerformanceAnalyzerActionFilter(performanceAnalyzerController));
+  }
+
+  @Override
+  public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
+    List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> actions =
+        new ArrayList<>(1);
+    actions.add(new ActionHandler<>(WhoAmIAction.INSTANCE, TransportWhoAmIAction.class));
+    return actions;
+  }
+
+  // - shardquery, shardfetch
+  @Override
+  public void onIndexModule(IndexModule indexModule) {
+    PerformanceAnalyzerSearchListener performanceanalyzerSearchListener =
+        new PerformanceAnalyzerSearchListener(performanceAnalyzerController);
+    indexModule.addSearchOperationListener(performanceanalyzerSearchListener);
+  }
+
+  // follower check, leader check
+  public void onDiscovery(Discovery discovery) {
+    try {
+      Class<?> listenerInjector = Class.forName(LISTENER_INJECTOR_CLASS_PATH);
+      Object listenerInjectorInstance = listenerInjector.getDeclaredConstructor().newInstance();
+      Method addListenerMethod =
+          listenerInjectorInstance
+              .getClass()
+              .getMethod(ADD_FAULT_DETECTION_METHOD, Discovery.class);
+      addListenerMethod.invoke(listenerInjectorInstance, discovery);
+    } catch (InstantiationException
+        | InvocationTargetException
+        | NoSuchMethodException
+        | IllegalAccessException e) {
+      LOG.debug("Exception while calling addFaultDetectionListener in Discovery");
+    } catch (ClassNotFoundException e) {
+      LOG.debug("No Class for ListenerInjector detected");
     }
+  }
 
-    private final ScheduledMetricCollectorsExecutor scheduledMetricCollectorsExecutor;
+  // - shardbulk
+  @Override
+  public List<TransportInterceptor> getTransportInterceptors(
+      NamedWriteableRegistry namedWriteableRegistry, ThreadContext threadContext) {
+    return singletonList(
+        new PerformanceAnalyzerTransportInterceptor(performanceAnalyzerController));
+  }
 
-    public PerformanceAnalyzerPlugin(final Settings settings, final java.nio.file.Path configPath) {
-        OSMetricsGeneratorFactory.getInstance();
+  @Override
+  public List<org.elasticsearch.rest.RestHandler> getRestHandlers(
+      final Settings settings,
+      final RestController restController,
+      final ClusterSettings clusterSettings,
+      final IndexScopedSettings indexScopedSettings,
+      final SettingsFilter settingsFilter,
+      final IndexNameExpressionResolver indexNameExpressionResolver,
+      final Supplier<DiscoveryNodes> nodesInCluster) {
+    PerformanceAnalyzerConfigAction performanceanalyzerConfigAction =
+        new PerformanceAnalyzerConfigAction(restController, performanceAnalyzerController);
+    PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
+    PerformanceAnalyzerResourceProvider performanceAnalyzerRp =
+        new PerformanceAnalyzerResourceProvider(settings, restController);
+    PerformanceAnalyzerClusterConfigAction paClusterConfigAction =
+        new PerformanceAnalyzerClusterConfigAction(
+            settings, restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
+    PerformanceAnalyzerOverridesClusterConfigAction paOverridesConfigClusterAction =
+        new PerformanceAnalyzerOverridesClusterConfigAction(
+            settings, restController, configOverridesClusterSettingHandler, configOverridesWrapper);
+    return Arrays.asList(
+        performanceanalyzerConfigAction,
+        paClusterConfigAction,
+        performanceAnalyzerRp,
+        paOverridesConfigClusterAction);
+  }
 
-        ESResources.INSTANCE.setSettings(settings);
-        ESResources.INSTANCE.setConfigPath(configPath);
-        ESResources.INSTANCE.setPluginFileLocation(new Environment(settings, configPath).
-                pluginsFile().toAbsolutePath().toString() + File.separator + PLUGIN_NAME + File.separator);
-        //initialize plugin settings. Accessing plugin settings before this
-        //point will break, as the plugin location will not be initialized.
-        PluginSettings.instance();
-        scheduledMetricCollectorsExecutor = new ScheduledMetricCollectorsExecutor();
-        this.performanceAnalyzerController = new PerformanceAnalyzerController(scheduledMetricCollectorsExecutor);
+  @Override
+  @SuppressWarnings("checkstyle:parameternumber")
+  public Collection<Object> createComponents(
+      Client client,
+      ClusterService clusterService,
+      ThreadPool threadPool,
+      ResourceWatcherService resourceWatcherService,
+      ScriptService scriptService,
+      NamedXContentRegistry xContentRegistry,
+      Environment environment,
+      NodeEnvironment nodeEnvironment,
+      NamedWriteableRegistry namedWriteableRegistry,
+      IndexNameExpressionResolver indexNameExpressionResolver,
+      Supplier<RepositoriesService> repositoriesServiceSupplier) {
+    ESResources.INSTANCE.setClusterService(clusterService);
+    ESResources.INSTANCE.setThreadPool(threadPool);
+    ESResources.INSTANCE.setEnvironment(environment);
+    ESResources.INSTANCE.setClient(client);
 
-        configOverridesWrapper = new ConfigOverridesWrapper();
-        clusterSettingsManager = new ClusterSettingsManager(Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                        PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING),
-                Collections.singletonList(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING));
-        configOverridesClusterSettingHandler = new ConfigOverridesClusterSettingHandler(configOverridesWrapper, clusterSettingsManager,
-                PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
-        clusterSettingsManager.addSubscriberForStringSetting(PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING,
-                configOverridesClusterSettingHandler);
-        perfAnalyzerClusterSettingHandler = new PerformanceAnalyzerClusterSettingHandler(performanceAnalyzerController,
-                clusterSettingsManager);
-        clusterSettingsManager.addSubscriberForIntSetting(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                perfAnalyzerClusterSettingHandler);
+    // ClusterSettingsManager needs ClusterService to have been created before we can
+    // initialize it. This is the earliest point at which we know ClusterService is created.
+    // So, call the initialize method here.
+    clusterSettingsManager.initialize();
+    return Collections.singletonList(performanceAnalyzerController);
+  }
 
-        nodeStatsSettingHandler = new NodeStatsSettingHandler(performanceAnalyzerController,
-                clusterSettingsManager);
-        clusterSettingsManager.addSubscriberForIntSetting(PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
-                nodeStatsSettingHandler);
+  @Override
+  public Map<String, Supplier<Transport>> getTransports(
+      Settings settings,
+      ThreadPool threadPool,
+      PageCacheRecycler pageCacheRecycler,
+      CircuitBreakerService circuitBreakerService,
+      NamedWriteableRegistry namedWriteableRegistry,
+      NetworkService networkService) {
+    ESResources.INSTANCE.setSettings(settings);
+    ESResources.INSTANCE.setCircuitBreakerService(circuitBreakerService);
+    return Collections.emptyMap();
+  }
 
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ThreadPoolMetricsCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CacheConfigMetricsCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new CircuitBreakerCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new OSMetricsCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new HeapMetricsCollector());
-
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MetricsPurgeActivity());
-
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NodeDetailsCollector(configOverridesWrapper));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
-                NodeStatsAllShardsMetricsCollector(performanceAnalyzerController));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
-                NodeStatsFixedShardsMetricsCollector(performanceAnalyzerController));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceMetrics());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterServiceEventMetrics());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new DisksCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new GCInfoCollector());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new FaultDetectionMetricsCollector(
-                performanceAnalyzerController, configOverridesWrapper));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
-                performanceAnalyzerController,configOverridesWrapper));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
-                performanceAnalyzerController,configOverridesWrapper));
-        scheduledMetricCollectorsExecutor.start();
-
-        EventLog eventLog = new EventLog();
-        EventLogFileHandler eventLogFileHandler = new EventLogFileHandler(eventLog, PluginSettings.instance().getMetricsLocation());
-        new EventLogQueueProcessor(eventLogFileHandler,
-                MetricsConfiguration.SAMPLING_INTERVAL,
-                QUEUE_PURGE_INTERVAL_MS, performanceAnalyzerController).scheduleExecutor();
-    }
-
-    // - http level: bulk, search
-    @Override
-    public List<ActionFilter> getActionFilters() {
-        return singletonList(new PerformanceAnalyzerActionFilter(performanceAnalyzerController));
-    }
-
-    @Override
-    public List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> getActions() {
-        List<ActionHandler<? extends ActionRequest, ? extends ActionResponse>> actions = new ArrayList<>(1);
-        actions.add(new ActionHandler<>(WhoAmIAction.INSTANCE,
-                TransportWhoAmIAction.class));
-        return actions;
-    }
-
-    //- shardquery, shardfetch
-    @Override
-    public void onIndexModule(IndexModule indexModule) {
-        PerformanceAnalyzerSearchListener performanceanalyzerSearchListener =
-            new PerformanceAnalyzerSearchListener(performanceAnalyzerController);
-        indexModule.addSearchOperationListener(performanceanalyzerSearchListener);
-    }
-
-    //follower check, leader check
-    public void onDiscovery(Discovery discovery) {
-        try {
-            Class<?> listenerInjector = Class.forName(LISTENER_INJECTOR_CLASS_PATH);
-            Object listenerInjectorInstance = listenerInjector.getDeclaredConstructor().newInstance();
-            Method addListenerMethod = listenerInjectorInstance.getClass().getMethod(ADD_FAULT_DETECTION_METHOD,
-                Discovery.class);
-            addListenerMethod.invoke(listenerInjectorInstance, discovery);
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException  |
-            IllegalAccessException e) {
-            LOG.debug("Exception while calling addFaultDetectionListener in Discovery");
-        } catch (ClassNotFoundException e) {
-            LOG.debug("No Class for ListenerInjector detected");
-        }
-    }
-
-    //- shardbulk
-    @Override
-    public List<TransportInterceptor> getTransportInterceptors(NamedWriteableRegistry namedWriteableRegistry, ThreadContext threadContext) {
-        return singletonList(new PerformanceAnalyzerTransportInterceptor(performanceAnalyzerController));
-    }
-
-    @Override
-    public List<org.elasticsearch.rest.RestHandler> getRestHandlers(final Settings settings,
-                                                                    final RestController restController,
-                                                                    final ClusterSettings clusterSettings,
-                                                                    final IndexScopedSettings indexScopedSettings,
-                                                                    final SettingsFilter settingsFilter,
-                                                                    final IndexNameExpressionResolver indexNameExpressionResolver,
-                                                                    final Supplier<DiscoveryNodes> nodesInCluster) {
-        PerformanceAnalyzerConfigAction performanceanalyzerConfigAction = new PerformanceAnalyzerConfigAction(
-                restController, performanceAnalyzerController);
-        PerformanceAnalyzerConfigAction.setInstance(performanceanalyzerConfigAction);
-        PerformanceAnalyzerResourceProvider performanceAnalyzerRp = new PerformanceAnalyzerResourceProvider(settings, restController);
-        PerformanceAnalyzerClusterConfigAction paClusterConfigAction = new PerformanceAnalyzerClusterConfigAction(settings,
-                restController, perfAnalyzerClusterSettingHandler, nodeStatsSettingHandler);
-        PerformanceAnalyzerOverridesClusterConfigAction paOverridesConfigClusterAction =
-                new PerformanceAnalyzerOverridesClusterConfigAction(settings, restController,
-                        configOverridesClusterSettingHandler, configOverridesWrapper);
-        return Arrays.asList(performanceanalyzerConfigAction, paClusterConfigAction, performanceAnalyzerRp, paOverridesConfigClusterAction);
-    }
-
-    @Override
-    @SuppressWarnings("checkstyle:parameternumber")
-    public Collection<Object> createComponents(Client client, ClusterService clusterService, ThreadPool threadPool,
-                                               ResourceWatcherService resourceWatcherService, ScriptService scriptService,
-                                               NamedXContentRegistry xContentRegistry, Environment environment,
-                                               NodeEnvironment nodeEnvironment, NamedWriteableRegistry namedWriteableRegistry,
-                                               IndexNameExpressionResolver indexNameExpressionResolver,
-                                               Supplier<RepositoriesService> repositoriesServiceSupplier) {
-        ESResources.INSTANCE.setClusterService(clusterService);
-        ESResources.INSTANCE.setThreadPool(threadPool);
-        ESResources.INSTANCE.setEnvironment(environment);
-        ESResources.INSTANCE.setClient(client);
-
-        // ClusterSettingsManager needs ClusterService to have been created before we can
-        // initialize it. This is the earliest point at which we know ClusterService is created.
-        // So, call the initialize method here.
-        clusterSettingsManager.initialize();
-        return Collections.singletonList(performanceAnalyzerController);
-    }
-
-    @Override
-    public Map<String, Supplier<Transport>> getTransports(Settings settings, ThreadPool threadPool,
-                                                          PageCacheRecycler pageCacheRecycler,
-                                                          CircuitBreakerService circuitBreakerService,
-                                                          NamedWriteableRegistry namedWriteableRegistry,
-                                                          NetworkService networkService) {
-        ESResources.INSTANCE.setSettings(settings);
-        ESResources.INSTANCE.setCircuitBreakerService(circuitBreakerService);
-        return Collections.emptyMap();
-    }
-
-    /**
-     * Returns a list of additional {@link Setting} definitions for this plugin.
-     */
-    @Override
-    public List<Setting<?>> getSettings() {
-        return Arrays.asList(PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
-                             PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
-                             PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
-    }
-
+  /** Returns a list of additional {@link Setting} definitions for this plugin. */
+  @Override
+  public List<Setting<?>> getSettings() {
+    return Arrays.asList(
+        PerformanceAnalyzerClusterSettings.COMPOSITE_PA_SETTING,
+        PerformanceAnalyzerClusterSettings.PA_NODE_STATS_SETTING,
+        PerformanceAnalyzerClusterSettings.CONFIG_OVERRIDES_SETTING);
+  }
 }
