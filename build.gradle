@@ -17,6 +17,7 @@ buildscript {
 
     ext {
         es_version = System.getProperty("es.version", "7.10.2")
+        gitDefaultBranch = 'main'
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -78,7 +79,7 @@ apply plugin: 'com.diffplug.spotless'
 spotless {
     java {
         // only apply formatting rules to updated files
-        ratchetFrom 'origin/main'
+        ratchetFrom "origin/${gitDefaultBranch}"
 
         licenseHeaderFile(file('license-header'))
         googleJavaFormat()
@@ -309,6 +310,7 @@ task cloneGitRepo(type: GitClone) {
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
     uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
+    branch = gitDefaultBranch
     destinationPath = destination
     bare = false
     enabled = !destination.exists() // to clone only once
