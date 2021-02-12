@@ -17,7 +17,7 @@ buildscript {
 
     ext {
         es_version = System.getProperty("es.version", "7.10.2")
-        gitDefaultBranch = 'main'
+        gitDefaultBranch = 'fargate-ci'
     }
     // This isn't applying from repositories.gradle so repeating it here
     repositories {
@@ -519,4 +519,4 @@ afterEvaluate {
 }
 
 bundlePlugin.mustRunAfter unpackRca
-build.dependsOn unpackRca
+// build.dependsOn unpackRca
