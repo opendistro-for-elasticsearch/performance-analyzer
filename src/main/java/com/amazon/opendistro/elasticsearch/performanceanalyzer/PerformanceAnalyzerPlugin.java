@@ -24,6 +24,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksC
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.GCInfoCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardIndexingPressureMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterThrottlingMetricsCollector;
@@ -201,6 +202,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
+                performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardIndexingPressureMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.start();
 
