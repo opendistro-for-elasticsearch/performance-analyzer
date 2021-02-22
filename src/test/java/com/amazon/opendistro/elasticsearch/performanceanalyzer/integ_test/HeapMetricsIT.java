@@ -21,7 +21,7 @@ public class HeapMetricsIT  extends MetricCollectorIntegTestBase {
 
     private static final Logger LOG = LogManager.getLogger(HeapMetricsIT.class);
     private double MIN_HEAP = 50 * 1024 * 1024 ; // 50 MB
-    private double MAX_HEAP = 512 * 1024 * 1024 ; // 512 MB
+    private double MAX_HEAP = 2 * 1024 * 1024 * 1024 ; // 2 GB
     @Before
     public void init() throws Exception {
         initNodes();
