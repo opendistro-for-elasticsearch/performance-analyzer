@@ -100,27 +100,24 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
                             JSONObject shardId = (JSONObject) parser.parse(mapper.writeValueAsString(tracker.get("shardId")));
                             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                            value.append(new ShardIndexingPressureStatus(AllMetrics.ShardIndexingPressureNodeRoleType.COORDINATING.toString(),
+                            value.append(new ShardIndexingPressureStatus(AllMetrics.IndexingStage.COORDINATING.toString(),
                                 shardId.get("indexName").toString(), shardId.get("id").toString(),
-                                true,
                                 Long.parseLong(tracker.get("coordinatingRejections").toString()),
                                 Long.parseLong(tracker.get("currentCoordinatingBytes").toString()),
                                 Long.parseLong(tracker.get("primaryAndCoordinatingLimits").toString()),
                                 Double.longBitsToDouble(Long.parseLong(tracker.get("coordinatingThroughputMovingAverage").toString())),
                                 Long.parseLong(tracker.get("lastSuccessfulCoordinatingRequestTimestamp").toString())).serialize())
                                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                            value.append(new ShardIndexingPressureStatus(AllMetrics.ShardIndexingPressureNodeRoleType.PRIMARY.toString(),
+                            value.append(new ShardIndexingPressureStatus(AllMetrics.IndexingStage.PRIMARY.toString(),
                                 shardId.get("indexName").toString(), shardId.get("id").toString(),
-                                true,
                                 Long.parseLong(tracker.get("primaryRejections").toString()),
                                 Long.parseLong(tracker.get("currentPrimaryBytes").toString()),
                                 Long.parseLong(tracker.get("primaryAndCoordinatingLimits").toString()),
                                 Double.longBitsToDouble(Long.parseLong(tracker.get("primaryThroughputMovingAverage").toString())),
                                 Long.parseLong(tracker.get("lastSuccessfulPrimaryRequestTimestamp").toString())).serialize())
                                 .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                            value.append(new ShardIndexingPressureStatus(AllMetrics.ShardIndexingPressureNodeRoleType.REPLICA.toString(),
+                            value.append(new ShardIndexingPressureStatus(AllMetrics.IndexingStage.REPLICA.toString(),
                                 shardId.get("indexName").toString(), shardId.get("id").toString(),
-                                true,
                                 Long.parseLong(tracker.get("replicaRejections").toString()),
                                 Long.parseLong(tracker.get("currentReplicaBytes").toString()),
                                 Long.parseLong(tracker.get("replicaLimits").toString()),
@@ -157,7 +154,7 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
     }
 
     static class ShardIndexingPressureStatus extends MetricStatus {
-        private final String nodeRole;
+        private final String indexingStage;
         private final String indexName;
         private final String shardId;
         private final long rejectionCount;
@@ -166,9 +163,9 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
         private final double averageWindowThroughput;
         private final long lastSuccessfulTimestamp;
 
-        public ShardIndexingPressureStatus(String nodeRole, String indexName, String shardId, boolean isActiveShard, long rejectionCount, long currentBytes,
+        public ShardIndexingPressureStatus(String indexingStage, String indexName, String shardId, long rejectionCount, long currentBytes,
                                            long currentLimits, double averageWindowThroughput, long lastSuccessfulTimestamp) {
-            this.nodeRole = nodeRole;
+            this.indexingStage = indexingStage;
             this.indexName = indexName;
             this.shardId = shardId;
             this.rejectionCount = rejectionCount;
@@ -178,9 +175,9 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
             this.lastSuccessfulTimestamp = lastSuccessfulTimestamp;
         }
 
-        @JsonProperty(ShardIndexingPressureDimension.Constants.NODE_ROLE_VALUE)
-        public String getNodeRole() {
-            return nodeRole;
+        @JsonProperty(ShardIndexingPressureDimension.Constants.INDEXING_STAGE)
+        public String getIndexingStage() {
+            return indexingStage;
         }
 
         @JsonProperty(ShardIndexingPressureDimension.Constants.INDEX_NAME_VALUE)
