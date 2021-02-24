@@ -55,7 +55,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
     public static final String SHARD_INDEXING_PRESSURE_FIELD_NAME = "shardIndexingPressure";
     public static final String SHARD_INDEXING_PRESSURE_STORE_FIELD_NAME = "shardIndexingPressureStore";
     public static final String SHARD_INDEXING_PRESSURE_HOT_STORE_FIELD_NAME = "shardIndexingPressureHotStore";
-    public static final String SHARD_INDEXING_PRESSURE_COLD_STORE_FIELD_NAME = "shardIndexingPressureColdStore";
 
     private final ConfigOverridesWrapper configOverridesWrapper;
     private final PerformanceAnalyzerController controller;
@@ -93,15 +92,8 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
                     Map<Long, Object> shardIndexingPressureHotStore =
                         (Map<Long, Object>) getField(SHARD_INDEXING_PRESSURE_STORE_CLASS_NAME, SHARD_INDEXING_PRESSURE_HOT_STORE_FIELD_NAME)
                             .get(shardIndexingPressureStore);
-                    Map<Long, Object> shardIndexingPressureColdStore =
-                        (Map<Long, Object>) getField(SHARD_INDEXING_PRESSURE_STORE_CLASS_NAME, SHARD_INDEXING_PRESSURE_COLD_STORE_FIELD_NAME)
-                            .get(shardIndexingPressureStore);
 
                     value.setLength(0);
-                    /*
-                    The shard metrics are written in the shared location along with the isActiveShard flag which
-                    determines if the shard had active writes or not. Will add all the shard metrics from the hot store.
-                     */
                     shardIndexingPressureHotStore.entrySet().stream().forEach(storeObject -> {
                         try {
                             JSONObject tracker = (JSONObject) parser.parse(mapper.writeValueAsString(storeObject.getValue()));
@@ -139,50 +131,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
                             LOG.debug("Exception raised while parsing string to json object. Skipping IndexingPressureMetricsCollector");
                         }
                     });
-
-                    /*
-                    Once all the metrics is added from the hot store we will skip the shard details from cold store that
-                    were present in hot store to publish relevant metrics for the rest of the shards.
-                     */
-                    shardIndexingPressureColdStore.entrySet().stream()
-                        .filter(storeObject -> !shardIndexingPressureHotStore.containsKey(storeObject.getKey()))
-                        .forEach(storeObject -> {
-                            try {
-                                JSONObject tracker = (JSONObject) parser.parse(mapper.writeValueAsString(storeObject.getValue()));
-                                JSONObject shardId = (JSONObject) parser.parse(mapper.writeValueAsString(tracker.get("shardId")));
-                                value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
-                                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                                value.append(new ShardIndexingPressureStatus(AllMetrics.ShardIndexingPressureNodeRoleType.COORDINATING.toString(),
-                                    shardId.get("indexName").toString(), shardId.get("id").toString(),
-                                    false,
-                                    Long.parseLong(tracker.get("coordinatingRejections").toString()),
-                                    Long.parseLong(tracker.get("currentCoordinatingBytes").toString()),
-                                    Long.parseLong(tracker.get("primaryAndCoordinatingLimits").toString()),
-                                    Double.longBitsToDouble(Long.parseLong(tracker.get("coordinatingThroughputMovingAverage").toString())),
-                                    Long.parseLong(tracker.get("lastSuccessfulCoordinatingRequestTimestamp").toString())).serialize())
-                                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                                value.append(new ShardIndexingPressureStatus(AllMetrics.ShardIndexingPressureNodeRoleType.PRIMARY.toString(),
-                                    shardId.get("indexName").toString(), shardId.get("id").toString(),
-                                    false,
-                                    Long.parseLong(tracker.get("primaryRejections").toString()),
-                                    Long.parseLong(tracker.get("currentPrimaryBytes").toString()),
-                                    Long.parseLong(tracker.get("primaryAndCoordinatingLimits").toString()),
-                                    Double.longBitsToDouble(Long.parseLong(tracker.get("primaryThroughputMovingAverage").toString())),
-                                    Long.parseLong(tracker.get("lastSuccessfulPrimaryRequestTimestamp").toString())).serialize())
-                                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                                value.append(new ShardIndexingPressureStatus(AllMetrics.ShardIndexingPressureNodeRoleType.REPLICA.toString(),
-                                    shardId.get("indexName").toString(), shardId.get("id").toString(),
-                                    false,
-                                    Long.parseLong(tracker.get("replicaRejections").toString()),
-                                    Long.parseLong(tracker.get("currentReplicaBytes").toString()),
-                                    Long.parseLong(tracker.get("replicaLimits").toString()),
-                                    Double.longBitsToDouble(Long.parseLong(tracker.get("replicaThroughputMovingAverage").toString())),
-                                    Long.parseLong(tracker.get("lastSuccessfulReplicaRequestTimestamp").toString())).serialize())
-                                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                            } catch (JsonProcessingException | ParseException e) {
-                                LOG.debug("Exception raised while parsing string to json object. Skipping IndexingPressureMetricsCollector");
-                            }
-                        });
                 }
             }
         } catch (NoSuchFieldException | IllegalAccessException | ClassNotFoundException e) {
@@ -212,7 +160,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
         private final String nodeRole;
         private final String indexName;
         private final String shardId;
-        private final boolean isActiveShard;
         private final long rejectionCount;
         private final long currentBytes;
         private final long currentLimits;
@@ -224,7 +171,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
             this.nodeRole = nodeRole;
             this.indexName = indexName;
             this.shardId = shardId;
-            this.isActiveShard = isActiveShard;
             this.rejectionCount = rejectionCount;
             this.currentBytes = currentBytes;
             this.currentLimits = currentLimits;
@@ -245,11 +191,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
         @JsonProperty(ShardIndexingPressureDimension.Constants.SHARD_ID_VALUE)
         public String getShardId() {
             return shardId;
-        }
-
-        @JsonProperty(ShardIndexingPressureValue.Constants.IS_ACTIVE_SHARD)
-        public Boolean getIsActiveShard() {
-            return isActiveShard;
         }
 
         @JsonProperty(ShardIndexingPressureValue.Constants.REJECTION_COUNT_VALUE)
