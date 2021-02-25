@@ -76,13 +76,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
         }
 
         try {
-            Class.forName(SHARD_INDEXING_PRESSURE_CLASS_NAME);
-        } catch (ClassNotFoundException e) {
-            LOG.debug("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
-            return;
-        }
-
-        try {
             ClusterService clusterService = ESResources.INSTANCE.getClusterService();
             if (clusterService != null) {
                 IndexingPressure indexingPressure = (IndexingPressure) getField(CLUSTER_SERVICE_CLASS_NAME, INDEXING_PRESSURE_FIELD_NAME).get(clusterService);

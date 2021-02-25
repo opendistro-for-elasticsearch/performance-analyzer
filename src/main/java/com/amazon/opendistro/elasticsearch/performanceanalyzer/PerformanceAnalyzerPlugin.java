@@ -203,8 +203,13 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardIndexingPressureMetricsCollector(
+        try {
+            Class.forName(ShardIndexingPressureMetricsCollector.SHARD_INDEXING_PRESSURE_CLASS_NAME);
+            scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardIndexingPressureMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
+        } catch (ClassNotFoundException e) {
+            LOG.debug("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
+        }
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();
