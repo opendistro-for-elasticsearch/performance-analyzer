@@ -33,6 +33,7 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerTransportRequestHandler.class);
     private final PerformanceAnalyzerController controller;
     private TransportRequestHandler<T> actualHandler;
+    boolean logOnce = false;
 
     PerformanceAnalyzerTransportRequestHandler(TransportRequestHandler<T> actualHandler, PerformanceAnalyzerController controller) {
         this.actualHandler = actualHandler;
@@ -92,7 +93,10 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
                     bsr.items().length,
                     bPrimary);
         } catch (Exception ex) {
-            LOG.error(ex);
+            if (!logOnce) {
+                LOG.error(ex);
+                logOnce = true;
+            }
             StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
         }
 
