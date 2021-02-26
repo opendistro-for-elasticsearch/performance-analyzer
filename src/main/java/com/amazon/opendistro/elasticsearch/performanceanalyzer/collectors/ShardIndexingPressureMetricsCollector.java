@@ -46,7 +46,6 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final JSONParser parser = new JSONParser();
 
-    //Class And Field Names
     public static final String SHARD_INDEXING_PRESSURE_CLASS_NAME = "org.elasticsearch.index.ShardIndexingPressure";
     public static final String CLUSTER_SERVICE_CLASS_NAME = "org.elasticsearch.cluster.service.ClusterService";
     public static final String INDEXING_PRESSURE_CLASS_NAME = "org.elasticsearch.index.IndexingPressure";

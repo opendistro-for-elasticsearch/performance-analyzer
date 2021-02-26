@@ -208,7 +208,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
             scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardIndexingPressureMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         } catch (ClassNotFoundException e) {
-            LOG.debug("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
+            LOG.info("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
         }
         scheduledMetricCollectorsExecutor.start();
 
