@@ -55,6 +55,8 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
     public static final String SHARD_INDEXING_PRESSURE_STORE_FIELD_NAME = "shardIndexingPressureStore";
     public static final String SHARD_INDEXING_PRESSURE_HOT_STORE_FIELD_NAME = "shardIndexingPressureHotStore";
 
+    private static final Integer MAX_HOT_STORE_LIMIT = 50;
+
     private final ConfigOverridesWrapper configOverridesWrapper;
     private final PerformanceAnalyzerController controller;
     private StringBuilder value;
@@ -86,7 +88,7 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
                             .get(shardIndexingPressureStore);
 
                     value.setLength(0);
-                    shardIndexingPressureHotStore.entrySet().stream().forEach(storeObject -> {
+                    shardIndexingPressureHotStore.entrySet().stream().limit(MAX_HOT_STORE_LIMIT).forEach(storeObject -> {
                         try {
                             JSONObject tracker = (JSONObject) parser.parse(mapper.writeValueAsString(storeObject.getValue()));
                             JSONObject shardId = (JSONObject) parser.parse(mapper.writeValueAsString(tracker.get("shardId")));
