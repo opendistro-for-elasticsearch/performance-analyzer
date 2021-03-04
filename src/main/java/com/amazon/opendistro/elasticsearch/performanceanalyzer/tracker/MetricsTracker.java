@@ -5,9 +5,9 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.tracker;
  *  everytime collector calls respective stats API.
  */
 public class MetricsTracker {
-    private Long prevTimeTakenInMillis;
-    private Long prevFailedCount;
-    private Long prevTotalCount;
+    private long prevTimeTakenInMillis;
+    private long prevFailedCount;
+    private long prevTotalCount;
 
     public MetricsTracker(long timeInMillis, long failedCount, long totalCount) {
         this.prevTimeTakenInMillis = timeInMillis;
@@ -16,9 +16,7 @@ public class MetricsTracker {
     }
 
     public MetricsTracker() {
-        this.prevTimeTakenInMillis = null;
-        this.prevFailedCount = null;
-        this.prevTotalCount = null;
+
     }
 
     public Long getPrevTimeTakenInMillis() {

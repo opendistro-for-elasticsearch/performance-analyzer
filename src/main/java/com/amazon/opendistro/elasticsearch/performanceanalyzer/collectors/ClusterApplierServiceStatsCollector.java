@@ -81,19 +81,14 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
                 return;
             }
 
-            Long latencyInMillis = computeLatency(clusterApplierServiceStats);
-            Long failure = computeFailure(clusterApplierServiceStats);
+            ClusterApplierServiceMetrics clusterApplierServiceMetrics = new ClusterApplierServiceMetrics(
+                    computeLatency(clusterApplierServiceStats), computeFailure(clusterApplierServiceStats));
 
-            if (latencyInMillis != null && failure != null) {
-                ClusterApplierServiceMetrics clusterApplierServiceMetrics = new
-                        ClusterApplierServiceMetrics(latencyInMillis, failure);
-
-                value.setLength(0);
-                value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
-                        .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                value.append(clusterApplierServiceMetrics.serialize());
-                saveMetricValues(value.toString(), startTime);
-            }
+            value.setLength(0);
+            value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
+                    .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
+            value.append(clusterApplierServiceMetrics.serialize());
+            saveMetricValues(value.toString(), startTime);
             this.tracker = new MetricsTracker(clusterApplierServiceStats.timeTakenInMillis,
                     clusterApplierServiceStats.failedCount, clusterApplierServiceStats.totalCount);
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
@@ -113,11 +108,7 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         return method.invoke(ESResources.INSTANCE.getClusterService().getClusterApplierService());
     }
 
-    private Long computeLatency(final ClusterApplierServiceStats currentMetrics) {
-        if(tracker.getPrevTimeTakenInMillis() == null || tracker.getPrevTotalCount() == null) {
-            return currentMetrics.timeTakenInMillis;
-        }
-
+    private long computeLatency(final ClusterApplierServiceStats currentMetrics) {
         final Long rate = computeRate(tracker.getPrevTotalCount());
         if(rate == 0) {
             return 0L;
@@ -125,15 +116,12 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         return (currentMetrics.timeTakenInMillis - tracker.getPrevTimeTakenInMillis()) / rate;
     }
 
-    private Long computeRate(final long currentTotalCount) {
+    private long computeRate(final long currentTotalCount) {
         return currentTotalCount - tracker.getPrevTotalCount();
     }
 
-    private Long computeFailure(final ClusterApplierServiceStats currentMetrics) {
-        if(tracker.getPrevFailedCount() != null) {
-            return currentMetrics.failedCount - tracker.getPrevFailedCount();
-        }
-        return currentMetrics.failedCount;
+    private long computeFailure(final ClusterApplierServiceStats currentMetrics) {
+        return currentMetrics.failedCount - tracker.getPrevFailedCount();
     }
 
     @Override
