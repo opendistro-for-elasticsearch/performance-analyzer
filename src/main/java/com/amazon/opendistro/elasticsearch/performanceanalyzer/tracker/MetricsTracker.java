@@ -1,5 +1,9 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.tracker;
 
+/**
+ *  Class to track previous latency and failure metrics to calculate point in time metrics. These values are updated
+ *  everytime collector calls respective stats API.
+ */
 public class MetricsTracker {
     private Long prevTimeTakenInMillis;
     private Long prevFailedCount;
