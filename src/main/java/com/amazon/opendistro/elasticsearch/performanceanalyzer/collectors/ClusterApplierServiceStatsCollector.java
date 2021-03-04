@@ -63,6 +63,9 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
 
     @Override
     public void collectMetrics(long startTime) {
+        if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
+            return;
+        }
         try {
             long mCurrT = System.currentTimeMillis();
             if (ESResources.INSTANCE.getClusterService() == null
@@ -109,7 +112,7 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
     }
 
     private long computeLatency(final ClusterApplierServiceStats currentMetrics) {
-        final Long rate = computeRate(tracker.getPrevTotalCount());
+        final long rate = computeRate(tracker.getPrevTotalCount());
         if(rate == 0) {
             return 0L;
         }
