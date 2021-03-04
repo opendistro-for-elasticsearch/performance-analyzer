@@ -202,7 +202,7 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
 
         @JsonProperty(ShardIndexingPressureValue.Constants.CURRENT_BYTES)
         public long getCurrentBytes() {
-            return rejectionCount;
+            return currentBytes;
         }
 
         @JsonProperty(ShardIndexingPressureValue.Constants.CURRENT_LIMITS)
