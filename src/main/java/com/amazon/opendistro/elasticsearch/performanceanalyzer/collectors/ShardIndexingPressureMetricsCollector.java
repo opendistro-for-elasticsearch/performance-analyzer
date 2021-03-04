@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
@@ -24,6 +25,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -76,6 +79,7 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
             return;
         }
 
+        long mCurrT = System.currentTimeMillis();
         try {
             ClusterService clusterService = ESResources.INSTANCE.getClusterService();
             if (clusterService != null) {
@@ -124,11 +128,18 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
                     });
                 }
             }
-        } catch (NoSuchFieldException | IllegalAccessException | ClassNotFoundException e) {
-            LOG.debug("Exception raised. Skipping IndexingPressureMetricsCollector");
+            if(value.length() != 0) {
+                saveMetricValues(value.toString(), startTime);
+                PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                    WriterMetrics.SHARD_INDEXING_PRESSURE_COLLECTOR_EXECUTION_TIME, "",
+                    System.currentTimeMillis() - mCurrT);
+            }
+        } catch (Exception ex) {
+            PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
+                ExceptionsAndErrors.SHARD_INDEXING_PRESSURE_COLLECTOR_ERROR, "", 1);
+            LOG.debug("Exception in Collecting Shard Indexing Pressure Metrics: {} for startTime {}", () -> ex.toString(), () -> startTime);
         }
 
-        saveMetricValues(value.toString(), startTime);
     }
 
     Field getField(String className, String fieldName) throws NoSuchFieldException, ClassNotFoundException {
