@@ -17,6 +17,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.PerformanceAnalyzerApp;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.tracker.MetricsTracker;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
@@ -41,22 +42,23 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL =
             MetricsConfiguration.CONFIG_MAP.get(ClusterApplierServiceStatsCollector.class).samplingInterval;
-    private static final Logger LOG = LogManager.getLogger(ClusterApplierServiceStatsCollector.class);
     private static final int KEYS_PATH_LENGTH = 0;
+    private static final Logger LOG = LogManager.getLogger(ClusterApplierServiceStatsCollector.class);
     private static final String GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME = "getStats";
+    private static final ObjectMapper mapper = new ObjectMapper();
     private final StringBuilder value;
     private final PerformanceAnalyzerController controller;
     private final ConfigOverridesWrapper configOverridesWrapper;
-    private static final ObjectMapper mapper = new ObjectMapper();
-    private MetricCache metricCache;
+
+    private MetricsTracker tracker;
 
     public ClusterApplierServiceStatsCollector(PerformanceAnalyzerController controller,
                                                ConfigOverridesWrapper configOverridesWrapper) {
-        super(SAMPLING_TIME_INTERVAL, "ClusterApplierServiceStatsCollector");
+        super(SAMPLING_TIME_INTERVAL, ClusterApplierServiceStatsCollector.class.getSimpleName());
         value = new StringBuilder();
         this.controller = controller;
         this.configOverridesWrapper = configOverridesWrapper;
-        this.metricCache = new MetricCache();
+        this.tracker = new MetricsTracker();
     }
 
     @Override
@@ -69,20 +71,20 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
             }
             mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
             mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            ClusterApplierServiceStats metricsObject = null;
+            ClusterApplierServiceStats clusterApplierServiceStats = null;
             try {
-                metricsObject = mapper.readValue(
+                clusterApplierServiceStats = mapper.readValue(
                         mapper.writeValueAsString(getClusterApplierServiceStats()), ClusterApplierServiceStats.class);
             } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException ex) {
-                LOG.debug("No method found to get cluster state applier thread stats. " +
+                LOG.warn("No method found to get cluster state applier thread stats. " +
                         "Skipping ClusterApplierServiceStatsCollector");
                 return;
             }
 
-            Long latencyInMillis = computeLatency(metricsObject);
-            Long failure = computeFailure(metricsObject);
+            Long latencyInMillis = computeLatency(clusterApplierServiceStats);
+            Long failure = computeFailure(clusterApplierServiceStats);
 
-            if(latencyInMillis != null && failure != null) {
+            if (latencyInMillis != null && failure != null) {
                 ClusterApplierServiceMetrics clusterApplierServiceMetrics = new
                         ClusterApplierServiceMetrics(latencyInMillis, failure);
 
@@ -92,8 +94,8 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
                 value.append(clusterApplierServiceMetrics.serialize());
                 saveMetricValues(value.toString(), startTime);
             }
-            this.metricCache = new MetricCache(metricsObject.timeTakenInMillis, metricsObject.failedCount,
-                    metricsObject.totalCount);
+            this.tracker = new MetricsTracker(clusterApplierServiceStats.timeTakenInMillis,
+                    clusterApplierServiceStats.failedCount, clusterApplierServiceStats.totalCount);
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.CLUSTER_APPLIER_SERVICE_STATS_COLLECTOR_EXECUTION_TIME, "",
                     System.currentTimeMillis() - mCurrT);
@@ -105,33 +107,33 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         }
     }
 
-    private Long computeLatency(final ClusterApplierServiceStats metricsObject) {
-        if(metricCache.prevTimeTakenInMillis == null || metricCache.prevTotalCount == null) {
-            return null;
-        }
-
-        final Long rate = computeRate(metricsObject);
-        if(rate == 0) {
-            return 0L;
-        }
-        return (metricsObject.timeTakenInMillis - metricCache.prevTimeTakenInMillis) / rate;
-    }
-
-    private Long computeRate(final ClusterApplierServiceStats metricsObject) {
-        return metricsObject.totalCount - metricCache.prevTotalCount;
-    }
-
-    private Long computeFailure(ClusterApplierServiceStats metricsObject) {
-        if(metricCache.prevFailedCount != null) {
-            return metricsObject.failedCount - metricCache.prevFailedCount;
-        }
-        return null;
-    }
-
     private Object getClusterApplierServiceStats() throws InvocationTargetException, IllegalAccessException,
             NoSuchMethodException {
         Method method = ClusterApplierService.class.getMethod(GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME);
         return method.invoke(ESResources.INSTANCE.getClusterService().getClusterApplierService());
+    }
+
+    private Long computeLatency(final ClusterApplierServiceStats currentMetrics) {
+        if(tracker.getPrevTimeTakenInMillis() == null || tracker.getPrevTotalCount() == null) {
+            return currentMetrics.timeTakenInMillis;
+        }
+
+        final Long rate = computeRate(tracker.getPrevTotalCount());
+        if(rate == 0) {
+            return 0L;
+        }
+        return (currentMetrics.timeTakenInMillis - tracker.getPrevTimeTakenInMillis()) / rate;
+    }
+
+    private Long computeRate(final long currentTotalCount) {
+        return currentTotalCount - tracker.getPrevTotalCount();
+    }
+
+    private Long computeFailure(final ClusterApplierServiceStats currentMetrics) {
+        if(tracker.getPrevFailedCount() != null) {
+            return currentMetrics.failedCount - tracker.getPrevFailedCount();
+        }
+        return currentMetrics.failedCount;
     }
 
     @Override
@@ -166,25 +168,6 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         @JsonProperty(AllMetrics.ClusterApplierServiceStatsValue.Constants.CLUSTER_APPLIER_SERVICE_FAILURE)
         public long getClusterApplierServiceFailed() {
             return clusterStateAppliedFailedCount;
-        }
-    }
-
-    private static class MetricCache {
-        private Long prevTimeTakenInMillis;
-        private Long prevFailedCount;
-        private Long prevTotalCount;
-
-
-        private MetricCache(long timeInMillis, long failedCount, long totalCount) {
-            this.prevTimeTakenInMillis = timeInMillis;
-            this.prevFailedCount = failedCount;
-            this.prevTotalCount = totalCount;
-        }
-
-        private MetricCache() {
-            this.prevTimeTakenInMillis = null;
-            this.prevFailedCount = null;
-            this.prevTotalCount = null;
         }
     }
 }
