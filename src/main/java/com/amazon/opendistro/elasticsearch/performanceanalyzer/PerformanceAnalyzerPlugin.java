@@ -18,6 +18,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 import static java.util.Collections.singletonList;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.AdmissionControlMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
@@ -203,6 +204,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new AdmissionControlMetricsCollector());
         try {
             Class.forName(ShardIndexingPressureMetricsCollector.SHARD_INDEXING_PRESSURE_CLASS_NAME);
             scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardIndexingPressureMetricsCollector(
