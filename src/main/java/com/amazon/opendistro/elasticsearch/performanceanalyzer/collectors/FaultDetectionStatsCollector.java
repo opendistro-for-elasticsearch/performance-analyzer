@@ -85,7 +85,6 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
                     mapper.writeValueAsString(getFollowerCheckStats()), FaultDetectionStats.class);
             FaultDetectionStats leaderCheckStats = mapper.readValue(
                     mapper.writeValueAsString(getLeaderCheckStats()), FaultDetectionStats.class);
-            System.out.println("Arpita in collector");
             FaultDetectionMetrics faultDetectionMetrics = new FaultDetectionMetrics();
             if (followerCheckStats != null) {
                 faultDetectionMetrics.setFollowerCheckMetrics(computeLatency(followerCheckStats, followerCheckTracker),
