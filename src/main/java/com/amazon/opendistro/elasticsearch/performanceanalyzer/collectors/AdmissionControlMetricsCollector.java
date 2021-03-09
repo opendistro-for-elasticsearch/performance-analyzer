@@ -21,9 +21,11 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.elasticsearch.cluster.service.MasterService;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
@@ -58,6 +60,13 @@ public class AdmissionControlMetricsCollector extends PerformanceAnalyzerMetrics
     @Override
     @SuppressWarnings("unchecked")
     public void collectMetrics(long startTime) {
+        if(!isAdmissionControlFeatureAvailable()) {
+            LOG.debug("AdmissionControl is not available for this domain");
+            PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                    WriterMetrics.ADMISSION_CONTROL_COLLECTOR_NOT_AVAILABLE, "", 1);
+            return;
+        }
+
         long startTimeMillis = System.currentTimeMillis();
         try {
             Class admissionController = Class.forName(ADMISSION_CONTROLLER);
@@ -103,8 +112,11 @@ public class AdmissionControlMetricsCollector extends PerformanceAnalyzerMetrics
             }
 
             saveMetricValues(value.toString(), startTime);
-        } catch (ClassNotFoundException e) {
-            LOG.debug("AdmissionControl not detected. Skipping AdmissionControlMetricsCollector");
+
+            PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
+                    WriterMetrics.ADMISSION_CONTROL_COLLECTOR_EXECUTION_TIME, "",
+                    System.currentTimeMillis() - startTimeMillis);
+
         } catch(Exception ex) {
             PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
                     ExceptionsAndErrors.ADMISSION_CONTROL_COLLECTOR_ERROR, getCollectorName(),
@@ -163,4 +175,13 @@ public class AdmissionControlMetricsCollector extends PerformanceAnalyzerMetrics
         }
     }
 
+    private boolean isAdmissionControlFeatureAvailable() {
+        try {
+            Class.forName(ADMISSION_CONTROLLER);
+            Class.forName(ADMISSION_CONTROL_SERVICE);
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
 }
