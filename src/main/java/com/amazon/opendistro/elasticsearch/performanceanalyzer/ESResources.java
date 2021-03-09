@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.service.ClusterService;
+import org.elasticsearch.discovery.Discovery;
 import org.elasticsearch.indices.breaker.CircuitBreakerService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.common.settings.Settings;
@@ -34,6 +35,7 @@ public final class ESResources {
     private java.nio.file.Path configPath;
     private String pluginFileLocation;
     private Client client;
+    private Discovery discovery;
 
     private ESResources() {
         threadPool = null;
@@ -44,6 +46,7 @@ public final class ESResources {
         environment = null;
         configPath = null;
         pluginFileLocation = null;
+        discovery = null;
     }
 
     public void setPluginFileLocation(String pluginFileLocation) {
@@ -116,5 +119,13 @@ public final class ESResources {
 
     public Client getClient() {
         return client;
+    }
+
+    public void setDiscovery(Discovery discovery) {
+        this.discovery = discovery;
+    }
+
+    public Discovery getDiscovery() {
+        return discovery;
     }
 }

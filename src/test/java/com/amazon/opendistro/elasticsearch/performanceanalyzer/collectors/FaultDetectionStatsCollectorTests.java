@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -31,49 +30,32 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class FaultDetectionMetricsCollectorTests extends CustomMetricsLocationTestBase {
+public class FaultDetectionStatsCollectorTests extends CustomMetricsLocationTestBase {
 
     @Test
     public void testFaultDetectionMetrics() {
-        MetricsConfiguration.CONFIG_MAP.put(FaultDetectionMetricsCollector.class, MetricsConfiguration.cdefault);
+        MetricsConfiguration.CONFIG_MAP.put(FaultDetectionStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+
         long startTimeInMills = 1153721339;
         PerformanceAnalyzerController controller = Mockito.mock(PerformanceAnalyzerController.class);
         ConfigOverridesWrapper configOverrides = Mockito.mock(ConfigOverridesWrapper.class);
-        FaultDetectionMetricsCollector faultDetectionMetricsCollector = new FaultDetectionMetricsCollector(
-                controller, configOverrides);
-        Mockito.when(controller.isCollectorEnabled(configOverrides, "FaultDetectionMetricsCollector"))
+        Mockito.when(controller.isCollectorEnabled(configOverrides, "FaultDetectionStatsCollector"))
                 .thenReturn(true);
-        faultDetectionMetricsCollector.saveMetricValues("fault_detection", startTimeInMills,
-                "follower_check", "65432", "start");
+        FaultDetectionStatsCollector faultDetectionStatsCollector = new FaultDetectionStatsCollector(
+                controller, configOverrides);
+        faultDetectionStatsCollector.saveMetricValues("testMetric", startTimeInMills);
+
         List<Event> metrics =  new ArrayList<>();
         PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
-
         assertEquals(1, metrics.size());
-        assertEquals("fault_detection", metrics.get(0).value);
+        assertEquals("testMetric", metrics.get(0).value);
 
         try {
-            faultDetectionMetricsCollector.saveMetricValues("fault_detection_metrics", startTimeInMills);
+            faultDetectionStatsCollector.saveMetricValues("fault_detection_metrics", startTimeInMills, "123");
             assertTrue("Negative scenario test: Should have been a RuntimeException", true);
         } catch (RuntimeException ex) {
-            //- expecting exception...0 values passed; 3 expected
-        }
-
-        try {
-            faultDetectionMetricsCollector.saveMetricValues("fault_detection_metrics", startTimeInMills,
-                    "leader_check");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...1 values passed; 3 expected
-        }
-
-        try {
-            faultDetectionMetricsCollector.saveMetricValues("fault_detection_metrics", startTimeInMills,
-                    "leader_check", "823765423");
-            assertTrue("Negative scenario test: Should have been a RuntimeException", true);
-        } catch (RuntimeException ex) {
-            //- expecting exception...2 values passed; 0 expected
+            //- expecting exception...1 values passed; 0 expected
         }
     }
 }
-

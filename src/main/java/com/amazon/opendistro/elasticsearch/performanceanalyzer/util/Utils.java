@@ -16,19 +16,8 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.util;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardIndexingPressureMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterThrottlingMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStateCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.*;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
@@ -55,10 +44,10 @@ public class Utils {
         MetricsConfiguration.CONFIG_MAP.put(NodeStatsFixedShardsMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceEventMetrics.class, new MetricsConfiguration.MetricConfig(1000, 0, 0));
         MetricsConfiguration.CONFIG_MAP.put(MasterServiceMetrics.class, cdefault);
-        MetricsConfiguration.CONFIG_MAP.put(FaultDetectionMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ShardStateCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(MasterThrottlingMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ShardIndexingPressureMetricsCollector.class, cdefault);
+        MetricsConfiguration.CONFIG_MAP.put(FaultDetectionStatsCollector.class, cdefault);
     }
 
     // These methods are utility functions for the Node Stat Metrics Collectors. These methods are used by both the all
