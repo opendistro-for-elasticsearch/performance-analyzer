@@ -16,6 +16,7 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.util;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.AdmissionControlMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardIndexingPressureMetricsCollector;
@@ -47,6 +48,7 @@ public class Utils {
 
     public static void configureMetrics() {
         MetricsConfiguration.MetricConfig cdefault = MetricsConfiguration.cdefault ;
+        MetricsConfiguration.CONFIG_MAP.put(AdmissionControlMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(CacheConfigMetricsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(CircuitBreakerCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ThreadPoolMetricsCollector.class, cdefault);
