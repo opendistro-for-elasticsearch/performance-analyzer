@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 import static java.util.Collections.singletonList;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.AdmissionControlMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
@@ -25,6 +26,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Electi
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.GCInfoCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardIndexingPressureMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterThrottlingMetricsCollector;
@@ -204,6 +206,14 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new AdmissionControlMetricsCollector());
+        try {
+            Class.forName(ShardIndexingPressureMetricsCollector.SHARD_INDEXING_PRESSURE_CLASS_NAME);
+            scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardIndexingPressureMetricsCollector(
+                performanceAnalyzerController,configOverridesWrapper));
+        } catch (ClassNotFoundException e) {
+            LOG.info("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
+        }
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();

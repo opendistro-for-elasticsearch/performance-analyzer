@@ -1,5 +1,5 @@
 /*
- * Copyright <2019> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
     private static final Logger LOG = LogManager.getLogger(PerformanceAnalyzerTransportRequestHandler.class);
     private final PerformanceAnalyzerController controller;
     private TransportRequestHandler<T> actualHandler;
+    boolean logOnce = false;
 
     PerformanceAnalyzerTransportRequestHandler(TransportRequestHandler<T> actualHandler, PerformanceAnalyzerController controller) {
         this.actualHandler = actualHandler;
@@ -92,7 +93,10 @@ public class PerformanceAnalyzerTransportRequestHandler<T extends TransportReque
                     bsr.items().length,
                     bPrimary);
         } catch (Exception ex) {
-            LOG.error(ex);
+            if (!logOnce) {
+                LOG.error(ex);
+                logOnce = true;
+            }
             StatsCollector.instance().logException(StatExceptionCode.ES_REQUEST_INTERCEPTOR_ERROR);
         }
 

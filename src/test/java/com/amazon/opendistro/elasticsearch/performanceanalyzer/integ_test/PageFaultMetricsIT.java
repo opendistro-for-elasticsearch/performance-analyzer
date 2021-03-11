@@ -1,5 +1,5 @@
 /*
- * Copyright <2020> Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License").
  * You may not use this file except in compliance with the License.
@@ -25,11 +25,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class PageFaultMetricsIT extends MetricCollectorIntegTestBase {
-  private List<String> nodeIDs;
 
   @Before
   public void init() throws Exception {
-    nodeIDs = getNodeID();
+    initNodes();
   }
 
   @Test
@@ -43,7 +42,7 @@ public class PageFaultMetricsIT extends MetricCollectorIntegTestBase {
     //read metric from all nodes in cluster
     responseNodeList =
         readMetric(PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/metrics/?metrics=Paging_MajfltRate&agg=max&nodes=all");
-    int nodeNum = nodeIDs.size();
+    int nodeNum = getNodeIDs().size();
     Assert.assertEquals(nodeNum, responseNodeList.size());
     for (int i = 0; i < nodeNum; i++) {
       validateMajorPageFaultMetric(responseNodeList.get(i));
@@ -61,7 +60,7 @@ public class PageFaultMetricsIT extends MetricCollectorIntegTestBase {
     //read metric from all nodes in cluster
     responseNodeList =
         readMetric(PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/metrics/?metrics=Paging_MinfltRate&agg=max&nodes=all");
-    int nodeNum = nodeIDs.size();
+    int nodeNum = getNodeIDs().size();
     Assert.assertEquals(nodeNum, responseNodeList.size());
     for (int i = 0; i < nodeNum; i++) {
       validateMinorPageFaultMetric(responseNodeList.get(i));
@@ -79,7 +78,7 @@ public class PageFaultMetricsIT extends MetricCollectorIntegTestBase {
     //read metric from all nodes in cluster
     responseNodeList =
         readMetric(PERFORMANCE_ANALYZER_BASE_ENDPOINT + "/metrics/?metrics=Paging_RSS&agg=max&nodes=all");
-    int nodeNum = nodeIDs.size();
+    int nodeNum = getNodeIDs().size();
     Assert.assertEquals(nodeNum, responseNodeList.size());
     for (int i = 0; i < nodeNum; i++) {
       validatePagingRSSMetric(responseNodeList.get(i));
