@@ -216,6 +216,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         } catch (ClassNotFoundException e) {
             LOG.info("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
         }
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new
+                ClusterApplierServiceStatsCollector(performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.start();
 
         EventLog eventLog = new EventLog();
