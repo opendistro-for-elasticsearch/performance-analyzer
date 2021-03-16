@@ -46,7 +46,7 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
     private static final Logger LOG = LogManager.getLogger(ClusterApplierServiceStatsCollector.class);
     private static final String GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME = "getStats";
     private static final ObjectMapper mapper;
-    private static ClusterApplierServiceStats prevClusterApplierServiceStats = new ClusterApplierServiceStats();
+    private static volatile ClusterApplierServiceStats prevClusterApplierServiceStats = new ClusterApplierServiceStats();
     private final StringBuilder value;
     private final PerformanceAnalyzerController controller;
     private final ConfigOverridesWrapper configOverridesWrapper;
@@ -94,7 +94,7 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
             value.append(clusterApplierServiceMetrics.serialize());
             saveMetricValues(value.toString(), startTime);
 
-            prevClusterApplierServiceStats = currentClusterApplierServiceStats;
+            ClusterApplierServiceStatsCollector.prevClusterApplierServiceStats = currentClusterApplierServiceStats;
 
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.CLUSTER_APPLIER_SERVICE_STATS_COLLECTOR_EXECUTION_TIME, "",
@@ -109,7 +109,7 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
 
     @VisibleForTesting
     public void resetPrevClusterApplierServiceStats() {
-        prevClusterApplierServiceStats = new ClusterApplierServiceStats();
+        ClusterApplierServiceStatsCollector.prevClusterApplierServiceStats = new ClusterApplierServiceStats();
     }
 
     @VisibleForTesting
@@ -120,7 +120,8 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
     }
 
     /**
-     * ClusterApplierServiceStats is ES is essentially ever increasing metric. To calculate point in time metric,
+     * ClusterApplierServiceStats is ES is a tracker for total time taken to apply cluster state and the
+     * number of times it has failed. To calculate point in time metric,
      * we will have to store its previous state and calculate the diff to get the point in time latency.
      * This might return as 0 if there is no cluster update since last retrieval.
      *
@@ -140,7 +141,8 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
     }
 
     /**
-     * ClusterApplierServiceStats is ES is essentially ever increasing metric. To calculate point in time metric,
+     * ClusterApplierServiceStats is ES is a tracker for total time taken to apply cluster state and the
+     * number of times it has failed. To calculate point in time metric,
      * we will have to store its previous state and calculate the diff to get the point in time failure.
      * This might return as 0 if there is no cluster update since last retrieval.
      *

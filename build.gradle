@@ -243,7 +243,7 @@ dependencies {
         exclude(group: 'org.hamcrest', module: 'hamcrest-core')
     }
     testCompile group: 'org.mockito', name: 'mockito-core', version: '2.23.0'
-    // https://mvnrepository.com/artifact/org.mockito/mockito-inline
+    // Dependency to mock final classes.
     testImplementation group: 'org.mockito', name: 'mockito-inline', version: '2.13.0'
     testCompile group: 'org.powermock', name: 'powermock-core', version: '2.0.0'
     testCompile group: 'org.powermock', name: 'powermock-api-support', version: '2.0.0'
