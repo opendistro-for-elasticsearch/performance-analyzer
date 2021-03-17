@@ -22,7 +22,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Admiss
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionStatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.GCInfoCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardIndexingPressureMetricsCollector;
@@ -200,8 +200,6 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new NetworkInterfaceCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new GCInfoCollector());
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(StatsCollector.instance());
-        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new FaultDetectionMetricsCollector(
-                performanceAnalyzerController, configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
@@ -215,6 +213,13 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 performanceAnalyzerController,configOverridesWrapper));
         } catch (ClassNotFoundException e) {
             LOG.info("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
+        }
+        try {
+            Class.forName(FaultDetectionStatsCollector.FAULT_DETECTION_STATS_CLASS_NAME);
+            scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new FaultDetectionStatsCollector(
+                    performanceAnalyzerController,configOverridesWrapper));
+        } catch (ClassNotFoundException e) {
+            LOG.info("Fault Detection Stats not present in this ES version. Skipping FaultDetectionStatsCollector");
         }
         scheduledMetricCollectorsExecutor.start();
 
@@ -249,18 +254,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
 
     //follower check, leader check
     public void onDiscovery(Discovery discovery) {
-        try {
-            Class<?> listenerInjector = Class.forName(LISTENER_INJECTOR_CLASS_PATH);
-            Object listenerInjectorInstance = listenerInjector.getDeclaredConstructor().newInstance();
-            Method addListenerMethod = listenerInjectorInstance.getClass().getMethod(ADD_FAULT_DETECTION_METHOD,
-                Discovery.class);
-            addListenerMethod.invoke(listenerInjectorInstance, discovery);
-        } catch (InstantiationException | InvocationTargetException | NoSuchMethodException  |
-            IllegalAccessException e) {
-            LOG.debug("Exception while calling addFaultDetectionListener in Discovery");
-        } catch (ClassNotFoundException e) {
-            LOG.debug("No Class for ListenerInjector detected");
-        }
+        ESResources.INSTANCE.setDiscovery(discovery);
     }
 
     //- shardbulk
