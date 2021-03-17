@@ -39,6 +39,8 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.Schedu
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStateCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ClusterApplierServiceStatsCollector;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
@@ -203,6 +205,8 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ShardStateCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterThrottlingMetricsCollector(
+                performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new ClusterApplierServiceStatsCollector(
                 performanceAnalyzerController,configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new AdmissionControlMetricsCollector());
         try {
