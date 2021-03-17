@@ -21,18 +21,17 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.Performanc
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.Utils;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsProcessor;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.tracker.MetricsTracker;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.coordination.Coordinator;
@@ -54,22 +53,25 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
     private static final String GET_STATS_METHOD_NAME = "getStats";
     private static final String FOLLOWERS_CHECKER_FIELD = "followersChecker";
     private static final String LEADER_CHECKER_FIELD = "leaderChecker";
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper;
+    private static volatile FaultDetectionStats prevFollowerCheckStats = new FaultDetectionStats();
+    private static volatile FaultDetectionStats prevLeaderCheckStats = new FaultDetectionStats();
     private final StringBuilder value;
     private final PerformanceAnalyzerController controller;
     private final ConfigOverridesWrapper configOverridesWrapper;
 
-    private MetricsTracker leaderCheckTracker;
-    private MetricsTracker followerCheckTracker;
+    static {
+        mapper = new ObjectMapper();
+        mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     public FaultDetectionStatsCollector(PerformanceAnalyzerController controller,
-                                               ConfigOverridesWrapper configOverridesWrapper) {
+                                        ConfigOverridesWrapper configOverridesWrapper) {
         super(SAMPLING_TIME_INTERVAL, FaultDetectionStatsCollector.class.getSimpleName());
         value = new StringBuilder();
         this.controller = controller;
         this.configOverridesWrapper = configOverridesWrapper;
-        this.leaderCheckTracker = new MetricsTracker();
-        this.followerCheckTracker = new MetricsTracker();
     }
 
     @Override
@@ -79,37 +81,36 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
         }
         try {
             long mCurrT = System.currentTimeMillis();
-            mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-            mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
             FaultDetectionStats followerCheckStats = mapper.readValue(
                     mapper.writeValueAsString(getFollowerCheckStats()), FaultDetectionStats.class);
             FaultDetectionStats leaderCheckStats = mapper.readValue(
                     mapper.writeValueAsString(getLeaderCheckStats()), FaultDetectionStats.class);
+
             FaultDetectionMetrics faultDetectionMetrics = new FaultDetectionMetrics();
             if (followerCheckStats != null) {
-                faultDetectionMetrics.setFollowerCheckMetrics(computeLatency(followerCheckStats, followerCheckTracker),
-                        computeFailure(followerCheckStats, followerCheckTracker));
-                this.followerCheckTracker = new MetricsTracker(followerCheckStats.timeTakenInMillis,
-                        followerCheckStats.failedCount, followerCheckStats.totalCount);
+                faultDetectionMetrics.setFollowerCheckMetrics(
+                        computeLatency(followerCheckStats, FaultDetectionStatsCollector.prevFollowerCheckStats),
+                        computeFailure(followerCheckStats, FaultDetectionStatsCollector.prevFollowerCheckStats));
+                FaultDetectionStatsCollector.prevFollowerCheckStats = followerCheckStats;
             }
             if (leaderCheckStats != null) {
-                faultDetectionMetrics.setLeaderCheckMetrics(computeLatency(leaderCheckStats, leaderCheckTracker),
-                        computeFailure(leaderCheckStats, leaderCheckTracker));
-                this.leaderCheckTracker = new MetricsTracker(leaderCheckStats.timeTakenInMillis,
-                        leaderCheckStats.failedCount, leaderCheckStats.totalCount);
+                faultDetectionMetrics.setLeaderCheckMetrics(
+                        computeLatency(leaderCheckStats, FaultDetectionStatsCollector.prevLeaderCheckStats),
+                        computeFailure(leaderCheckStats, FaultDetectionStatsCollector.prevLeaderCheckStats));
+                FaultDetectionStatsCollector.prevLeaderCheckStats = leaderCheckStats;
             }
+
             StringBuilder value = new StringBuilder();
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                     .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
             value.append(faultDetectionMetrics.serialize());
-
             saveMetricValues(value.toString(), startTime);
 
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.FAULT_DETECTION_COLLECTOR_EXECUTION_TIME, "",
                     System.currentTimeMillis() - mCurrT);
-        }
-        catch (NoSuchFieldException | InvocationTargetException | IllegalAccessException | NoSuchMethodException
+        } catch (NoSuchFieldException | InvocationTargetException | IllegalAccessException | NoSuchMethodException
                 | JsonProcessingException ex) {
             PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
                     ExceptionsAndErrors.FAULT_DETECTION_COLLECTOR_ERROR, "", 1);
@@ -118,7 +119,8 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
         }
     }
 
-    private Object getLeaderCheckStats() throws InvocationTargetException, IllegalAccessException,
+    @VisibleForTesting
+    public Object getLeaderCheckStats() throws InvocationTargetException, IllegalAccessException,
             NoSuchMethodException, NoSuchFieldException {
         Method method = LeaderChecker.class.getMethod(GET_STATS_METHOD_NAME);
         Discovery discovery = ESResources.INSTANCE.getDiscovery();
@@ -132,7 +134,8 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
         return null;
     }
 
-    private Object getFollowerCheckStats() throws InvocationTargetException, IllegalAccessException,
+    @VisibleForTesting
+    public Object getFollowerCheckStats() throws InvocationTargetException, IllegalAccessException,
             NoSuchMethodException, NoSuchFieldException {
         Method method = FollowersChecker.class.getMethod(GET_STATS_METHOD_NAME);
         Discovery discovery = ESResources.INSTANCE.getDiscovery();
@@ -146,20 +149,38 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
         return null;
     }
 
-    private double computeLatency(final FaultDetectionStats currentMetrics, MetricsTracker tracker) {
-        final double rate = computeRate(currentMetrics.totalCount, tracker);
+    /**
+     * FaultDetectionStats is ES is a tracker for total time taken for fault detection and the
+     * number of times it has failed. To calculate point in time metric,
+     * we will have to store its previous state and calculate the diff to get the point in time latency.
+     * This might return as 0 if there is no fault detection operation since last retrieval.
+     *
+     * @param currentMetrics Current fault detection stats in ES
+     * @return point in time latency.
+     */
+    private double computeLatency(final FaultDetectionStats currentMetrics, FaultDetectionStats prevStats) {
+        final double rate = computeRate(currentMetrics.totalCount, prevStats);
         if(rate == 0) {
             return 0D;
         }
-        return (currentMetrics.timeTakenInMillis - tracker.getPrevTimeTakenInMillis()) / rate;
+        return (currentMetrics.timeTakenInMillis - prevStats.timeTakenInMillis) / rate;
     }
 
-    private double computeRate(final double currentTotalCount, MetricsTracker tracker) {
-        return currentTotalCount - tracker.getPrevTotalCount();
+    private double computeRate(final double currentTotalCount, FaultDetectionStats prevStats) {
+        return currentTotalCount - prevStats.totalCount;
     }
 
-    private double computeFailure(final FaultDetectionStats currentMetrics, MetricsTracker tracker) {
-        return currentMetrics.failedCount - tracker.getPrevFailedCount();
+    /**
+     * FaultDetectionStats is ES is a tracker for total time taken for fault detection and the
+     * number of times it has failed. To calculate point in time metric,
+     * we will have to store its previous state and calculate the diff to get the point in time latency.
+     * This might return as 0 if there is no fault detection operation since last retrieval.
+     *
+     * @param currentMetrics Current fault detection stats in ES
+     * @return point in time latency.
+     */
+    private double computeFailure(final FaultDetectionStats currentMetrics, FaultDetectionStats prevStats) {
+        return currentMetrics.failedCount - prevStats.failedCount;
     }
 
     @Override
@@ -170,10 +191,23 @@ public class FaultDetectionStatsCollector extends PerformanceAnalyzerMetricsColl
         return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sFaultDetection);
     }
 
+    public void resetFaultDetectionStats() {
+        FaultDetectionStatsCollector.prevFollowerCheckStats = new FaultDetectionStats();
+        FaultDetectionStatsCollector.prevLeaderCheckStats = new FaultDetectionStats();
+    }
+
     public static class FaultDetectionStats  {
         private long totalCount;
         private long timeTakenInMillis;
         private long failedCount;
+
+        public FaultDetectionStats(long totalCount, long timeTakenInMillis, long failedCount) {
+            this.totalCount = totalCount;
+            this.timeTakenInMillis = timeTakenInMillis;
+            this.failedCount = failedCount;
+        }
+
+        public FaultDetectionStats() {}
     }
 
     public static class FaultDetectionMetrics extends MetricStatus {
