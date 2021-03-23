@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.ClusterService;
-import org.elasticsearch.index.IndexingPressure;
 import org.jooq.tools.json.JSONObject;
 import org.jooq.tools.json.JSONParser;
 import org.jooq.tools.json.ParseException;
@@ -83,7 +82,7 @@ public class ShardIndexingPressureMetricsCollector extends PerformanceAnalyzerMe
         try {
             ClusterService clusterService = ESResources.INSTANCE.getClusterService();
             if (clusterService != null) {
-                IndexingPressure indexingPressure = (IndexingPressure) getField(CLUSTER_SERVICE_CLASS_NAME, INDEXING_PRESSURE_FIELD_NAME).get(clusterService);
+                Object indexingPressure = getField(CLUSTER_SERVICE_CLASS_NAME, INDEXING_PRESSURE_FIELD_NAME).get(clusterService);
                 if(indexingPressure != null) {
                     Object shardIndexingPressure = getField(INDEXING_PRESSURE_CLASS_NAME, SHARD_INDEXING_PRESSURE_FIELD_NAME).get(indexingPressure);
                     Object shardIndexingPressureStore = getField(SHARD_INDEXING_PRESSURE_CLASS_NAME, SHARD_INDEXING_PRESSURE_STORE_FIELD_NAME).get(shardIndexingPressure);
