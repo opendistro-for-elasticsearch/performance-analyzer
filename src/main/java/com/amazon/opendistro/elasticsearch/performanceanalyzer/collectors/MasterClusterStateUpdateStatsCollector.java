@@ -38,15 +38,16 @@ import org.elasticsearch.cluster.service.ClusterApplierService;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetricsCollector implements
+public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerMetricsCollector implements
         MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL =
-            MetricsConfiguration.CONFIG_MAP.get(ClusterApplierServiceStatsCollector.class).samplingInterval;
+            MetricsConfiguration.CONFIG_MAP.get(MasterClusterStateUpdateStatsCollector.class).samplingInterval;
     private static final int KEYS_PATH_LENGTH = 0;
-    private static final Logger LOG = LogManager.getLogger(ClusterApplierServiceStatsCollector.class);
-    private static final String GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME = "getStats";
+    private static final Logger LOG = LogManager.getLogger(MasterClusterStateUpdateStatsCollector.class);
+    public static final String MASTER_CLUSTER_UPDATE_STATS_CLASS_NAME = "org.elasticsearch.cluster.service.MasterClusterUpdateStats";
+    private static final String GET_MASTER_CLUSTER_UPDATE_STATS_METHOD_NAME = "getStats";
     private static final ObjectMapper mapper;
-    private volatile ClusterApplierServiceStats prevClusterApplierServiceStats = new ClusterApplierServiceStats();
+    private volatile MasterClusterStateUpdateStats prevMasterClusterStateUpdateStats = new MasterClusterStateUpdateStats();
     private final StringBuilder value;
     private final PerformanceAnalyzerController controller;
     private final ConfigOverridesWrapper configOverridesWrapper;
@@ -57,9 +58,9 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
-    public ClusterApplierServiceStatsCollector(PerformanceAnalyzerController controller,
-                                               ConfigOverridesWrapper configOverridesWrapper) {
-        super(SAMPLING_TIME_INTERVAL, ClusterApplierServiceStatsCollector.class.getSimpleName());
+    public MasterClusterStateUpdateStatsCollector(PerformanceAnalyzerController controller,
+                                                  ConfigOverridesWrapper configOverridesWrapper) {
+        super(SAMPLING_TIME_INTERVAL, MasterClusterStateUpdateStatsCollector.class.getSimpleName());
         value = new StringBuilder();
         this.controller = controller;
         this.configOverridesWrapper = configOverridesWrapper;
@@ -67,56 +68,50 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
 
     @Override
     public void collectMetrics(long startTime) {
-        if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
+        if (!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
             return;
         }
         try {
             long mCurrT = System.currentTimeMillis();
             if (ESResources.INSTANCE.getClusterService() == null
-                    || ESResources.INSTANCE.getClusterService().getClusterApplierService() == null) {
+                    || ESResources.INSTANCE.getClusterService().getMasterService() == null) {
                 return;
             }
-            ClusterApplierServiceStats currentClusterApplierServiceStats = null;
-            try {
-                currentClusterApplierServiceStats = mapper.readValue(
-                        mapper.writeValueAsString(getClusterApplierServiceStats()), ClusterApplierServiceStats.class);
-            } catch (InvocationTargetException | IllegalAccessException | NoSuchMethodException ex) {
-                LOG.warn("No method found to get cluster state applier thread stats. " +
-                        "Skipping ClusterApplierServiceStatsCollector");
-                return;
-            }
-            ClusterApplierServiceMetrics clusterApplierServiceMetrics = new ClusterApplierServiceMetrics(
-                    computeLatency(currentClusterApplierServiceStats), computeFailure(currentClusterApplierServiceStats));
+            MasterClusterStateUpdateStats currentMasterClusterStateUpdateStats = mapper.readValue(
+                    mapper.writeValueAsString(getMasterClusterStateUpdateStats()), MasterClusterStateUpdateStats.class);
+
+            MasterClusterStateUpdateMetrics masterClusterStateUpdateMetrics = new MasterClusterStateUpdateMetrics(
+                    computeLatency(currentMasterClusterStateUpdateStats), computeFailure(currentMasterClusterStateUpdateStats));
 
             value.setLength(0);
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                     .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-            value.append(clusterApplierServiceMetrics.serialize());
+            value.append(masterClusterStateUpdateMetrics.serialize());
             saveMetricValues(value.toString(), startTime);
 
-            prevClusterApplierServiceStats = currentClusterApplierServiceStats;
+            prevMasterClusterStateUpdateStats = currentMasterClusterStateUpdateStats;
 
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
-                    WriterMetrics.CLUSTER_APPLIER_SERVICE_STATS_COLLECTOR_EXECUTION_TIME, "",
+                    WriterMetrics.MASTER_CLUSTER_UPDATE_STATS_COLLECTOR_EXECUTION_TIME, "",
                     System.currentTimeMillis() - mCurrT);
         } catch (Exception ex) {
             PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
-                    ExceptionsAndErrors.CLUSTER_APPLIER_SERVICE_STATS_COLLECTOR_ERROR, "", 1);
+                    ExceptionsAndErrors.MASTER_CLUSTER_UPDATE_STATS_COLLECTOR_ERROR, "", 1);
             LOG.debug("Exception in Collecting Cluster Applier Service Metrics: {} for startTime {}",
                     () -> ex.toString(), () -> startTime);
         }
     }
 
     @VisibleForTesting
-    public void resetPrevClusterApplierServiceStats() {
-        prevClusterApplierServiceStats = new ClusterApplierServiceStats();
+    public void resetPrevMasterClusterStateUpdateStats() {
+        prevMasterClusterStateUpdateStats = new MasterClusterStateUpdateStats();
     }
 
     @VisibleForTesting
-    public Object getClusterApplierServiceStats() throws InvocationTargetException, IllegalAccessException,
+    public Object getMasterClusterStateUpdateStats() throws InvocationTargetException, IllegalAccessException,
             NoSuchMethodException {
-        Method method = ClusterApplierService.class.getMethod(GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME);
-        return method.invoke(ESResources.INSTANCE.getClusterService().getClusterApplierService());
+        Method method = ClusterApplierService.class.getMethod(GET_MASTER_CLUSTER_UPDATE_STATS_METHOD_NAME);
+        return method.invoke(ESResources.INSTANCE.getClusterService().getMasterService());
     }
 
     /**
@@ -128,16 +123,16 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
      * @param currentMetrics Current Cluster update stats in ES
      * @return point in time latency.
      */
-    private double computeLatency(final ClusterApplierServiceStats currentMetrics) {
-        final double rate = computeRate(currentMetrics.totalCount);
-        if(rate == 0) {
+    private double computeLatency(final MasterClusterStateUpdateStats currentMetrics) {
+        final double rate = computeRate(currentMetrics.publishTotalCount);
+        if (rate == 0) {
             return 0D;
         }
-        return (currentMetrics.timeTakenInMillis - prevClusterApplierServiceStats.timeTakenInMillis) / rate;
+        return (currentMetrics.publishTimeTakenInMillis - prevMasterClusterStateUpdateStats.publishTimeTakenInMillis) / rate;
     }
 
     private double computeRate(final double currentTotalCount) {
-        return currentTotalCount - prevClusterApplierServiceStats.totalCount;
+        return currentTotalCount - prevMasterClusterStateUpdateStats.publishTotalCount;
     }
 
     /**
@@ -149,8 +144,8 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
      * @param currentMetrics Current Cluster update stats in ES
      * @return point in time failure.
      */
-    private double computeFailure(final ClusterApplierServiceStats currentMetrics) {
-        return currentMetrics.failedCount - prevClusterApplierServiceStats.failedCount;
+    private double computeFailure(final MasterClusterStateUpdateStats currentMetrics) {
+        return currentMetrics.publishFailedCount - prevMasterClusterStateUpdateStats.publishFailedCount;
     }
 
     @Override
@@ -158,46 +153,43 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
         if (keysPath.length != KEYS_PATH_LENGTH) {
             throw new RuntimeException("keys length should be " + KEYS_PATH_LENGTH);
         }
-        return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sClusterApplierService);
+        return PerformanceAnalyzerMetrics.generatePath(startTime, PerformanceAnalyzerMetrics.sMasterClusterUpdate);
     }
 
-    public static class ClusterApplierServiceStats  {
-        private long totalCount;
-        private long timeTakenInMillis;
-        private long failedCount;
-        private long elapsedTimeCurrentInMillis;
+    public static class MasterClusterStateUpdateStats {
+        private long publishTotalCount;
+        private long publishTimeTakenInMillis;
+        private long publishFailedCount;
 
         @VisibleForTesting
-        public ClusterApplierServiceStats(long totalCount, long timeTakenInMillis, long failedCount,
-                                          long elapsedTimeCurrentInMillis) {
-            this.totalCount = totalCount;
-            this.timeTakenInMillis = timeTakenInMillis;
-            this.failedCount = failedCount;
-            this.elapsedTimeCurrentInMillis = elapsedTimeCurrentInMillis;
+        public MasterClusterStateUpdateStats(long totalCount, long timeTakenInMillis, long failedCount) {
+            this.publishTotalCount = totalCount;
+            this.publishTimeTakenInMillis = timeTakenInMillis;
+            this.publishFailedCount = failedCount;
         }
 
-        public ClusterApplierServiceStats() {
+        public MasterClusterStateUpdateStats() {
 
         }
     }
 
-    public static class ClusterApplierServiceMetrics extends MetricStatus {
-        private double clusterStateAppliedFailedCount;
-        private double clusterStateAppliedTimeInMillis;
+    public static class MasterClusterStateUpdateMetrics extends MetricStatus {
+        private double masterClusterStateUpdateFailedCount;
+        private double masterClusterStateUpdateTimeInMillis;
 
-        public ClusterApplierServiceMetrics(double clusterApplierServiceLatency, double clusterApplierServiceFailed) {
-            this.clusterStateAppliedTimeInMillis = clusterApplierServiceLatency;
-            this.clusterStateAppliedFailedCount = clusterApplierServiceFailed;
+        public MasterClusterStateUpdateMetrics(double latency, double failedCount) {
+            this.masterClusterStateUpdateTimeInMillis = latency;
+            this.masterClusterStateUpdateFailedCount = failedCount;
         }
 
-        @JsonProperty(AllMetrics.ClusterApplierServiceStatsValue.Constants.CLUSTER_APPLIER_SERVICE_LATENCY)
-        public double getClusterApplierServiceLatency() {
-            return clusterStateAppliedTimeInMillis;
+        @JsonProperty(AllMetrics.MasterClusterUpdateStatsValue.Constants.PUBLISH_CLUSTER_STATE_LATENCY)
+        public double getMasterClusterStateLatency() {
+            return masterClusterStateUpdateTimeInMillis;
         }
 
-        @JsonProperty(AllMetrics.ClusterApplierServiceStatsValue.Constants.CLUSTER_APPLIER_SERVICE_FAILURE)
-        public double getClusterApplierServiceFailed() {
-            return clusterStateAppliedFailedCount;
+        @JsonProperty(AllMetrics.MasterClusterUpdateStatsValue.Constants.PUBLISH_CLUSTER_STATE_FAILURE)
+        public double getMasterClusterStateUpdateFailed() {
+            return masterClusterStateUpdateFailedCount;
         }
     }
 }

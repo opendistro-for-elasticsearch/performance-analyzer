@@ -18,28 +18,7 @@ package com.amazon.opendistro.elasticsearch.performanceanalyzer;
 import static java.util.Collections.singletonList;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.action.PerformanceAnalyzerActionFilter;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.AdmissionControlMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CacheConfigMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.CircuitBreakerCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.DisksCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.FaultDetectionMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.GCInfoCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.HeapMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardIndexingPressureMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceEventMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterServiceMetrics;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterThrottlingMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MetricsPurgeActivity;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NetworkInterfaceCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeDetailsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsAllShardsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.OSMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ScheduledMetricCollectorsExecutor;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ShardStateCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.StatsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ClusterApplierServiceStatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.*;
 
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
@@ -215,6 +194,13 @@ public final class PerformanceAnalyzerPlugin extends Plugin implements ActionPlu
                 performanceAnalyzerController,configOverridesWrapper));
         } catch (ClassNotFoundException e) {
             LOG.info("Shard IndexingPressure not present in this ES version. Skipping ShardIndexingPressureMetricsCollector");
+        }
+        try {
+            Class.forName(MasterClusterStateUpdateStatsCollector.MASTER_CLUSTER_UPDATE_STATS_CLASS_NAME);
+            scheduledMetricCollectorsExecutor.addScheduledMetricCollector(new MasterClusterStateUpdateStatsCollector(
+                    performanceAnalyzerController,configOverridesWrapper));
+        } catch (ClassNotFoundException e) {
+            LOG.info("Master Cluster Update Stats not present in this ES version. Skipping MasterClusterStateUpdateStatsCollector");
         }
         scheduledMetricCollectorsExecutor.start();
 
