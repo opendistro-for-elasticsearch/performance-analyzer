@@ -38,7 +38,7 @@ public class ElectionTermCollector extends PerformanceAnalyzerMetricsCollector i
     private StringBuilder value;
 
     public ElectionTermCollector(PerformanceAnalyzerController controller,
-                                 ConfigOverridesWrapper configOverridesWrapper){
+                                 ConfigOverridesWrapper configOverridesWrapper) {
         super(SAMPLING_TIME_INTERVAL, "ElectionTermCollector");
         value = new StringBuilder();
         this.controller = controller;
@@ -57,7 +57,7 @@ public class ElectionTermCollector extends PerformanceAnalyzerMetricsCollector i
 
     @Override
     public void collectMetrics(long startTime) {
-        if(!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
+        if (!controller.isCollectorEnabled(configOverridesWrapper, getCollectorName())) {
             return;
         }
         long mCurrT = System.currentTimeMillis();
@@ -90,6 +90,7 @@ public class ElectionTermCollector extends PerformanceAnalyzerMetricsCollector i
 
     public static class ElectionTermMetrics extends MetricStatus {
         private final long electionTerm;
+
         public ElectionTermMetrics(long electionTerm) {
             this.electionTerm = electionTerm;
         }
