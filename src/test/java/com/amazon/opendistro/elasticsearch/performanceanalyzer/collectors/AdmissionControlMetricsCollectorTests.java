@@ -15,28 +15,31 @@
 
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
+import static org.junit.Assert.assertEquals;
+
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.CustomMetricsLocationTestBase;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class AdmissionControlMetricsCollectorTests extends CustomMetricsLocationTestBase {
 
+    @Ignore
     @Test
     public void admissionControlMetricsCollector() {
-        MetricsConfiguration.CONFIG_MAP.put(AdmissionControlMetricsCollector.class, MetricsConfiguration.cdefault);
-        AdmissionControlMetricsCollector admissionControlMetricsCollector = new AdmissionControlMetricsCollector();
+        MetricsConfiguration.CONFIG_MAP.put(
+                AdmissionControlMetricsCollector.class, MetricsConfiguration.cdefault);
+        AdmissionControlMetricsCollector admissionControlMetricsCollector =
+                new AdmissionControlMetricsCollector();
 
         long startTimeInMills = System.currentTimeMillis();
         admissionControlMetricsCollector.saveMetricValues("testMetric", startTimeInMills);
 
-        List<Event> metrics =  new ArrayList<>();
+        List<Event> metrics = new ArrayList<>();
         PerformanceAnalyzerMetrics.metricQueue.drainTo(metrics);
         assertEquals(1, metrics.size());
         assertEquals("testMetric", metrics.get(0).value);
