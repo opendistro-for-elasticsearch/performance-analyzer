@@ -189,7 +189,7 @@ jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = 0.8
+                minimum = 0.7
             }
         }
     }
@@ -197,7 +197,7 @@ jacocoTestCoverageVerification {
 
 
 // to run coverage verification during the build (and fail when appropriate)
-//check.dependsOn jacocoTestCoverageVerification
+check.dependsOn jacocoTestCoverageVerification
 
 checkstyleMain.enabled = false
 checkstyleTest.enabled = false
