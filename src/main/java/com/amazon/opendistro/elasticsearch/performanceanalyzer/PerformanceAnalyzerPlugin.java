@@ -240,6 +240,9 @@ public final class PerformanceAnalyzerPlugin extends Plugin
                 new ClusterApplierServiceStatsCollector(
                         performanceAnalyzerController, configOverridesWrapper));
         scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
+                new ElectionTermCollector(
+                        performanceAnalyzerController,configOverridesWrapper));
+        scheduledMetricCollectorsExecutor.addScheduledMetricCollector(
                 new AdmissionControlMetricsCollector());
         try {
             Class.forName(ShardIndexingPressureMetricsCollector.SHARD_INDEXING_PRESSURE_CLASS_NAME);
