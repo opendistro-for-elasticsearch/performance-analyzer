@@ -97,14 +97,9 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
         } catch (Exception ex) {
             PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
                     ExceptionsAndErrors.MASTER_CLUSTER_UPDATE_STATS_COLLECTOR_ERROR, "", 1);
-            LOG.debug("Exception in Collecting Cluster Applier Service Metrics: {} for startTime {}",
+            LOG.debug("Exception in Collecting Master Cluster State Update Metrics: {} for startTime {}",
                     () -> ex.toString(), () -> startTime);
         }
-    }
-
-    @VisibleForTesting
-    public void resetPrevMasterClusterStateUpdateStats() {
-        prevMasterClusterStateUpdateStats = new MasterClusterStateUpdateStats();
     }
 
     @VisibleForTesting
@@ -115,12 +110,12 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     }
 
     /**
-     * ClusterApplierServiceStats is ES is a tracker for total time taken to apply cluster state and the
+     * MasterClusterUpdateMetric is ES is a tracker for total time taken to publish cluster state and the
      * number of times it has failed. To calculate point in time metric,
      * we will have to store its previous state and calculate the diff to get the point in time latency.
-     * This might return as 0 if there is no cluster update since last retrieval.
+     * This might return as 0 if there is no publish request since last retrieval.
      *
-     * @param currentMetrics Current Cluster update stats in ES
+     * @param currentMetrics Current Publish Cluster update stats in ES from master perspective
      * @return point in time latency.
      */
     private double computeLatency(final MasterClusterStateUpdateStats currentMetrics) {
@@ -136,12 +131,12 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     }
 
     /**
-     * ClusterApplierServiceStats is ES is a tracker for total time taken to apply cluster state and the
+     * MasterClusterUpdateMetric is ES is a tracker for total time taken to publish cluster state and the
      * number of times it has failed. To calculate point in time metric,
-     * we will have to store its previous state and calculate the diff to get the point in time failure.
-     * This might return as 0 if there is no cluster update since last retrieval.
+     * we will have to store its previous state and calculate the diff to get the point in time latency.
+     * This might return as 0 if there is no publish request since last retrieval.
      *
-     * @param currentMetrics Current Cluster update stats in ES
+     * @param currentMetrics Current Publish Cluster update stats in ES from master perspective
      * @return point in time failure.
      */
     private double computeFailure(final MasterClusterStateUpdateStats currentMetrics) {
@@ -174,22 +169,22 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     }
 
     public static class MasterClusterStateUpdateMetrics extends MetricStatus {
-        private double masterClusterStateUpdateFailedCount;
-        private double masterClusterStateUpdateTimeInMillis;
+        private double publishFailedCount;
+        private double publishTimeTakenInMillis;
 
         public MasterClusterStateUpdateMetrics(double latency, double failedCount) {
-            this.masterClusterStateUpdateTimeInMillis = latency;
-            this.masterClusterStateUpdateFailedCount = failedCount;
+            this.publishTimeTakenInMillis = latency;
+            this.publishFailedCount = failedCount;
         }
 
         @JsonProperty(AllMetrics.MasterClusterUpdateStatsValue.Constants.PUBLISH_CLUSTER_STATE_LATENCY)
-        public double getMasterClusterStateLatency() {
-            return masterClusterStateUpdateTimeInMillis;
+        public double getPublishTimeTakenInMillis() {
+            return publishTimeTakenInMillis;
         }
 
         @JsonProperty(AllMetrics.MasterClusterUpdateStatsValue.Constants.PUBLISH_CLUSTER_STATE_FAILURE)
-        public double getMasterClusterStateUpdateFailed() {
-            return masterClusterStateUpdateFailedCount;
+        public double getPublishFailedCount() {
+            return publishFailedCount;
         }
     }
 }

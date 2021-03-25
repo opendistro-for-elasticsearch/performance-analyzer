@@ -108,11 +108,6 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
     }
 
     @VisibleForTesting
-    public void resetPrevClusterApplierServiceStats() {
-        prevClusterApplierServiceStats = new ClusterApplierServiceStats();
-    }
-
-    @VisibleForTesting
     public Object getClusterApplierServiceStats() throws InvocationTargetException, IllegalAccessException,
             NoSuchMethodException {
         Method method = ClusterApplierService.class.getMethod(GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME);
