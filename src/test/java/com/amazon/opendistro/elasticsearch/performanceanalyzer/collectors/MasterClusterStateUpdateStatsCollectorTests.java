@@ -22,7 +22,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import junit.framework.TestCase;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -34,7 +34,6 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +42,17 @@ import java.util.Map;
 @PrepareForTest({ESResources.class})
 public class MasterClusterStateUpdateStatsCollectorTests extends TestCase {
     ObjectMapper mapper = new ObjectMapper();
+
+    public void cleanUp() throws Exception {
+        super.setUp();
+        // clean metricQueue before running every test
+        TestUtil.readEvents();
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+    }
+
     @Test
-    public void testMasterClusterStateUpdateStats_saveMetricValues() {
+    public void testMasterClusterStateUpdateStats_saveMetricValues() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(MasterClusterStateUpdateStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
@@ -74,9 +82,8 @@ public class MasterClusterStateUpdateStatsCollectorTests extends TestCase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testMasterClusterStateUpdateStats_collectMetrics() throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, JsonProcessingException {
-        System.out.println("test 1");
+    public void testMasterClusterStateUpdateStats_collectMetrics() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(MasterClusterStateUpdateStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
@@ -113,9 +120,8 @@ public class MasterClusterStateUpdateStatsCollectorTests extends TestCase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testMasterClusterStateUpdateStats_collectMetricsWithPreviousMasterClusterUpdateStats() throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, JsonProcessingException {
-        System.out.println("test 2");
+    public void testMasterClusterStateUpdateStats_collectMetricsWithPreviousMasterClusterUpdateStats() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(MasterClusterStateUpdateStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
@@ -172,7 +178,8 @@ public class MasterClusterStateUpdateStatsCollectorTests extends TestCase {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testMasterClusterStateUpdateStats_collectMetrics_ClassNotFoundException() {
+    public void testMasterClusterStateUpdateStats_collectMetrics_ClassNotFoundException() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(MasterClusterStateUpdateStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;

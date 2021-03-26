@@ -27,12 +27,11 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsCo
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
@@ -47,8 +46,17 @@ import org.powermock.reflect.Whitebox;
 @PrepareForTest({ESResources.class})
 public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocationTestBase {
     ObjectMapper mapper = new ObjectMapper();
+
+    public void cleanUp() throws Exception {
+        super.setUp();
+        // clean metricQueue before running every test
+        TestUtil.readEvents();
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+    }
+
     @Test
-    public void testClusterApplierServiceStats_saveMetricValues() {
+    public void testClusterApplierServiceStats_saveMetricValues() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
@@ -78,9 +86,8 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testClusterApplierServiceStats_collectMetrics() throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, JsonProcessingException {
-        System.out.println("test 1");
+    public void testClusterApplierServiceStats_collectMetrics() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
@@ -118,9 +125,8 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testClusterApplierServiceStats_collectMetricsWithPreviousClusterApplierMetrics() throws NoSuchMethodException, IllegalAccessException,
-            InvocationTargetException, JsonProcessingException {
-        System.out.println("test 2");
+    public void testClusterApplierServiceStats_collectMetricsWithPreviousClusterApplierMetrics() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
@@ -177,7 +183,8 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testClusterApplierServiceStats_collectMetrics_ClassNotFoundException() {
+    public void testClusterApplierServiceStats_collectMetrics_ClassNotFoundException() throws Exception {
+        cleanUp();
         MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
