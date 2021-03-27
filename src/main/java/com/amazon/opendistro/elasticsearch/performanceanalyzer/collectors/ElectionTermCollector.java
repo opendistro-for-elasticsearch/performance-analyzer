@@ -29,6 +29,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * This class starts publishing election term metric. These metric is emitted from cluster state.
+ */
 public class ElectionTermCollector extends PerformanceAnalyzerMetricsCollector implements MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL = MetricsConfiguration.CONFIG_MAP.get(ElectionTermCollector.class).samplingInterval;
     private static final Logger LOG = LogManager.getLogger(ElectionTermCollector.class);
