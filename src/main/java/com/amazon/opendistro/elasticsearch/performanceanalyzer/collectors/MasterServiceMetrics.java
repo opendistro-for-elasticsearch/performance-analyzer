@@ -78,21 +78,16 @@ public class MasterServiceMetrics extends PerformanceAnalyzerMetricsCollector im
 
             pendingTasks.stream().forEach( pendingTask -> {
                 String pendingTaskType = pendingTask.getSource().toString().split(" ",2)[0];
-                if (pendingTaskCountPerTaskType.containsKey(pendingTaskType)) {
-                    pendingTaskCountPerTaskType.put(pendingTaskType, pendingTaskCountPerTaskType.get(pendingTaskType) + 1);
-                }
-                else{
-                    pendingTaskCountPerTaskType.put(pendingTaskType,1);
-                }
+                pendingTaskCountPerTaskType.put(pendingTaskType,
+                        pendingTaskCountPerTaskType.getOrDefault(pendingTaskType,0)+1);
             });
 
             value.setLength(0);
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds());
-            for (String pendingTaskType : pendingTaskCountPerTaskType.keySet()){
+            pendingTaskCountPerTaskType.forEach((pendingTaskType,PendingTaskValue) -> {
                 value.append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
-                value.append(new MasterPendingStatus(
-                        pendingTaskType,pendingTaskCountPerTaskType.get(pendingTaskType)).serialize());
-            }
+                value.append(new MasterPendingStatus(pendingTaskType,PendingTaskValue).serialize());
+            });
 
             saveMetricValues(value.toString(), startTime,
                     PerformanceAnalyzerMetrics.MASTER_CURRENT, PerformanceAnalyzerMetrics.MASTER_META_DATA);
