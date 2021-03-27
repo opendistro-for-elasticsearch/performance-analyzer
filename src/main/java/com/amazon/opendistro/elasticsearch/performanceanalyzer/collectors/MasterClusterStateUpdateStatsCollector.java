@@ -38,6 +38,10 @@ import org.elasticsearch.cluster.service.ClusterApplierService;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+/**
+ * This class starts publishing latency and failure metrics for Publish Phase of Cluster state. These metrics are
+ * emitted from Master node.
+ */
 public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerMetricsCollector implements
         MetricsProcessor {
     public static final int SAMPLING_TIME_INTERVAL =
@@ -82,14 +86,13 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
 
             MasterClusterStateUpdateMetrics masterClusterStateUpdateMetrics = new MasterClusterStateUpdateMetrics(
                     computeLatency(currentMasterClusterStateUpdateStats), computeFailure(currentMasterClusterStateUpdateStats));
+            prevMasterClusterStateUpdateStats = currentMasterClusterStateUpdateStats;
 
             value.setLength(0);
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                     .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
             value.append(masterClusterStateUpdateMetrics.serialize());
             saveMetricValues(value.toString(), startTime);
-
-            prevMasterClusterStateUpdateStats = currentMasterClusterStateUpdateStats;
 
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.MASTER_CLUSTER_UPDATE_STATS_COLLECTOR_EXECUTION_TIME, "",
@@ -110,7 +113,7 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     }
 
     /**
-     * MasterClusterUpdateMetric is ES is a tracker for total time taken to publish cluster state and the
+     * MasterClusterUpdateMetric in ES is a tracker for total time taken to publish cluster state and the
      * number of times it has failed. To calculate point in time metric,
      * we will have to store its previous state and calculate the diff to get the point in time latency.
      * This might return as 0 if there is no publish request since last retrieval.
@@ -120,7 +123,7 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
      */
     private double computeLatency(final MasterClusterStateUpdateStats currentMetrics) {
         final double rate = computeRate(currentMetrics.publishTotalCount);
-        if (rate == 0) {
+        if (rate <= 0) {
             return 0D;
         }
         return (currentMetrics.publishTimeTakenInMillis - prevMasterClusterStateUpdateStats.publishTimeTakenInMillis) / rate;
@@ -131,7 +134,7 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     }
 
     /**
-     * MasterClusterUpdateMetric is ES is a tracker for total time taken to publish cluster state and the
+     * MasterClusterUpdateMetric in ES is a tracker for total time taken to publish cluster state and the
      * number of times it has failed. To calculate point in time metric,
      * we will have to store its previous state and calculate the diff to get the point in time latency.
      * This might return as 0 if there is no publish request since last retrieval.
@@ -140,7 +143,11 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
      * @return point in time failure.
      */
     private double computeFailure(final MasterClusterStateUpdateStats currentMetrics) {
-        return currentMetrics.publishFailedCount - prevMasterClusterStateUpdateStats.publishFailedCount;
+        double failed = currentMetrics.publishFailedCount - prevMasterClusterStateUpdateStats.publishFailedCount;
+        if(failed < 0) {
+            return 0D;
+        }
+        return failed;
     }
 
     @Override
@@ -152,8 +159,17 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     }
 
     public static class MasterClusterStateUpdateStats {
+        /**
+         * The number of publish cluster state operations.
+         */
         private long publishTotalCount;
+        /**
+         * The time publish cluster state operation takes in millis
+         */
         private long publishTimeTakenInMillis;
+        /**
+         * The number of publish cluster state operations that have failed.
+         */
         private long publishFailedCount;
 
         @VisibleForTesting

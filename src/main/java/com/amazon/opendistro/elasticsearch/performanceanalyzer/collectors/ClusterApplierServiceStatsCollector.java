@@ -87,14 +87,13 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
             }
             ClusterApplierServiceMetrics clusterApplierServiceMetrics = new ClusterApplierServiceMetrics(
                     computeLatency(currentClusterApplierServiceStats), computeFailure(currentClusterApplierServiceStats));
+            prevClusterApplierServiceStats = currentClusterApplierServiceStats;
 
             value.setLength(0);
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                     .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
             value.append(clusterApplierServiceMetrics.serialize());
             saveMetricValues(value.toString(), startTime);
-
-            prevClusterApplierServiceStats = currentClusterApplierServiceStats;
 
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.CLUSTER_APPLIER_SERVICE_STATS_COLLECTOR_EXECUTION_TIME, "",
