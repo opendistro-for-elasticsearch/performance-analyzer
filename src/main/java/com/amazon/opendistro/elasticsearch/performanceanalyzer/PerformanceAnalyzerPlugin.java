@@ -58,6 +58,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.http_action.whoam
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.listener.PerformanceAnalyzerSearchListener;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.ExceptionsAndErrors;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.rca.framework.metrics.WriterMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLog;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.EventLogFileHandler;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.transport.PerformanceAnalyzerTransportInterceptor;
@@ -257,7 +258,7 @@ public final class PerformanceAnalyzerPlugin extends Plugin
                     performanceAnalyzerController,configOverridesWrapper));
         } catch (ClassNotFoundException e) {
             PerformanceAnalyzerApp.ERRORS_AND_EXCEPTIONS_AGGREGATOR.updateStat(
-                    ExceptionsAndErrors.MASTER_CLUSTER_UPDATE_STATS_COLLECTOR_DISABLED, "", 1);
+                    WriterMetrics.MASTER_CLUSTER_UPDATE_STATS_COLLECTOR_DISABLED, "", 1);
             LOG.info("Master Cluster Update Stats not present in this ES version. Skipping MasterClusterStateUpdateStatsCollector");
         }
         scheduledMetricCollectorsExecutor.start();
