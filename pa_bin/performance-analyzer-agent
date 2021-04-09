@@ -20,7 +20,7 @@ if [ -z "$2" ]; then
     exit 1
   fi
 else
-  JAVA_HOME=$2
+  export JAVA_HOME=$2
 fi
 
 # Instead of the supervisor executing peformance-analyzer-agent from the plugin location,
