@@ -93,7 +93,7 @@ public class ElectionTermCollectorTests {
     public void testCollectMetrics() {
         Mockito.when(controller.isCollectorEnabled(configOverrides, "ElectionTermCollector"))
                 .thenReturn(true);
-	electionTermCollector.collectMetrics(startTimeInMills);
+        electionTermCollector.collectMetrics(startTimeInMills);
         String jsonStr = readMetricsInJsonString(1);
         String[] jsonStrArray = jsonStr.split(":",2);
         assertTrue(jsonStrArray[0].contains(ElectionTermValue.Constants.ELECTION_TERM_VALUE));
