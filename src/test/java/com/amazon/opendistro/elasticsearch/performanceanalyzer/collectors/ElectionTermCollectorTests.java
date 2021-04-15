@@ -16,8 +16,6 @@
 package com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -25,7 +23,6 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.ESResources;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PerformanceAnalyzerController;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.PluginSettings;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.config.overrides.ConfigOverridesWrapper;
-import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetrics.ElectionTermValue;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
@@ -38,7 +35,6 @@ import org.elasticsearch.threadpool.ThreadPool;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 public class ElectionTermCollectorTests {
@@ -47,9 +43,6 @@ public class ElectionTermCollectorTests {
     private ThreadPool threadPool;
     private PerformanceAnalyzerController controller;
     private ConfigOverridesWrapper configOverrides;
-
-    @Mock
-    private ClusterService mockedClusterService;
 
     @Before
     public void init() {
@@ -90,37 +83,15 @@ public class ElectionTermCollectorTests {
     }
 
     @Test
-    public void testCollectMetrics() {
-        electionTermCollector.collectMetrics(startTimeInMills);
-        String jsonStr = readMetricsInJsonString(1);
-        String[] jsonStrArray = jsonStr.split(":",2);
-        assertTrue(jsonStrArray[0].contains(ElectionTermValue.Constants.ELECTION_TERM_VALUE));
-        assertTrue(jsonStrArray[1].contains("0"));
-    }
+    public void testElectionTermMetrics() {
+        Mockito.when(controller.isCollectorEnabled(configOverrides, "ElectionTermCollector"))
+                .thenReturn(true);
+        electionTermCollector.saveMetricValues("election_term_metrics", startTimeInMills);
 
-    @Test
-    public void testWithMockClusterService() {
-        ESResources.INSTANCE.setClusterService(mockedClusterService);
-        electionTermCollector.collectMetrics(startTimeInMills);
-        String jsonStr = readMetricsInJsonString(0);
-        assertNull(jsonStr);
-
-        ESResources.INSTANCE.setClusterService(null);
-        electionTermCollector.collectMetrics(startTimeInMills);
-        jsonStr = readMetricsInJsonString(0);
-        assertNull(jsonStr);
-    }
-
-    private String readMetricsInJsonString(int size) {
         List<Event> metrics = TestUtil.readEvents();
-        assert metrics.size() == size;
-        if (size != 0) {
-            String[] jsonStrs = metrics.get(0).value.split("\n");
-            assert jsonStrs.length == 2;
-            return jsonStrs[1];
-        } else {
-            return null;
-        }
+        assertEquals(1, metrics.size());
+        assertEquals("election_term_metrics", metrics.get(0).value);
     }
+
 }
 
