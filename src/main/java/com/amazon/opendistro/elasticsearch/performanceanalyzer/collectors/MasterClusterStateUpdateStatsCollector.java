@@ -34,6 +34,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.cluster.service.ClusterApplierService;
+import org.elasticsearch.cluster.service.MasterService;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -108,7 +109,7 @@ public class MasterClusterStateUpdateStatsCollector extends PerformanceAnalyzerM
     @VisibleForTesting
     public Object getMasterClusterStateUpdateStats() throws InvocationTargetException, IllegalAccessException,
             NoSuchMethodException {
-        Method method = ClusterApplierService.class.getMethod(GET_MASTER_CLUSTER_UPDATE_STATS_METHOD_NAME);
+        Method method = MasterService.class.getMethod(GET_MASTER_CLUSTER_UPDATE_STATS_METHOD_NAME);
         return method.invoke(ESResources.INSTANCE.getClusterService().getMasterService());
     }
 
