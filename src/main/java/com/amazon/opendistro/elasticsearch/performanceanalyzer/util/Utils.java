@@ -32,6 +32,7 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeSt
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.NodeStatsFixedShardsMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ThreadPoolMetricsCollector;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.ClusterApplierServiceStatsCollector;
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.collectors.MasterClusterStateUpdateStatsCollector;
 import org.elasticsearch.action.admin.indices.stats.CommonStats;
 import org.elasticsearch.action.admin.indices.stats.CommonStatsFlags;
 import org.elasticsearch.action.admin.indices.stats.IndexShardStats;
@@ -65,6 +66,7 @@ public class Utils {
         MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ElectionTermCollector.class, cdefault);
         MetricsConfiguration.CONFIG_MAP.put(ShardIndexingPressureMetricsCollector.class, cdefault);
+        MetricsConfiguration.CONFIG_MAP.put(MasterClusterStateUpdateStatsCollector.class, cdefault);
     }
 
     // These methods are utility functions for the Node Stat Metrics Collectors. These methods are used by both the all

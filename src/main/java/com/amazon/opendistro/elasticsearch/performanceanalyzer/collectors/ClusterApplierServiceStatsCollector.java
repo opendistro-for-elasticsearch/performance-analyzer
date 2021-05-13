@@ -46,7 +46,7 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
     private static final Logger LOG = LogManager.getLogger(ClusterApplierServiceStatsCollector.class);
     private static final String GET_CLUSTER_APPLIER_SERVICE_STATS_METHOD_NAME = "getStats";
     private static final ObjectMapper mapper;
-    private static volatile ClusterApplierServiceStats prevClusterApplierServiceStats = new ClusterApplierServiceStats();
+    private volatile ClusterApplierServiceStats prevClusterApplierServiceStats = new ClusterApplierServiceStats();
     private final StringBuilder value;
     private final PerformanceAnalyzerController controller;
     private final ConfigOverridesWrapper configOverridesWrapper;
@@ -87,14 +87,13 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
             }
             ClusterApplierServiceMetrics clusterApplierServiceMetrics = new ClusterApplierServiceMetrics(
                     computeLatency(currentClusterApplierServiceStats), computeFailure(currentClusterApplierServiceStats));
+            prevClusterApplierServiceStats = currentClusterApplierServiceStats;
 
             value.setLength(0);
             value.append(PerformanceAnalyzerMetrics.getJsonCurrentMilliSeconds())
                     .append(PerformanceAnalyzerMetrics.sMetricNewLineDelimitor);
             value.append(clusterApplierServiceMetrics.serialize());
             saveMetricValues(value.toString(), startTime);
-
-            ClusterApplierServiceStatsCollector.prevClusterApplierServiceStats = currentClusterApplierServiceStats;
 
             PerformanceAnalyzerApp.WRITER_METRICS_AGGREGATOR.updateStat(
                     WriterMetrics.CLUSTER_APPLIER_SERVICE_STATS_COLLECTOR_EXECUTION_TIME, "",
@@ -105,11 +104,6 @@ public class ClusterApplierServiceStatsCollector extends PerformanceAnalyzerMetr
             LOG.debug("Exception in Collecting Cluster Applier Service Metrics: {} for startTime {}",
                     () -> ex.toString(), () -> startTime);
         }
-    }
-
-    @VisibleForTesting
-    public void resetPrevClusterApplierServiceStats() {
-        ClusterApplierServiceStatsCollector.prevClusterApplierServiceStats = new ClusterApplierServiceStats();
     }
 
     @VisibleForTesting

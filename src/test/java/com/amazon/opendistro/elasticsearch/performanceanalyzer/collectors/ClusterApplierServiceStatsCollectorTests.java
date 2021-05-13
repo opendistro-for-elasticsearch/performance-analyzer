@@ -26,12 +26,13 @@ import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.AllMetric
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.MetricsConfiguration;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.metrics.PerformanceAnalyzerMetrics;
 import com.amazon.opendistro.elasticsearch.performanceanalyzer.reader_writer_shared.Event;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.lang.reflect.InvocationTargetException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import com.amazon.opendistro.elasticsearch.performanceanalyzer.util.TestUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.elasticsearch.cluster.service.ClusterApplierService;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.junit.Ignore;
@@ -47,10 +48,17 @@ import org.powermock.reflect.Whitebox;
 public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocationTestBase {
     ObjectMapper mapper = new ObjectMapper();
 
+    public void cleanUp() throws Exception {
+        super.setUp();
+        // clean metricQueue before running every test
+        TestUtil.readEvents();
+        System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
+    }
+
     @Test
-    public void testClusterApplierServiceStats_saveMetricValues() {
-        MetricsConfiguration.CONFIG_MAP.put(
-                ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
+    public void testClusterApplierServiceStats_saveMetricValues() throws Exception {
+        cleanUp();
+        MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
         PerformanceAnalyzerController controller =
@@ -82,12 +90,9 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
     @SuppressWarnings("unchecked")
     @Ignore
     @Test
-    public void testClusterApplierServiceStats_collectMetrics()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
-                    JsonProcessingException {
-        System.out.println("test 1");
-        MetricsConfiguration.CONFIG_MAP.put(
-                ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
+    public void testClusterApplierServiceStats_collectMetrics() throws Exception {
+        cleanUp();
+        MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
         PerformanceAnalyzerController controller =
@@ -137,12 +142,9 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testClusterApplierServiceStats_collectMetricsWithPreviousClusterApplierMetrics()
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
-                    JsonProcessingException {
-        System.out.println("test 2");
-        MetricsConfiguration.CONFIG_MAP.put(
-                ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
+    public void testClusterApplierServiceStats_collectMetricsWithPreviousClusterApplierMetrics() throws Exception {
+        cleanUp();
+        MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
         PerformanceAnalyzerController controller =
@@ -170,7 +172,6 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
         Mockito.when(esResources.getClusterService()).thenReturn(clusterService);
         Mockito.when(clusterService.getClusterApplierService()).thenReturn(clusterApplierService);
 
-        spyCollector.resetPrevClusterApplierServiceStats();
         spyCollector.collectMetrics(startTimeInMills);
 
         List<Event> metrics = new ArrayList<>();
@@ -218,9 +219,9 @@ public class ClusterApplierServiceStatsCollectorTests extends CustomMetricsLocat
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testClusterApplierServiceStats_collectMetrics_ClassNotFoundException() {
-        MetricsConfiguration.CONFIG_MAP.put(
-                ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
+    public void testClusterApplierServiceStats_collectMetrics_ClassNotFoundException() throws Exception {
+        cleanUp();
+        MetricsConfiguration.CONFIG_MAP.put(ClusterApplierServiceStatsCollector.class, MetricsConfiguration.cdefault);
         System.setProperty("performanceanalyzer.metrics.log.enabled", "False");
         long startTimeInMills = 1153721339;
         PerformanceAnalyzerController controller =
