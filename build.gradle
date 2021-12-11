@@ -54,7 +54,7 @@ spotbugsTest {
 }
 
 ext {
-    opendistroVersion = '1.13.0'
+    opendistroVersion = '1.13.3'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -220,10 +220,10 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.5'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
     compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.5'
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.15.0') {
         force = 'true'
     }
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.15.0') {
         force = 'true'
     }
 
@@ -288,6 +288,7 @@ task cloneGitRepo(type: GitClone) {
     rcaDir = Paths.get(getProject().getBuildDir().toString(), "performance-analyzer-rca").toString()
     def destination = file(rcaDir)
     uri = "https://github.com/opendistro-for-elasticsearch/performance-analyzer-rca.git"
+    branch = "1.13"
     destinationPath = destination
     bare = false
     enabled = !destination.exists() // to clone only once
