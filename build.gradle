@@ -220,10 +220,10 @@ dependencies {
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.5'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
     compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.5'
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.16.0') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.17.0') {
         force = 'true'
     }
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.16.0') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.17.0') {
         force = 'true'
     }
 
