@@ -54,7 +54,7 @@ spotbugsTest {
 }
 
 ext {
-    opendistroVersion = '1.13.0'
+    opendistroVersion = '1.13.3'
     isSnapshot = "true" == System.getProperty("build.snapshot", "true")
 }
 
@@ -215,11 +215,12 @@ dependencies {
 
     configurations.all {
        resolutionStrategy {
-          force 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
-          force 'com.fasterxml.jackson.core:jackson-core:2.10.5'
-          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.10.5'
-          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.10.5'
-          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.10.5'
+          force "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
+          force 'com.fasterxml.jackson.core:jackson-databind:2.12.6.1'
+          force 'com.fasterxml.jackson.core:jackson-core:2.12.6'
+          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-smile:2.12.6'
+          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.12.6'
+          force 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.12.6'
           force 'junit:junit:4.13.1'
        }
     }
@@ -232,13 +233,13 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk15on:1.68'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.68'
     compile 'com.amazon.opendistro.elasticsearch:performanceanalyzer-rca:1.13'
-    compile 'com.fasterxml.jackson.core:jackson-annotations:2.10.5'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.10.5.1'
-    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.10.5'
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.11.1') {
+    compile 'com.fasterxml.jackson.core:jackson-annotations:2.12.6'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.12.6.1'
+    compile 'com.fasterxml.jackson.module:jackson-module-paranamer:2.12.6'
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.16.0') {
         force = 'true'
     }
-    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1') {
+    compile(group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.16.0') {
         force = 'true'
     }
 
@@ -267,7 +268,11 @@ dependencies {
     testCompile(group: 'org.objenesis', name: 'objenesis', version: '3.0.1') {
         force = 'true'
     }
-    testCompile group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
+    testCompile(group: 'com.google.code.gson', name: 'gson', version: '2.8.9') {
+        force = 'true'
+    }
+
+    checkstyle "com.puppycrawl.tools:checkstyle:${project.checkstyle.toolVersion}"
 }
 
 dependencyLicenses {
